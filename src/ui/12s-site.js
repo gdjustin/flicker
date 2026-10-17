@@ -28,11 +28,19 @@ function closePanel() { $('panel').classList.add('hidden'); panelKind = ''; if (
 
 /* ---- save tools ---- */
 function markBackup() { S.lastBackup = Date.now(); save(true); renderSaveDot(); }
+// In the Claude artifact the viewer must allow a download (the downloads capability); elsewhere a plain file link works.
+let DL;   // undefined: not known yet; null: not offered here
+try { if (window.claude && typeof window.claude.use === 'function') window.claude.use('downloads').then(d => { DL = d; }, () => { DL = null; }); else DL = null; } catch (e) { DL = null; }
+function saveName() { return GAME.title.toLowerCase().replace(/\W+/g, '-') + '-save-' + new Date().toISOString().slice(0, 10) + '.txt'; }
+// resolves true when the file was handed over
 function downloadSave() {
-  try { const blob = new Blob([exportText()], { type: 'text/plain' }), a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = GAME.title.toLowerCase().replace(/\W+/g, '-') + '-save-' + new Date().toISOString().slice(0, 10) + '.txt';
-    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); markBackup(); return true; }
-  catch (e) { notice('This browser would not download the file. Use Copy as text instead.'); return false; }
+  const text = exportText();
+  if (DL) return DL.save({ filename: saveName(), data: text }).then(() => { markBackup(); return true; },
+    e => { notice(e && e.code === 'declined' ? 'Download cancelled.' : 'This view can\u2019t download files. Use Copy as text instead.'); return false; });
+  try { const blob = new Blob([text], { type: 'text/plain' }), a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = saveName();
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); markBackup(); return Promise.resolve(true); }
+  catch (e) { notice('This browser would not download the file. Use Copy as text instead.'); return Promise.resolve(false); }
 }
 function loadFrom(s, what) {
   try { localStorage.setItem(SAVE_KEY + '.before-load', serialize(S)); } catch (e) {}   // the game being replaced, kept aside once
@@ -43,7 +51,7 @@ function panelSave(body) {
   body.appendChild(el('p', 'pmut', S.lastBackup ? 'You last kept a copy ' + ago(S.lastBackup) + '.' : 'You haven’t kept a copy of this game yet.'));
   const row = el('div', 'prow'); body.appendChild(row);
   const out = el('textarea', 'ptext hidden'); out.readOnly = true; out.setAttribute('aria-label', 'Your save, as text');
-  row.appendChild(pbtn('Download a copy', () => { if (downloadSave()) { notice('Copy downloaded.'); openPanel('save'); } }, 'primary'));
+  row.appendChild(pbtn('Download a copy', () => downloadSave().then(ok => { if (ok) { notice('Copy downloaded.'); if (panelKind === 'save') openPanel('save'); } }), 'primary'));
   row.appendChild(pbtn('Copy as text', () => { out.value = exportText(); out.classList.remove('hidden'); out.focus(); out.select(); let ok = false;
     try { ok = document.execCommand('copy'); } catch (e) {} if (navigator.clipboard) navigator.clipboard.writeText(out.value).then(() => notice('Save copied. Paste it somewhere safe.'), () => {});
     if (ok) notice('Save copied. Paste it somewhere safe.'); markBackup(); }));
@@ -93,7 +101,7 @@ function panelSettings(body) {
   const step2 = armBtn('Erase this game', 'Click again to erase everything', () => { try { localStorage.setItem(SAVE_KEY + '.before-reset', serialize(S)); localStorage.removeItem(SAVE_KEY); } catch (e) {}
     const keep = { opt: S.opt }; S = Object.assign(fresh(), keep); save(true); location.reload(); }, 'bad');
   step2.disabled = true;
-  zr.append(pbtn('Download a copy first', () => { if (downloadSave()) step2.disabled = false; else step2.disabled = false; }), step2);
+  zr.append(pbtn('Download a copy first', () => downloadSave().then(() => { step2.disabled = false; })), step2);
   body.appendChild(z);
 }
 
