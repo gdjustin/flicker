@@ -13,5 +13,5 @@ const GAME = {
   },
   // anonymous milestone counts: the web app address of the owner's counter sheet (tools/counter/Code.gs),
   // like https://script.google.com/macros/s/.../exec. Empty sends nothing. The test build never sends.
-  countUrl: ''
+  countUrl: 'https://script.google.com/macros/s/AKfycbwXUME7e8RJQ46orpkuaV3D8iGFynd_BVngLy3kLXx4kvr9kiF0BwwVk7JCAAAUswhM/exec'
 };
