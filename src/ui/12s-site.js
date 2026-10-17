@@ -107,13 +107,14 @@ function panelSettings(body) {
 
 /* ---- changelog and About ---- */
 function panelChanges(body) {
-  for (const c of CHANGELOG) { const s = el('section', 'pchg'); s.appendChild(el('h3', '', c.version + ' · ' + c.date + (c.title ? ' · ' + c.title : '')));
-    if (c.internal) s.appendChild(el('p', 'pmut', 'Covers ' + c.internal + '.'));
+  for (const c of CHANGELOG) { const s = el('section', 'pchg'); s.appendChild(el('h3', '', [c.version, c.title, c.date].filter(Boolean).join(' · ')));
+    if (c.internal && GAME.test) s.appendChild(el('p', 'pmut', 'Covers ' + c.internal + '.'));   // internal names show in the test build only
     for (const [h, items] of c.sections) { s.appendChild(el('h4', '', h)); const ul = el('ul'); items.forEach(t => ul.appendChild(el('li', '', t))); s.appendChild(ul); }
     body.appendChild(s); }
 }
 function panelAbout(body) {
   body.appendChild(el('p', 'plead', ABOUT.lead));
+  if (ABOUT.inspirations) { body.appendChild(el('h3', '', 'Inspirations')); body.appendChild(el('p', '', ABOUT.inspirations)); }
   const dl = el('dl', 'away-list'); ABOUT.credits.forEach(([a, b]) => { dl.append(el('dt', '', a), el('dd', '', b)); }); body.appendChild(dl);
   body.appendChild(el('h3', '', 'Licences'));
   ABOUT.licences.forEach((t, i) => { const p = el('p', 'pmut', t); if (i === 0 && GAME.links.source) { const a = el('a', '', 'Read the code'); a.href = GAME.links.source; a.target = '_blank'; a.rel = 'noopener'; p.append(' ', a, '.'); } body.appendChild(p); });
