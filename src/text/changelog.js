@@ -32,5 +32,5 @@ const ABOUT = {
     'Fonts: Spectral and Cinzel (SIL Open Font License), served by Google Fonts. Large numbers: break_infinity.js (MIT).'
   ],
   privacy: 'Your game is saved in this browser and nowhere else, unless you download or copy it. The game collects no personal information. Its fonts come from Google Fonts and a number library from jsDelivr, which see your connection as any website does.',
-  privacyCounts: 'It also sends a few anonymous counts when a game reaches certain points (such as the first rebirth), with nothing that identifies you or your browser, so we can see how far players get. You can turn this off in Settings.'
+  privacyCounts: 'It also sends a short anonymous note when a game reaches five points (starting, the village, the map, the first rebirth and the end of the playtest): which point, how long the game has been played, and the version. Nothing in it identifies you or your browser. It helps us see how far players get and how long it takes. You can turn it off in Settings.'
 };

@@ -11,7 +11,7 @@ const GAME = {
     discord: '',                 // the Discord invite (owner sets it up)
     source: 'https://github.com/gdjustin/flicker'
   },
-  // anonymous milestone counts: an address such as https://<code>.goatcounter.com/count?p={p}&e=true.
-  // Empty sends nothing. The test build never sends.
+  // anonymous milestone counts: the web app address of the owner's counter sheet (tools/counter/Code.gs),
+  // like https://script.google.com/macros/s/.../exec. Empty sends nothing. The test build never sends.
   countUrl: ''
 };

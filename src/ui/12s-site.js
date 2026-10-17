@@ -166,12 +166,21 @@ function checkVersion() {
 }
 setTimeout(checkVersion, 60000); setInterval(checkVersion, 15 * 60000);
 
-/* ---- anonymous milestone counts: a few points of progress, once per game, with nothing that identifies anyone ---- */
+/* ---- anonymous milestone counts (owner, 2026-10-17): five points, once per game, sent to the owner's Google Sheet
+   (tools/counter/Code.gs). Each note says which point, hours played, days since the game began, the run and the version;
+   nothing identifies the player. Only the public build sends, only from a real web address, and only if the setting allows. */
 function countMile(k) {
-  if (GAME.test || !GAME.countUrl || opt('counts') === false || !['stood', 'settler', 'light50', 'end', 'map', 'run2', 'run3', 'best100'].includes(k)) return;
-  S.counted = S.counted || {}; if (S.counted[k]) return; S.counted[k] = 1;
-  try { const img = new Image(); img.referrerPolicy = 'no-referrer'; img.src = GAME.countUrl.replace('{p}', encodeURIComponent('/m/' + k)); } catch (e) {}
+  const name = ({ prologue: 'prologue', stood: 'village', map: 'map', run2: 'rebirth1', demoEnd: 'end' })[k]; if (!name) return;
+  if (GAME.test || !GAME.countUrl || opt('counts') === false) return;
+  if (!(location.protocol === 'https:' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) || /claude\.ai|claudeusercontent/.test(location.hostname)) return;
+  S.counted = S.counted || {}; if (S.counted[name]) return; S.counted[name] = 1;
+  const born = S.born || (S.stats && S.stats.startedAt) || Date.now();
+  const body = JSON.stringify({ m: name, play: Math.round((S.playTime || 0) / 36) / 100, days: Math.round((Date.now() - born) / 864000) / 100, run: (S.meta && S.meta.run) || 1, v: GAME.version });
+  try { if (navigator.sendBeacon && navigator.sendBeacon(GAME.countUrl, new Blob([body], { type: 'text/plain' }))) return; } catch (e) {}
+  try { fetch(GAME.countUrl, { method: 'POST', mode: 'no-cors', keepalive: true, headers: { 'Content-Type': 'text/plain' }, body }); } catch (e) {}
 }
+if (!S.born) S.born = (S.stats && S.stats.startedAt) || Date.now();   // when this game began; a rebirth keeps it
+if (!S.flags.stood && !(S.meta && S.meta.run > 1)) countMile('prologue');
 
 /* ---- once the player stands, ask the browser to keep the game's storage (a calm moment for any prompt) ---- */
 setInterval(() => { renderSaveDot();

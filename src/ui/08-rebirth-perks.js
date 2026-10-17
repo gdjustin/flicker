@@ -199,7 +199,7 @@ function beginRun() {
   const m = meta(); m.run++; S.inPerks = false;
   try { const was = S.w; S.w = null; runRec(); S.w = was; } catch (e) {}   // v1n: run records begin with the run
   const keep = { meta: m, speed: S.speed, playTime: S.playTime, debug: S.debug, miles: S.miles, showDone: S.showDone,
-    opt: S.opt, lastBackup: S.lastBackup, lastBuild: S.lastBuild, counted: S.counted, persistAsked: S.persistAsked };
+    opt: S.opt, lastBackup: S.lastBackup, lastBuild: S.lastBuild, counted: S.counted, persistAsked: S.persistAsked, born: S.born };
   S = Object.assign(fresh(), keep);
   if (m.perks.skipPrologue) { S.flags.stood = true; S.flags.driftShown = true; S.flags.cohereShown = true; }
   S.log = []; say(m.perks.skipPrologue ? 'Run ' + m.run + '. You remember how to stand. The grey waits.' : 'Run ' + m.run + '. Nothing. Then, something. But you remember.');

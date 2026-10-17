@@ -16,7 +16,7 @@ function serialize(s) {
     stats: { motesEver: s.stats.motesEver.toString(), gathers: s.stats.gathers,
       startedAt: s.stats.startedAt, finishedAt: s.stats.finishedAt },
     w: s.w, meta: s.meta || null, view: s.view || null, inPerks: !!s.inPerks, speed: s.speed || 1, showDone: !!s.showDone, showDoneIdeas: !!s.showDoneIdeas, showDoneBuilds: !!s.showDoneBuilds, playTime: s.playTime || 0,
-    opt: s.opt || null, lastBackup: s.lastBackup || 0, lastBuild: s.lastBuild || null, counted: s.counted || null, persistAsked: !!s.persistAsked,
+    opt: s.opt || null, lastBackup: s.lastBackup || 0, lastBuild: s.lastBuild || null, counted: s.counted || null, persistAsked: !!s.persistAsked, born: s.born || 0,
     lastSeen: Date.now(), log: s.log.slice(0, 30) });
 }
 function deserialize(json) {
@@ -31,7 +31,7 @@ function deserialize(json) {
     startedAt: st.startedAt || Date.now(), finishedAt: st.finishedAt || null };
   s.lastSeen = o.lastSeen || Date.now(); s.log = Array.isArray(o.log) ? o.log : [];
   s.w = o.w || null; s.meta = o.meta || null; s.view = o.view || null; s.inPerks = !!o.inPerks; s.speed = o.speed || 1; s.showDone = !!o.showDone; s.showDoneIdeas = !!o.showDoneIdeas; s.showDoneBuilds = !!o.showDoneBuilds; s.playTime = o.playTime || 0;
-  s.opt = o.opt || null; s.lastBackup = o.lastBackup || 0; s.lastBuild = o.lastBuild || null; s.counted = o.counted || null; s.persistAsked = !!o.persistAsked;
+  s.opt = o.opt || null; s.lastBackup = o.lastBackup || 0; s.lastBuild = o.lastBuild || null; s.counted = o.counted || null; s.persistAsked = !!o.persistAsked; s.born = o.born || 0;
   if (!GAME.test) { s.speed = 1; s.debug = false; }   // the public build has no playtest speed or tools
   return s;
 }
