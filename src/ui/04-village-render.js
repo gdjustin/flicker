@@ -50,8 +50,7 @@ function keptBuffLines(w, r) {
   if (craft && lv[craft]) out.push(P[craft].name + ' ' + lv[craft] + ': +' + Math.round(P[craft].x * lv[craft] * 100) + '%' + (craft === 'coppercraft' ? ' (smelters burn +' + Math.round(P.coppercraft.use * lv.coppercraft * 100) + '%)' : w.m ? '' : ', in the village too'));
   if (r === 'food' && lv.openDoors && !w.m) out.push('Open doors: the first settlers came knowing how to forage');
   if (!w.m && lv.sureHands && ['wood', 'stones', 'fiber', 'food'].includes(r)) out.push('Sure hands: gathering by hand ×' + P.sureHands.hand[lv.sureHands - 1]);
-  if (w.m && lv.stewardsKept && ['wood', 'stones', 'fiber'].includes(r)) out.push('Stewards kept: its store grows by itself while you are away');
-  if (w.m && lv.tidyStores && ['wood', 'stones', 'fiber'].includes(r)) out.push('Tidy stores: at the cap, the next stockpile buys itself');
+  if (w.m && MC.stewardsOn && MC.stewardsOn(w) && ['wood', 'stones', 'fiber', 'copper'].includes(r) && (r !== 'copper' || w.m.cards.cubins)) out.push('Stewards: when this store is full, they buy the next stockpile if you can afford it');
   return out;
 }
 function keptLightLines(w) {
@@ -251,12 +250,12 @@ function renderWorld() {
         const after = Array.from(jb.querySelectorAll('.jrow')).find(r => VC.JOBS.findIndex(x => 'job-' + x.id === r.id) > VC.JOBS.indexOf(j));
         jb.insertBefore(row, after || null);
       }
-      row.children[0].textContent = j.name; row.children[1].textContent = j.tag;
+      if (row.children[0].textContent !== j.name) row.children[0].textContent = j.name; if (row.children[1].textContent !== j.tag) row.children[1].textContent = j.tag;   // v1r: write only what changed
       row.dataset.tkeys = ['world.job.' + j.id + '.name', 'world.job.' + j.id + '.desc', 'world.job.' + j.id + '.tag', 'w.jtip.live', 'w.jtip.none', 'w.jtip.roster'].join(' ');
       row.children[3].textContent = w.jobs[j.id] || 0;
       row.children[2].disabled = !(w.jobs[j.id] > 0); row.children[4].disabled = VC.jobsTotal(w) >= w.pop;
       // haulers with nothing to carry get a glowing dot
-      if (j.id === 'hauler') row.classList.toggle('hint', (w.jobs.hauler || 0) > 0 && (!w.proj || w.proj.paused));
+      if (j.id === 'hauler') row.classList.toggle('hint', steady('haulIdleV', (w.jobs.hauler || 0) > 0 && (!w.proj || w.proj.paused)));   // v1r: held steady, so it can't flicker
     }
   }
   // Ideas & upgrades: every buy-once card in one box, each labelled with its kind

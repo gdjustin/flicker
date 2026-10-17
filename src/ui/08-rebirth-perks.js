@@ -75,7 +75,7 @@ const PK_UI = {
   stewardsKept: { icon: 'yard', story: 'The stewards remember their ledgers.' }, openDoors: { icon: 'settler', story: 'Settlers come the moment you wake.' },
   lightRemembers: { icon: 'path', story: 'The ground you lit before still holds a little of it.' }, headStart: { icon: 'basket', story: 'The stores were never quite empty.' },
   practisedHaulers: { icon: 'basket', story: 'They know the road to every site.' }, relicsRemembered: { icon: 'gem', story: 'The relics know their way back to you.' },
-  oldFlames: { icon: 'flame', story: 'Some fires never quite went out.' }, tidyStores: { icon: 'yard', story: 'Full stores make room for themselves.' },
+  oldFlames: { icon: 'flame', story: 'Some fires never quite went out.' },
   keptLights: { icon: 'lamp', story: 'What you built for the light still stands.' }, villageComplete: { icon: 'hammer', story: 'The village rises the moment you plan it.' }
 };
 const PK_ICON = {

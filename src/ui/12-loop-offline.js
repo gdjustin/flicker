@@ -4,6 +4,8 @@ let S = loadSaved() || fresh();
 try { const w0 = S.w; if (w0 && w0.m && !MC.D.chearth.on && (w0.m.lv.chearth || 0) > 0) { const n0 = w0.m.lv.chearth; let cu = 0, st = 0;
   for (let i = 0; i < n0; i++) { const g = MC.D.chearth.g, m = Math.pow(g, i); cu += Math.ceil(MC.D.chearth.cost.copper * m); st += Math.ceil(MC.D.chearth.cost.stones * m); }
   w0.m.lv.chearth = 0; w0.res.copper = (w0.res.copper || 0) + cu; w0.res.stones = (w0.res.stones || 0) + st; w0.m.refundHearth = [n0, cu, st]; } } catch (e) {}
+// v1r: a tower whose build finished before the fix lights now
+try { if (S.w && S.w.m) MC.repairAmps(S.w); } catch (e) {}
 // v1h: a save from before the copper store keeps its copper: Lined stockpiles comes free if more than the chest holds
 try { if (S.w && S.w.m && S.w.m.copperFound && !S.w.m.cards.cubins && (S.w.res.copper || 0) > MC.D.cuBase) S.w.m.cards.cubins = true; } catch (e) {}
 const awayCap = () => (S.w && S.w.m ? MC.awayHours(S.w) * 3600 : CONTENT.offlineCapSeconds);

@@ -54,7 +54,7 @@ function cellMarks(k, cls, qn, rel, anchors, towers) {
   let s = '';
   if (cls.includes('target')) s += MK_TARGET;
   if (qn) s += medal(null, 'tr', 30, '#d9a64e', null, qn);
-  if (rel[k]) s += medal('gem', 'br', 28, anchors[k] === 'lit' ? '#f3dfae' : '#d9a64e', '#d9a64e');
+  // v1r (owner): relic medallions are off the map; the place card shows the relic instead
   if (anchors[k] === 'plan' || (towers[k] && !towers[k].lit)) s += medal('hammer', 'tl', 31, '#d9a64e', '#f3dfae');
   if (cls.includes('ruin') || (towers[k] && towers[k].lit)) s += medal('tower', 'c', 56, towers[k] && towers[k].lit ? '#f3dfae' : '#d9a64e', '#f3dfae');
   if (cls.includes('motes')) s += MK_SPARK;
@@ -113,7 +113,10 @@ function renderMap(w) {
     requestAnimationFrame(() => { f.style.transform = 'translate(-50%, -36px)'; f.style.opacity = '0'; }); setTimeout(() => f.remove(), 2000); }); }
   // the world so far
   const m = meta(), hsNow = m.hsLife;
-  $('m-world').textContent = 'Run ' + m.run + ' · ' + w.m.restored + ' places called back (best ' + Math.max(m.best || 0, w.m.restored) + ') · ' + MC.regionsDone(w) + ' regions finished · memory ×' + fmtW(MC.memMult(w), 2) + ' · ' + fmtW(w.m.hsNew || 0) + ' new heartstones this run (' + fmtW(hsNow) + ' remembered)';
+  { const pl = (n, one, many) => fmtW(n) + ' ' + (n === 1 ? one : many), rd = MC.regionsDone(w), hn = w.m.hsNew || 0;   // v1r (owner): run 1 shows only what run 1 has
+    $('m-world').textContent = m.run > 1
+      ? 'Run ' + m.run + ' · ' + pl(w.m.restored, 'place', 'places') + ' called back (best ' + Math.max(m.best || 0, w.m.restored) + ') · ' + pl(rd, 'region', 'regions') + ' finished · memory ×' + fmtW(MC.memMult(w), 2) + ' · ' + pl(hn, 'new heartstone', 'new heartstones') + ' this run (' + fmtW(hsNow) + ' remembered)'
+      : pl(w.m.restored, 'place', 'places') + ' called back · ' + pl(rd, 'region', 'regions') + ' finished · ' + pl(hn, 'heartstone', 'heartstones'); }
   renderPanel(w); renderRegions(w);
 }
 // v1h: every region you've set foot in, as v24e: a pip per place in map order (filled once back, dashed when picked or lined up), "N of M", a tick when finished
@@ -144,11 +147,13 @@ function renderPanel(w) {
   const t = tileOf(k); if (!t) { add('p', 'mptitle', 'Water'); add('p', 'mmut', 'The light slides off it. Its region finishes without it.'); return; }
   const lit = !!w.m.tiles[k], reach = MC.reachable(w, t), r = regionOf(t), rc = regionCount(w, r), far = !lit && !reach && !!(MC.seenTiles(w)[k] || (w.m.revealed || {})[k]);
   add('p', 'msec', lit ? 'Called back' : reach ? 'Beside your land' : far ? MT.seenH : 'In the dark');
-  add('p', 'mptitle', lit || reach || far ? tileName(t) : 'Darkness, ' + t.step + ' steps from home');
+  // v1r (owner): a place called back shows its relic at the top of the card
+  if (lit) { const has = !!(w.m.relicT && w.m.relicT[k]), rh = add('p', 'mprelic'); rh.innerHTML = relicIconHtml(t.land) + ' '; rh.appendChild(document.createTextNode(relicName(k) + (has ? ' · claimed' : ' · waits: ' + fmtW(MC.relicCost(w, k).copper) + ' copper'))); }
+  add('p', 'mptitle', lit || reach || far ? tileName(t) : 'Darkness');
   if (!lit && (t.name || t.tag) && t.name !== 'A lit window' && t.step <= (w.m.maxStep || 0) + 3) add('p', 'mmut', 'Motes gather over it. Only you can see them: something is waiting there.');
   const lines = document.createElement('div'); lines.className = 'mplines'; box.appendChild(lines);
   const line = s => { const p = document.createElement('p'); p.textContent = s; lines.appendChild(p); };
-  if (lit || reach || far) line(LANDN[t.land] + ' · ' + t.step + ' step' + (t.step === 1 ? '' : 's') + ' ' + dirWord(t) + ' · ' + r.name + ': ' + rc + ' of ' + r.tiles.length + ' back');
+  if (lit || reach || far) line(LANDN[t.land] + ' · ' + r.name + ': ' + rc + ' of ' + r.tiles.length + ' back');
   if (!lit && (reach || far)) {
     const need = MC.tileCost(t, w), got = w.m.got[k] || 0, amp = MC.ampMult(w, k), L = MC.lightRate(w) * amp;
     line('Needs ' + fmtW(need) + ' light' + (got > 0 ? ' (' + Math.floor(got / need * 100) + '% there)' : '') + '. At your light: about ' + fmtTime((need - got) / Math.max(1e-9, L)) + '.');
@@ -169,10 +174,9 @@ function renderPanel(w) {
   if (k === MC.ruinKey() && (lit || reach || far) && !w.m.done.repair) { const st = document.createElement('p'); st.className = 'mstory'; st.textContent = lit ? MT.ruinStory : MT.ruinGlimpse; lines.appendChild(st); }
   if (lit) {
     const g = [];
-    if (w.m.relicT && w.m.relicT[k]) g.push('relic claimed'); else g.push('its relic waits: ' + fmtW(MC.relicCost(w, k).copper) + ' copper');
     const an = (w.m.anchors || []).find(a => a.key === k); if (an) g.push(an.lit ? 'a Light Anchor holds its relic (×' + fmtW(1 + MC.anchorFocus(w), 2) + ')' : 'an anchor is being built');
     const tw = w.m.amps.find(a => a.x === t.x && a.y === t.y); if (tw) g.push(tw.lit ? 'an amplifier tower stands here' : 'an amplifier tower is being built');
-    line(g.join(' · ') + '.');
+    if (g.length) line(capFirst(g.join(' · ')) + '.');
   }
   const acts = document.createElement('div'); acts.className = 'mpacts'; box.appendChild(acts);
   const btn = (title, sub, on, fn, cls) => { const b = document.createElement('button'); b.className = 'act' + (cls ? ' ' + cls : ''); b.type = 'button'; b.addEventListener('click', fn); setBtn(b, title, sub, on, {}); acts.appendChild(b); return b; };

@@ -3,6 +3,7 @@
 //
 //   node tools/build.js            -> dist/game.html  (bare page, for the Claude artifact, which adds its own <html> shell)
 //                                     dist/index.html (standalone page, for GitHub Pages and local play)
+//                                     dist/test.html  (bare page titled "Flicker test build", for a separate test link)
 //
 // src/parts.json lists the page's pieces in order: {"file": path} or {"text": literal}.
 // Inside any file, /*@include path*/null is replaced by that file's contents (used for the map data).
@@ -39,6 +40,8 @@ if (require.main === module) {
   fs.mkdirSync(path.join(ROOT, 'dist'), { recursive: true });
   fs.writeFileSync(path.join(ROOT, 'dist/game.html'), bare);
   fs.writeFileSync(path.join(ROOT, 'dist/index.html'), standalone(bare));
+  // the test build: the same page under its own name, for checks on a separate link (its own save, never the owner's)
+  fs.writeFileSync(path.join(ROOT, 'dist/test.html'), bare.replace(/<title>[^<]*<\/title>/, '<title>Flicker test build</title>'));
   console.log('built dist/game.html and dist/index.html (' + bare.length + ' characters)');
 }
 

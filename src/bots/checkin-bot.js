@@ -18,7 +18,7 @@ var MBOT = function (MC, VBOT) {
     opt = Object.assign({ preset: 'checkin', days: 9, revealHour: 18, burnPlay: 'income', burnShare: 0.6, econ: 'full', smeltMax: 0.35, keeperShare: 0.22, storyShare: 0.14, smeltShare: 0.12, glowShare: 0.06, haulShare: 0.45,
       dtActive: 10, dtAway: 60, horizonH: 2, ampSpot: 'auto', minGain: 0.01, pick: 'cheapest', needK: 4, needH: 48 }, PRESETS[opt && opt.preset || 'checkin'], opt || {});
     var pr = opt.prestige, pv = MC.villagePrestige(pr), vkept = !!(pr && pr.perks && pr.perks.villageComplete);
-    var vr = VBOT.run(VC, Object.assign({}, VILLAGE, { pv: pv, instantProj: vkept, startRes: D0.villageStart }));
+    var vr = VBOT.run(VC, Object.assign({}, VILLAGE, { pv: pv, instantProj: vkept, startRes: pr ? D0.villageStart : null }));   // v1r: the opening stores come from run 2 on
     var s = MC.init(vr.s, opt.prestige), T0 = s.t, D = MC.D;
     var snap = {}; TAIL.forEach(function (id) { snap[id] = s.lv[id] || 0; });
     var handLight = MC.lightRate(s) / (s.feast > 0 ? 1 + VC.feastSpec(s).boost : 1);

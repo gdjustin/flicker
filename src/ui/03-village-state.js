@@ -172,7 +172,8 @@ function wName() { const v = $('w-name-input').value.trim().slice(0, 40); if (!v
 // with 40 stone and wood, and the comforts that act here (Sure hands, Open doors, Practised haulers, The village complete)
 function villageStart(w) {
   const pr = prestigeObj(), pv = MC.villagePrestige(pr); if (pv) w.pv = pv;
-  const st = MC.D.villageStart || {}; for (const k in st) if (st[k] > 0) { w.res[k] = Math.max(w.res[k] || 0, st[k]); w.seen[k] = true; }
+  const st = pr ? (MC.D.villageStart || {}) : {}; for (const k in st)   // v1r (owner): the opening stores are a gift from run 2 on, not run 1
+    if (st[k] > 0) { w.res[k] = Math.max(w.res[k] || 0, st[k]); w.seen[k] = true; }
   if (pv && pv.startPop) { w.pop = Math.min(VC.D.maxSettlers, pv.startPop); w.doorPop = w.pop; w.pvExtra = Math.max(0, pv.startPop - w.pop); w.lastArrive = 0;
     (pv.doorCards || []).forEach(c => { w.cards[c] = true; w.learnedAt[c] = 0; }); w.res.food = Math.max(w.res.food, 10 * w.pop); w.seen.food = true; }
   return w;
@@ -182,6 +183,14 @@ function enterWorld() {
   $('prologue').classList.add('hidden'); $('world').classList.remove('hidden'); document.body.classList.add('in-world');
   renderLog(); renderWorld();
 }
+// v1r: a signal that has to hold for a moment before it shows or clears, so a value that wavers between ticks can't flicker
+const STEADY = {};
+function steady(key, cond, holdMs) {
+  const now = Date.now(), e = STEADY[key] || (STEADY[key] = { v: cond, want: cond, since: now });
+  if (cond !== e.want) { e.want = cond; e.since = now; }
+  if (e.want !== e.v && now - e.since >= (holdMs || 1500)) e.v = e.want;
+  return e.v;
+}
 function resetWorldDom() {
   ['w-res', 'w-acts', 'w-make', 'w-jobs', 'w-research', 'w-snails'].forEach(id => { $(id).innerHTML = ''; });
   ['h-make', 'h-jobs', 'h-ideas', 'h-snails'].forEach(id => $(id).classList.add('hidden')); $('w-drawer').classList.add('hidden'); $('w-feast').classList.add('hidden');
@@ -189,7 +198,7 @@ function resetWorldDom() {
 }
 function restartPhase() { S.flags.stood = true; S.w = null; S.log = []; enterWorld(); resetWorldDom(); renderWorld(); save(true); }
 function showMoment(id) {
-  try { const P = { settler: ['k.settler.p'], end: ['k.end.p1', 'k.end.p2', 'k.end.p3'] }[id];
+  try { const P = { settler: ['k.settler.p'], end: ['k.end.p1', 'k.end.p2', 'k.end.p3'], open: ['k.open.p1', 'k.open.p2'] }[id]; $('moment').dataset.kind = '';
     $('moment-h').textContent = tx('k.' + id + '.h'); const body = $('moment-body'); body.innerHTML = '';
     P.forEach(k => { const p = document.createElement('p'); p.textContent = tx(k); body.appendChild(p); });
     $('moment-ok').textContent = tx('k.' + id + '.ok'); $('moment').classList.remove('hidden'); $('moment-ok').focus(); } catch (e) {}

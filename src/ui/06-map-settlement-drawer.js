@@ -99,6 +99,10 @@ function burnRow(box, id, minus, plus) {
 function relicTiles(w) { return MC.relicsOpen(w).map(k => ({ k, c: MC.relicCost(w, k).copper })).sort((a, b) => a.c - b.c); }
 // v1q (owner, 2026-10-16): relics back on their own tab, from the Relics and Remembering mock-up (no claimed-of-called-back counts, no marks)
 const RELIC_OF = { forest: ['Heartwood', 'wood'], hills: ['Cairnstone', 'stone'], marsh: ['Reed charm', 'fiber'], river: ['River token', 'hauling'], meadow: ['Seed jar', 'food'], mountain: ['Sky shard', 'stone'], water: ['Lake glass', 'hauling'] };
+// v1r (owner): a relic is named for its region, numbered within it: "The Relic of Stonebeak (3 of 9)"
+function relicName(k) { const t = tileOf(k), r = t && regionOf(t); if (!r) return 'The Relic of ' + shortName(t); return 'The Relic of ' + capFirst(r.name.replace(/^the /i, '')) + ' (' + (r.tiles.indexOf(k) + 1) + ' of ' + r.tiles.length + ')'; }
+// the relic card's own icon: its land's medallion, small
+function relicIconHtml(land) { return '<span class="md xs" style="--c:var(--l-' + LANDC[land] + ')" aria-hidden="true">' + LANDG[land] + '</span>'; }
 function relicsNeedYou(w) { const open = relicTiles(w).filter(x => w.res.copper >= x.c); return open.length ? [open.length === 1 ? 'a relic you can claim' : open.length + ' relics you can claim'] : []; }
 function mRelicAll() { const w = W(); let n = 0; for (const x of relicTiles(w)) { if (w.res.copper < MC.relicCost(w, x.k).copper) break; if (MC.buyRelic(w, x.k)) n++; } if (n) { w.stats.buys.length = 0; sys(n + ' relic' + (n === 1 ? ' is' : 's are') + ' claimed.'); renderWorld(); } }
 function renderRelicsTab(w) {
@@ -106,8 +110,8 @@ function renderRelicsTab(w) {
   const L = w.m.relicLand || {}, ring = {}; if (w.m.relicT) Object.keys(w.m.relicT).forEach(k => { const t = tileOf(k), rg = regionOf(t); if (D.resonance.on && rg && rg.tiles.every(q => w.m.tiles[q])) ring[t.land] = (ring[t.land] || 0) + 1; });
   const backOf = {}; Object.keys(w.m.tiles).forEach(k => { const t = tileOf(k); if (t) backOf[t.land] = (backOf[t.land] || 0) + 1; });
   const open = relicTiles(w), rr = MC.perk(w, 'relicsRemembered');
-  let h = '<p class="jhead">Every place you call back leaves a relic of its land. Claim it with copper and it works for the rest of the run: its land’s work goes faster, and all light a little brighter. Finish a region and its relics ring: each counts ' + (1 + D.resonance.R) + ' times.</p>';
-  h += '<div class="rclaim"><p class="sech">Relics to claim' + (rr ? ' <span style="font-style:normal;color:var(--form)">· relics you claimed in an earlier run cost half</span>' : '') + '</p><div class="acts" id="rel-acts"></div></div>';
+  const ringTip = 'Finish a region and its relics ring: each counts ' + (1 + D.resonance.R) + ' times.';   // v1r (owner): the old intro, now a hover
+  let h = '<div class="rclaim"><p class="sech">Relics to claim' + (rr ? ' <span style="font-style:normal;color:var(--form)">· relics you claimed in an earlier run cost half</span>' : '') + '</p><div class="acts" id="rel-acts"></div></div>';
   h += '<div class="rel"><div><p class="sech">Relics by land</p><div class="rgrid">';
   let wTot = 0;
   for (const land of ['forest', 'hills', 'marsh', 'river', 'meadow', 'mountain', 'water']) {
@@ -121,11 +125,11 @@ function renderRelicsTab(w) {
       (rg ? '<p class="rw" style="color:var(--form)">' + rg + ' ringing (region finished)</p>' : '') + '</div>';
   }
   h += '</div><div class="rtot"><span>All light from relics: <b>×' + fmtW(MC.relicMult(w), 2) + '</b></span>' + (lore > 1 ? '<span>Relic lore: <b>×' + fmtW(lore, 2) + '</b> on every relic’s light</span>' : '') +
-    '<span>Ringing relics: <b>' + Object.values(ring).reduce((a, b) => a + b, 0) + '</b></span></div></div>';
+    '<span class="tipme" tabindex="0" data-tip="' + ringTip + '">Ringing relics: <b>' + Object.values(ring).reduce((a, b) => a + b, 0) + '</b></span></div></div>';
   // regions: the ones you have touched, this run or before
   const m = meta(), regs = MC.REGIONS.map((rg, i) => ({ rg, i, on: regionCount(w, rg), N: rg.tiles.length, best: m.regBest[i] || 0, fin: m.regFin[i] || 0 })).filter(r => r.on || r.best);
   regs.sort((a, b) => (b.on === b.N) - (a.on === a.N) || b.on / b.N - a.on / a.N);
-  h += '<div><p class="sech">Regions</p><div class="regs">';
+  h += '<div><p class="sech"><span class="tipme" tabindex="0" data-tip="' + ringTip + '">Regions</span></p><div class="regs">';
   for (const r of regs) { const fin = r.on === r.N, name = capFirst(r.rg.name);
     const nx = (w.m.target && r.rg.tiles.includes(w.m.target)) ? 1 : 0; let pips = ''; if (r.N <= 24) for (let i = 0; i < r.N; i++) pips += '<i class="' + (i < r.on ? 'on' : i < r.on + nx ? 'nx' : '') + '"></i>';
     const past = r.fin && r.fin < m.run ? 'finished in run ' + r.fin + (fin ? ' too' : '') : r.best && !fin ? 'best: ' + r.best + ' of ' + r.N + ', in an earlier run' : fin ? 'first finished this run' : '';
@@ -133,21 +137,24 @@ function renderRelicsTab(w) {
       (fin ? '<span class="rgx">Its relics count ' + (1 + D.resonance.R) + ' times' + (past ? '. ' + capFirst(past) + '.' : '.') + '</span>' : past ? '<span class="rgx">' + capFirst(past) + '</span>' : '') + '</div>'; }
   if (!regs.length) h += '<p class="note" style="color:var(--ash);font-style:italic">Call back a place and its region appears here.</p>';
   h += '</div></div></div>';
-  if (box.dataset.sig !== h) { box.dataset.sig = h; box.innerHTML = h; }
+  if (box.dataset.sig !== h) { box.dataset.sig = h; box.innerHTML = h;
+    box.querySelectorAll('[data-tip]').forEach(e => { ['mouseenter', 'focus'].forEach(ev => e.addEventListener(ev, () => showTextTip(e, e.textContent.replace(/:.*$/, ''), [e.dataset.tip]))); ['mouseleave', 'blur'].forEach(ev => e.addEventListener(ev, hideTip)); }); }
   const acts = $('rel-acts'), shown = open.slice(0, 6).map(x => x.k);
   Array.from(acts.children).forEach(b => { if (b.dataset.k && !shown.includes(b.dataset.k)) b.remove(); if (b.id === 'w-rel-all' && !(rr >= 2)) b.remove(); });
   if (rr >= 2 && open.length > 1) { const tot = open.reduce((a, x) => a + x.c, 0), b = ensureBtn(acts, 'w-rel-all', () => mRelicAll(), 'relic'); setBtn(b, 'Claim every relic you can', open.length + ' waiting; ' + fmtC(tot) + ' copper for all of them. Cheapest first.', w.res.copper >= open[0].c, { cost: { copper: open[0].c } }); }
   for (const x of open.slice(0, 6)) { const t = tileOf(x.k), b = ensureBtn(acts, 'w-rel-' + x.k.replace(/[^\w]/g, '_'), () => mRelic(x.k), 'relic'); b.dataset.k = x.k;
-    setBtn(b, 'The relic of ' + shortName(t), capFirst(relicGain(w, x.k)) + '. ' + LANDN[t.land] + ', ' + t.step + ' step' + (t.step === 1 ? '' : 's') + ' out.' + (rr && w.m.relicKnown && w.m.relicKnown[x.k] ? ' Remembered: half price.' : ''), VC.canPay(w, { copper: x.c }), { cost: { copper: x.c } }); }
+    setBtn(b, relicName(x.k), capFirst(relicGain(w, x.k)) + '. ' + LANDN[t.land] + '.' + (rr && w.m.relicKnown && w.m.relicKnown[x.k] ? ' Remembered: half price.' : ''), VC.canPay(w, { copper: x.c }), { cost: { copper: x.c } }); relicIconOn(b, t.land); }
   if (!open.length && !acts.children.length) acts.innerHTML = '<p class="note" style="color:var(--ash);font-style:italic;margin:0">No relics waiting. Each place you call back brings one.</p>';
   else { const pn = acts.querySelector('p.note'); if (pn && open.length) pn.remove(); }
 }
+// put the land's small medallion in front of a relic button's title (once)
+function relicIconOn(b, land) { const bt = b.querySelector('.bt'); if (bt && !bt.querySelector('.md')) bt.insertAdjacentHTML('afterbegin', relicIconHtml(land) + ' '); }
 function renderRelicBox(w) {
   const g = mgroup('relics'), box = g.querySelector('.acts'), open = relicTiles(w), shown = open.slice(0, 3).map(x => x.k);
   g.querySelector('.bgh').textContent = 'Relics: ' + (w.m.relicsN || 0) + ' claimed of ' + w.m.restored + ' places (×' + fmtW(MC.relicMult(w), 2) + ' light)';
   Array.from(box.children).forEach(b => { if (!shown.includes(b.dataset.k)) b.remove(); });
   for (const x of open.slice(0, 3)) { const t = tileOf(x.k), b = ensureBtn(box, 'w-rel-' + x.k.replace(/[^\w]/g, '_'), () => mRelic(x.k), 'relic'); b.dataset.k = x.k;
-    setBtn(b, 'The relic of ' + shortName(t), capFirst(relicGain(w, x.k)) + '. ' + LANDN[t.land] + ', ' + t.step + ' step' + (t.step === 1 ? '' : 's') + ' out.', VC.canPay(w, { copper: x.c }), { cost: { copper: x.c } }); }
+    setBtn(b, relicName(x.k), capFirst(relicGain(w, x.k)) + '. ' + LANDN[t.land] + '.', VC.canPay(w, { copper: x.c }), { cost: { copper: x.c } }); relicIconOn(b, t.land); }
 }
 function renderMapJobs(w) {
   const jb = $('w-jobs'); if (!w.pop) return; $('h-jobs').classList.remove('hidden');
@@ -158,15 +165,17 @@ function renderMapJobs(w) {
     if (!row) { row = document.createElement('div'); row.id = 'job-' + j.id; row.className = 'jrow reveal'; row.tabIndex = 0;
       row.innerHTML = '<span class="jn"></span><span class="jt"></span><button class="jb" aria-label="Remove one">−</button><span class="jc"></span><button class="jb" aria-label="Add one">+</button>';
       row.children[2].addEventListener('click', e => wJob(j.id, -1, e)); row.children[4].addEventListener('click', e => wJob(j.id, 1, e));
-      ['mouseenter', 'focus'].forEach(ev => row.addEventListener(ev, () => showTextTip(row, j.name, [j.desc]))); ['mouseleave', 'blur'].forEach(ev => row.addEventListener(ev, hideTip));
+      ['mouseenter', 'focus'].forEach(ev => row.addEventListener(ev, () => showTextTip(row, j.name, [mapJobDesc(j)]))); ['mouseleave', 'blur'].forEach(ev => row.addEventListener(ev, hideTip));
       jb.appendChild(row); }
-    if (!row.children[0].firstChild || row.children[0].firstChild.nodeValue !== j.name) row.children[0].textContent = j.name; row.children[1].textContent = j.id === 'storyteller' && MC.academyOn(w) ? 'light, at the Academy' : j.tag;
-    { const idleH = j.id === 'hauler' && (w.jobs.hauler || 0) > 0 && !w.m.proj, needH = j.id === 'hauler' && !!w.m.proj && !w.m.awaitClick && !(w.jobs.hauler > 0); let d = row.children[0].querySelector('.rdot');   // v1g: haulers idle, or a build with no one carrying
+    if (!row.children[0].firstChild || row.children[0].firstChild.nodeValue !== j.name) row.children[0].textContent = j.name; { const tg = j.id === 'storyteller' && MC.academyOn(w) ? 'light, at the Academy' : j.id === 'firekeeper' && !MC.D.keeperFuelMap ? MT.keeperTag : j.tag; if (row.children[1].textContent !== tg) row.children[1].textContent = tg; }
+    { const idleH = j.id === 'hauler' && steady('haulIdleM', (w.jobs.hauler || 0) > 0 && !w.m.proj), needH = j.id === 'hauler' && steady('haulNeedM', !!w.m.proj && !w.m.awaitClick && !(w.jobs.hauler > 0)); let d = row.children[0].querySelector('.rdot');   // v1g: haulers idle, or a build with no one carrying
       if ((idleH || needH) && !d) { d = document.createElement('i'); d.className = 'rdot'; row.children[0].appendChild(d); } else if (!(idleH || needH) && d) d.remove();
       if (d) d.title = idleH ? 'Nothing to carry: put them to other work' : 'A build is waiting for haulers'; }
     row.children[3].textContent = w.jobs[j.id] || 0; row.children[2].disabled = !(w.jobs[j.id] > 0); row.children[4].disabled = VC.jobsTotal(w) >= w.pop;
   });
 }
+// v1r: once the map opens, firekeepers make light from a settler alone (keeperFuelMap 0), so their words change too
+function mapJobDesc(j) { return j.id === 'firekeeper' && !MC.D.keeperFuelMap ? MT.keeperDesc : j.desc; }
 function renderMapCards(w) {
   const box = $('w-research'); let any = false;
   const vc = VC.CARDS.filter(c => w.cards[c.id] == null && VC.gateOk(w, c.at));

@@ -45,11 +45,32 @@ const { VC, VBOT, MCORE, MBOT } = loadRules();
   results.village = { minutes: round(v.end / 60, 1), lightPerSec: round(v.light, 2), settlers: v.s.pop };
 }
 
+// 3b. Soft-lock checks (v1r): players who play badly or oddly still reach the map, or the game says why not.
+// Lesson from v1q2: a full store must never block the only source of another resource.
+{
+  const styles = {
+    'clicks only until the first settler': { clickUntilPop: 1 },
+    'most settlers on the fires': { keeperShare: 0.6 },
+    'almost no storytellers': { storyShare: 0.03, clickUntilPop: 99 },
+    'never feasts': { feasts: false },
+    'very few haulers': { haulShare: 0.1 }
+  };
+  for (const name in styles) {
+    const v = VBOT.run(VC, Object.assign({ maxT: 24 * 3600 }, styles[name]));
+    check('soft-lock: ' + name + ' still reaches the map', v.s.pct >= 100 && !!v.s.done.beacon, Math.round(v.s.t / 60) + ' min, lit ' + Math.round(v.s.pct) + '%');
+  }
+  // never hauling can't finish a project; the remedy must be open and the project strip must say so (vp.nohaul shows when nobody hauls)
+  const v = VBOT.run(VC, { maxT: 24 * 3600, noHaul: true }), s = v.s;
+  check('soft-lock: a player who never hauls is told why they are stuck', !!s.proj && !s.proj.paused && !(s.jobs.hauler > 0) && VC.jobOpen(s, 'hauler'), 'stuck on ' + (s.proj && s.proj.id) + ' with the hauler job open');
+}
+
 // 4. Map phase 1, run 1: the check-in player (2 h at the reveal, then 4 check-ins a day) reaches 40 places.
 {
   const MC = MCORE(VC); MC.applySet('V3');
   const r = MBOT(MC, VBOT).run({ preset: 'checkin', stopTiles: 40, econ: 'full', pick: 'need' });
   check('map run 1: the check-in player reaches 40 places', r.s.m.restored >= 40, r.s.m.restored + ' places');
+  const rl = MBOT(MC, VBOT).run({ preset: 'light', stopTiles: 40, econ: 'full', pick: 'need' });
+  check('map run 1: the light player (3 check-ins a day) reaches 40 places', rl.s.m.restored >= 40, rl.s.m.restored + ' places by hour ' + Math.round(rl.marks.stop || 0));
   results.mapRun1 = { villageMinutes: round(r.villageMin, 1), hoursTo10: round(r.marks[10], 2), hoursTo20: round(r.marks[20], 2), hoursTo40: round(r.marks[40], 2) };
 }
 

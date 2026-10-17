@@ -165,7 +165,12 @@ const MT = {   // the map's text, in one place for the text editor
   tabVillage: 'Settlement', tabMap: 'Map',
   revealH: 'The world beyond', reveal1: 'Your light reaches the edge of your homeland and finds nothing beyond. Not darkness, but a yawning void.',
   reveal2: 'But your light has changed. It’s no longer mere firelight. You sense this light can be used to call the world back, and you dare to hope.',
-  reveal3: 'You are beginning to remember. Copper to the east. And so much more. Choose land beyond your home and call it back.', revealOk: 'Choose land',
+  reveal3: 'You are beginning to remember. Copper to the north. Something big to the east. Choose land beyond your home and call it back.', revealOk: 'Choose a land to call back',
+  keeperTag: 'tends the light', keeperDesc: 'Tends the light all day. Out here a firekeeper needs no wood: the light feeds itself. The best light there is, for a settler.',
+  keeperLog: 'Your firekeepers no longer need wood. The light feeds itself now.',
+  ampH: 'An Amplifier Restored', amp1: 'You have discovered and repaired an ancient amplifier. Who built it? How long has it been here?',
+  amp2: 'You recall these massive structures help focus and boost light energy. Light you send to the east (in the highlighted land marked on the map) will now arrive in that land three times as strong.',
+  amp3: 'Soon you’ll be able to build your own amplifiers, choose where they stand, and which direction they face.', ampOk: 'Back to the map',
   stripTo: 'Invoking the light to call back', stripNone: 'Your light is waiting', stripPick: 'Pick a tile on the map, then send light there.',
   poolSaved: ' of {cap} light saved up', poolLeft: 'Send it somewhere and it all pours in at once.', poolFull: 'The store is full: an hour’s worth. Light beyond it is lost until you send it somewhere.',
   poolTip: 'The light waits, up to an hour’s worth.', thenOn: ' · then on to the cheapest place beside your land', thenLine: ' · then {list}',
@@ -215,12 +220,19 @@ function startMap() {
   w.seen.copper = false; S.view = 'map';
   resetWorldDom(); sys('The map is open. Pick a dark place beside your home and send your light there.'); if (w.jobs.storyteller || w.cards.storytelling) sys(MT.scholars);
   if (MC.D.eatMap > 1) sys(fill(MT.eatMore, { x: fmtW(MC.D.eatMap, 1) }));
+  if (!MC.D.keeperFuelMap && (w.jobs.firekeeper || w.cards.firekeeping)) sys(MT.keeperLog);   // v1r
   renderWorld(); save(true);
 }
 function showReveal() {
   $('moment-h').textContent = MT.revealH; const body = $('moment-body'); body.innerHTML = '';
   [MT.reveal1, MT.reveal2, MT.reveal3].forEach(t => { const p = document.createElement('p'); p.textContent = t; body.appendChild(p); });
   $('moment-ok').textContent = MT.revealOk; $('moment').dataset.kind = 'map'; $('moment').classList.remove('hidden'); $('moment-ok').focus();
+}
+// v1r: the first time the broken tower is mended (once ever)
+function showAmpRestored() {
+  $('moment-h').textContent = MT.ampH; const body = $('moment-body'); body.innerHTML = '';
+  [MT.amp1, MT.amp2, MT.amp3].forEach(t => { const p = document.createElement('p'); p.textContent = t; body.appendChild(p); });
+  $('moment-ok').textContent = MT.ampOk; $('moment').dataset.kind = ''; $('moment').classList.remove('hidden'); $('moment-ok').focus();
 }
 function showThirty() {
   $('moment-h').textContent = MT.thirtyH; const body = $('moment-body'); body.innerHTML = '';
@@ -290,7 +302,8 @@ function mAnchor(key) { const w = W(); if (MC.planAnchor(w, key)) { sys('A Light
 function mTarget(key) { const w = W(); const had = w.m.pool || 0; if (MC.setTarget(w, key)) { if (had >= 1) sys('The light you saved, ' + fmtC(had) + ', pours into ' + shortName(tileOf(key)) + '.'); mapTick(0); renderWorld(); } }
 function mLineup(key) { const w = W(); if (MC.lineupAdd(w, key)) renderWorld(); }
 function mUnline(key) { const w = W(); if (MC.lineupRemove(w, key)) { renderWorld(); } }
-function mFinish() { const w = W(); const id = w.m.awaitClick; if (MC.clickFinish(w)) { const p = MC.projDef(w, id); wsay(pname(w, id) + ' is finished.'); renderWorld(); save(true); } }
+function mFinish() { const w = W(); const id = w.m.awaitClick; if (MC.clickFinish(w)) { const p = MC.projDef(w, id); wsay(pname(w, id) + ' is finished.'); renderWorld(); save(true);
+  if (id === 'repair' && !meta().ampSeen) { meta().ampSeen = true; showAmpRestored(); save(true); } } }
 function mRepair() { const w = W(); if (MC.repairAmp(w)) { MC.prioritize(w, 'repair'); sys(MT.ruinStart); renderWorld(); save(true); } }
 function mFirst(id) { const w = W(); if (MC.prioritize(w, id)) renderWorld(); }
 function mAcademy() { const w = W(); w.m.academyOn = !w.m.academyOn; renderWorld(); }

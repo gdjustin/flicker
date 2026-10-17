@@ -32,7 +32,8 @@ var MCORE = function (VC) {
     booksGrowth: 1.3, booksPriceShare: 0.6, booksCopperShare: 0.02,
     // storage: stockpiles continue; past level 25 they also take a little copper (option 2)
     reinforceAt: 25, reinforceCopper: 0.02,
-    autoStoreHours: 0,          // 0 = use the time-away limit; else keep this many hours of income as room
+    autoStoreHours: 0,          // 0 = use the time-away limit; else keep this many hours of income as room (stewards 'away' only)
+    stewards: 'atCap',          // v1r (owner, 2026-10-16): 'atCap' = a full stockpiled store buys the next stockpile if affordable, any time; 'away' = v1q's top-up when you leave
     eatMap: 4.5,                // v1h (owner agreed 2026-10-13): settlers eat 4.5x the village's 0.06 food a second once the map opens (about 1 in 9 foraging)
     // v1h copper store (owner 2026-10-13): a small chest until Lined stockpiles is learned, then stockpiles hold copper too, retroactive to
     // the first stockpile: copper room = cuRoom x the wood room. Generous, so a long night never spills copper; tied to stockpiles, so it can't pile up early
@@ -69,7 +70,7 @@ var MCORE = function (VC) {
     memPct: 0.05, pave: 1.5,
     villageReach: 1,
     // Light Lab v2 dials: srcScope 'phase' = the fire buffs (src) touch only this phase's lines (owner 2026-10-16), 'all' = v1;
-    // vHearthMax: the village hearth's levels (10 in v1p); villageStart: the village's opening stores (owner: 40 stone and wood, not a perk)
+    // vHearthMax: the village hearth's levels (10 in v1p); villageStart: the village's opening stores (owner: 40 stone and wood, not a perk; v1r: from run 2 on)
     srcScope: 'all', vHearthMax: 10, villageStart: { wood: 0, stones: 0 },
     perkCompound: 0,            // Light Lab v1 dial: 1 = the family buff perks compound (x(1+x) a level), 0 = they add (+x a level)            // Light Lab v1 (owner): memory and the family perks reach the village too (0 = off, as in v1p)
     // copper hearth (hybrid of the village hearth, endless): +a all light a level, additive; opens when the village hearth is maxed
@@ -109,7 +110,7 @@ var MCORE = function (VC) {
       skipPrologue: { kind: 'comfort', tier: 'cheap', name: 'Skip the prologue', desc: 'Runs begin in the village (no effect in the lab: the bot starts in the village)', costs: [3] },
       oldLessons: { kind: 'comfort', tier: 'cheap', name: 'Old lessons I, II', desc: 'Research learned in an earlier run costs 50%, then 25%', f: [0.5, 0.25], costs: [8, 30] },
       sureHands: { kind: 'comfort', tier: 'medium', name: 'Sure hands I, II', desc: 'Hand gathering gives twice, then four times as much', hand: [2, 4], costs: [12, 30] },
-      stewardsKept: { kind: 'comfort', tier: 'medium', name: 'Stewards kept', desc: 'Wood, stone and fiber stores grow on their own from the first place (raw only; II and III later)', costs: [20] },
+      stewardsKept: { kind: 'comfort', tier: 'medium', name: 'Stewards kept', desc: 'Your stewards are there from the first place: when a store is full, they buy the next stockpile if you can afford it', costs: [20] },
       openDoors: { kind: 'comfort', tier: 'medium', name: 'Open doors I\u2013IV', desc: 'The village starts with 5, 15, 25, then 50 settlers (past 25 they wait at the reveal)', pop: [5, 15, 25, 50], costs: [15, 30, 60, 100] },
       lightRemembers: { kind: 'comfort', tier: 'medium', name: 'The light remembers I\u2013III', desc: 'Remembered places need {x}% less light again a level (the paved path deepens)', x: 0.33, costs: [20, 40, 70] },
       headStart: { kind: 'comfort', tier: 'medium', name: 'Head start', desc: 'The map opens with wood, stone, fiber, food and copper stores full', costs: [20] },
@@ -117,7 +118,6 @@ var MCORE = function (VC) {
       relicsRemembered: { kind: 'comfort', tier: 'medium', name: 'Relics remembered I, II', desc: 'I: relics claimed in an earlier run cost half. II: buy all (no effect in the lab: the bot buys them anyway)', f: 0.5, costs: [15, 30] },
       oldFlames: { kind: 'comfort', tier: 'medium', name: 'Old flames I\u2013IV', desc: 'Last run\u2019s upgrade lines come back already bought: I copper tools, books and timber houses; II + fire-tending and long songs; III + copper lamps and braziers; IV + burner rebuilds and copper burners', costs: [10, 25, 50, 90], share: 1,
         lines: [['ct_axes', 'ct_mattocks', 'ct_spindles', 'ct_baskets', 'books', 'house'], ['ctend', 'longsong'], ['clamp', 'cbrazier'], ['eff_firepit', 'eff_limekiln', 'eff_rushlight', 'cuburner', 'eff_cuburner']] },
-      tidyStores: { kind: 'comfort', tier: 'late', name: 'Tidy stores', desc: 'When wood, stone or fiber reaches its cap, the next stockpile is bought by itself, away too', costs: [60] },
       keptLights: { kind: 'comfort', tier: 'late', name: 'Kept lights', desc: 'Light projects built in an earlier run stay built (not the beacon, the amplifiers or the tower)', costs: [80] },
       villageComplete: { kind: 'comfort', tier: 'late', name: 'The village complete', desc: 'Village projects build themselves, free, as soon as they are planned (end of phase 1)', costs: [120] }
     },
@@ -249,7 +249,7 @@ var MCORE = function (VC) {
     // Overflow removed in v1g (owner, 2026-10-13): to revisit or redesign later. Its rule stays in the tick behind D.overflowOn (0)
     { id: 'amps', name: 'Amplifier towers', cost: { ideas: 1400 }, at: { proj: 'repair', tiles: 10 }, desc: 'Build towers of your own on restored land, aimed outward.' },
     { id: 'away8', name: 'Long night', cost: { ideas: 2200 }, at: { tiles: 14 }, away: 8, desc: 'Time away counts for 8 hours.' },
-    { id: 'autostore', name: 'Stewards', cost: { ideas: 2500 }, at: { tiles: 13 }, desc: 'Stores grow on their own to hold your time away’s income.' },
+    { id: 'autostore', name: 'Stewards', cost: { ideas: 2500 }, at: { tiles: 13 }, desc: 'When wood, stone, fiber or copper fills its store, your stewards buy the next stockpile if you can afford it, away too.' },
     { id: 'orefloor', name: 'Ore floor', cost: { ideas: 2600 }, at: { proj: 'bellows', tiles: 32 }, project: 'orefloor', desc: 'Plan an ore floor: smelters make half again as much copper.' },
     { id: 'hall', name: 'The great hall', cost: { ideas: 1800 }, at: { pop: 38 }, project: 'hall', desc: 'Plan a great hall: room for ten more settlers.' },
     { id: 'away12', name: 'Keepers of the dark', cost: { ideas: 6000 }, at: { tiles: 20 }, away: 12, desc: 'Time away counts for 12 hours.' },
@@ -651,7 +651,7 @@ var MCORE = function (VC) {
   }
   function finishProject(s, id) {
     s.m.done[id] = s.t;
-    if (id.indexOf('amp') === 0) { var a = s.m.amps[+id.slice(3)]; if (a) a.lit = true; }
+    if (id.indexOf('amp') === 0) { var an = +id.slice(3), a = s.m.amps.find(function (x) { return !x.story && x.n === an; }); if (a) a.lit = true; }   // v1r: by the tower's own build number (the mended tower sits first in the list)
     if (id.indexOf('anchor:') === 0) { var key = id.slice(7), a = (s.m.anchors || []).find(function (x) { return x.key === key; }); if (a) { a.lit = true; var land = MAP.tiles[MAP.idx[key]].land; s.m.relicsSet = s.m.relicsSet || {}; s.m.relicsSet[land] = (s.m.relicsSet[land] || 0) + 1;
       if (tileRelicMode() && s.m.relicT && s.m.relicT[key]) { s.m.relicAnch = (s.m.relicAnch || 0) + 1; s.m.relicAnchLand = s.m.relicAnchLand || {}; s.m.relicAnchLand[land] = (s.m.relicAnchLand[land] || 0) + 1; } } }
     if (id === 'repair') { var t = MAP.tiles.find(function (x) { return x.tag === 'amp'; }); s.m.amps.unshift({ x: t.x, y: t.y, dir: [1, 0], lit: true, story: true }); }
@@ -782,11 +782,18 @@ var MCORE = function (VC) {
 
   // ---------------------------------------------------------------- automation while away
   function awayHours(s) { return s.m.away; }
-  // Light Lab v3: Tidy stores buys the next stockpile when wood, stone or fiber sits at its cap
-  function tidyStore(s) { if (!['wood', 'stones', 'fiber'].some(function (r) { return s.res[r] >= cap(s, r) - 1e-6; })) return 0;
-    var c = levelCost(s, 'stockpile'); if (!c || !VC.canPay(s, c)) return 0; for (var k in c) s.res[k] -= c[k]; spend(s, 'storage', c); s.lv.stockpile = (s.lv.stockpile || 0) + 1; s.m.autoBuys++; return 1; }
-  function autoStore(s) {
-    if (!hasC(s, 'autostore') && !(perk(s, 'stewardsKept') && s.m.restored >= 1)) return 0;
+  function stewardsOn(s) { return hasC(s, 'autostore') || (perk(s, 'stewardsKept') && s.m.restored >= 1); }
+  // v1r (owner, 2026-10-16): stewards buy one stockpile when a store that stockpiles hold is full and one is affordable, away or not.
+  // (v1q's Tidy stores comfort did the same and is gone; the old top-up when leaving stays behind the dial for the lab.)
+  function autoStore(s, away) {
+    if (!stewardsOn(s)) return 0;
+    if (D.stewards === 'atCap') {
+      var mats = ['wood', 'stones', 'fiber'].concat(hasC(s, 'cubins') ? ['copper'] : []);
+      if (!mats.some(function (r) { return s.res[r] >= cap(s, r) - 1e-6; })) return 0;
+      var c = levelCost(s, 'stockpile'); if (!c || !VC.canPay(s, c)) return 0;
+      for (var k in c) s.res[k] -= c[k]; spend(s, 'storage', c); s.lv.stockpile = (s.lv.stockpile || 0) + 1; s.m.autoBuys++; return 1;
+    }
+    if (away === false) return 0;
     var hrs = D.autoStoreHours || awayHours(s), bought = 0;
     ['wood', 'stones', 'fiber', 'copper'].forEach(function (r) {
       if (r === 'copper' && (!hasC(s, 'cubins') || !hasC(s, 'autostore'))) return;   // Light Lab v2: Stewards kept is raw only
@@ -869,8 +876,7 @@ var MCORE = function (VC) {
     if (!away && dt > 0) { var hn = s.m.haulNow = s.m.haulNow || {}, a0 = Math.min(1, dt / 4); ['wood', 'stones', 'fiber', 'food', 'copper'].forEach(function (k) { hn[k] = (hn[k] || 0) * (1 - a0) + ((hauled[k] || 0) / dt) * a0; if (hn[k] < 1e-6) hn[k] = 0; }); }
     // settlers sent by restored places move in when there's room
     while (s.m.pending > 0 && s.pop < room(s)) { s.pop++; s.m.pending--; ev.push(['arrive', s.pop]); }
-    if (away) autoStore(s);
-    if (perk(s, 'tidyStores')) tidyStore(s);
+    if (away || D.stewards === 'atCap') autoStore(s, !!away);
     return ev;
   }
 
@@ -926,6 +932,8 @@ var MCORE = function (VC) {
     if (s.m.anchors.some(function (a) { return a.key === key; })) return false;
     s.m.anchors.push({ key: key, lit: false }); startProject(s, 'anchor:' + key); return true;
   }
+  // v1r: saves from before the fix may hold a finished tower that never lit
+  function repairAmps(s) { var n = 0; (s.m.amps || []).forEach(function (a) { if (!a.story && !a.lit && s.m.done['amp' + a.n]) { a.lit = true; n++; } }); return n; }
   function planAmp(s, x, y, dir) {
     if (!hasC(s, 'amps')) return false;
     var built = s.m.amps.filter(function (a) { return !a.story; }).length; if (built >= ampMaxOf(s)) return false;
@@ -973,7 +981,7 @@ var MCORE = function (VC) {
     cap: cap, room: room, jobMake: jobMake, copperMake: copperMake, smeltMult: smeltMult, burnDemand: burnDemand, burnShare: burnShare, lightParts: lightParts, lightRate: lightRate, sentRate: sentRate,
     phaseMult: phaseMult, nearTiles: nearTiles, sysOpen: sysOpen, sysHeld: sysHeld, unlockPerkOf: unlockPerkOf, relicMult: relicMult, tendMult: tendMult, effMult: effMult, tileMult: tileMult, toolMult: toolMult,
     projNeeds: projNeeds, projDef: projDef, startProject: startProject, prioritize: prioritize, clickFinish: clickFinish, setTarget: setTarget, cheapestTarget: cheapestTarget, poolCap: poolCap, scoutDepth: scoutDepth, seenTiles: seenTiles, burst: burst, burstLight: burstLight, burstCost: burstCost, burstTrip: burstTrip, burstReady: burstReady, lineupMax: lineupMax, lineupOk: lineupOk, lineupAdd: lineupAdd, lineupRemove: lineupRemove, nextTarget: nextTarget, lineupAuto: lineupAuto,
-    landScale: landScale, resonantN: function (s) { return resonant(s).n; }, rebuildNo: rebuildNo, rebuildTo: rebuildTo, litBurners: litBurners, surgeOf: surgeOf, surgeLeft: surgeLeft, eatRate: eatRate, ruinKey: ruinKey, repairOpen: repairOpen, repairStarted: repairStarted, repairAmp: repairAmp, boostOf: boostOf, landRelicBoost: landRelicBoost, smeltFuel: smeltFuel, haulRate: haulRate, buyRelic: buyRelic, relicCost: relicCost, relicsOpen: relicsOpen, planAmp: planAmp, jobOpen: jobOpen, setJob: setJob, landCount: landCount, hungry: hungry, autoStore: autoStore,
+    repairAmps: repairAmps, stewardsOn: stewardsOn, landScale: landScale, resonantN: function (s) { return resonant(s).n; }, rebuildNo: rebuildNo, rebuildTo: rebuildTo, litBurners: litBurners, surgeOf: surgeOf, surgeLeft: surgeLeft, eatRate: eatRate, ruinKey: ruinKey, repairOpen: repairOpen, repairStarted: repairStarted, repairAmp: repairAmp, boostOf: boostOf, landRelicBoost: landRelicBoost, smeltFuel: smeltFuel, haulRate: haulRate, buyRelic: buyRelic, relicCost: relicCost, relicsOpen: relicsOpen, planAmp: planAmp, jobOpen: jobOpen, setJob: setJob, landCount: landCount, hungry: hungry, autoStore: autoStore,
     beaconLv: beaconLv, sinkOf: sinkOf, beaconStepOf: beaconStepOf, beaconEveryOf: beaconEveryOf, coneOf: coneOf, glowMult: glowMult, anchorLight: anchorLight, academyOn: academyOn, planAnchor: planAnchor, relicFree: relicFree, relicFreeKey: relicFreeKey, relicRaw: relicRaw, anchorFocus: anchorFocus, focusMode: focusMode, RELIC_RAW: RELIC_RAW, rawPerk: rawPerk, REGIONS: REGIONS, regionsDone: regionsDone, regionMult: regionMult, directMult: directMult, perk: perk, perkCost: perkCost, cardCost: cardCost, beaconMaxOf: beaconMaxOf, ampMaxOf: ampMaxOf, heartstones: heartstones, hsFor: hsFor, memMult: memMult, refreshCards: refreshCards
   };
 };

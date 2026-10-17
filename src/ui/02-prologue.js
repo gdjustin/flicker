@@ -149,7 +149,7 @@ function renderStand() {
   box.innerHTML = '';
   const b = document.createElement('button'); b.className = 'act primary reveal'; b.id = 'b-stand';
   b.textContent = tx('p.stand'); b.dataset.tkeys = 'p.stand';
-  b.addEventListener('click', () => { S.flags.stood = true; enterWorld(); save(true); });
+  b.addEventListener('click', () => { S.flags.stood = true; enterWorld(); save(true); if (!(S.meta && S.meta.run > 1)) showMoment('open'); });   // v1r: run 1 only
   box.appendChild(b);
 }
 function renderEnd() {

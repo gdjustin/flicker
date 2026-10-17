@@ -704,3 +704,10 @@ body.view-map .cols { grid-template-columns: 14rem minmax(0, 1fr) 22rem; }
 #v-relics .reg.fin .tct { color: var(--ember); }
 #v-relics .reg.past .rgx { color: var(--form); }
 #v-relics { --l-forest: #6f9464; --l-valley: #6aa6cc; --l-mountains: #8a84a6; --l-hills: #9a8c7a; --l-meadow: #b8a65a; --l-marsh: #5f9790; --l-water: #2d4a68; }
+/* v1r: the Relics tab has no journal beside it; relic medallions in titles and the place card */
+body.view-relics .cols { grid-template-columns: 14rem minmax(0, 1fr); }
+body.view-relics .col.side { display: none; }
+.md.xs { width: 1.15em; height: 1.15em; font-size: 0.7em; vertical-align: 0.1em; }
+.mprelic { margin: 0 0 0.25rem; font-size: 0.85rem; color: var(--ember); display: flex; align-items: center; gap: 0.35rem; }
+.tipme { text-decoration: underline dotted; text-underline-offset: 3px; cursor: help; }
+#v-relics .md.xs, .mprelic .md.xs { width: 1.15rem; height: 1.15rem; font-size: 0.62rem; border-width: 1.5px; box-shadow: 0 0 0 1.5px var(--btn), 0 0 0 2.5px #9a7a3e; margin: 0 0.3rem 0 0; }

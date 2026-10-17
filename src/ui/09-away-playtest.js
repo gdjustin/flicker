@@ -42,7 +42,7 @@ function adoptBotState(s, note) {
   MV.cells = null; resetWorldDom(); enterWorld();
 }
 function skipToMap() {
-  const pr = prestigeObj(), pv = MC.villagePrestige(pr); const r = VBOT.run(VC, { pv: pv, startRes: MC.D.villageStart, instantProj: !!(pv && pv.instant) }); adoptBotState(r.s, 'Playtest: the lab’s bot played the village to its end (' + Math.round(r.s.t / 60) + ' minutes). The map is yours.');
+  const pr = prestigeObj(), pv = MC.villagePrestige(pr); const r = VBOT.run(VC, { pv: pv, startRes: pr ? MC.D.villageStart : null, instantProj: !!(pv && pv.instant) }); adoptBotState(r.s, 'Playtest: the lab’s bot played the village to its end (' + Math.round(r.s.t / 60) + ' minutes). The map is yours.');
   S.playTime = (S.playTime || 0) + r.s.t; startMap(); runHelp('the lab bot played the village'); save(true);
 }
 function botMap(n, preset) {
@@ -95,7 +95,7 @@ function renderMapPhase(w) {
   tabDot('tab-map', view === 'map' ? [] : mapNeedsYou(w)); tabDot('tab-village', view === 'village' ? [] : settlementNeedsYou(w)); tabDot('tab-relics', view === 'relics' ? [] : relicsNeedYou(w));
   $('v-village').classList.toggle('hidden', view !== 'village'); $('v-map').classList.toggle('hidden', view !== 'map'); $('m-panel').classList.toggle('hidden', view !== 'map'); $('v-relics').classList.toggle('hidden', view !== 'relics');
   $('m-regions').classList.toggle('hidden', view !== 'map' || !Object.keys(w.m.tiles).length);
-  document.body.classList.toggle('view-map', view === 'map');
+  document.body.classList.toggle('view-map', view === 'map'); document.body.classList.toggle('view-relics', view === 'relics');   // v1r: no journal beside the relics
   if (view === 'village') { renderMapSettlement(w); renderMapSnails(w); }
   else if (view === 'relics') renderRelicsTab(w);
   else { const now = Date.now(); if (now - MV.lastMap > 250) { MV.lastMap = now; renderMap(w); } }

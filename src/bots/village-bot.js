@@ -50,7 +50,7 @@ var VBOT = (function () {
       // a settler is waiting for room and a shelter is open: pause hauling until it's built
       var waitingRoom = s.pop < 25 && s.pop >= VC.room(s) && s.pct >= D.settlerPct[s.pop] && VC.ladderOpen(s, VC.LAD.shelter) && !VC.ladderMaxed(s, VC.LAD.shelter);
       if (waitingRoom) spare = Math.floor(spare / 3);
-      if (s.proj && VC.jobOpen(s, 'hauler') && spare > 0) {
+      if (s.proj && VC.jobOpen(s, 'hauler') && spare > 0 && !opt.noHaul) {   // noHaul: a test player who never hauls (v1r soft-lock checks)
         // enough haulers to carry about `haulShare` of what the producers make
         var rawNow = VC.jobMake(s, 'wood') + VC.jobMake(s, 'stones') + VC.jobMake(s, 'fiber'), per = VC.haulRate(s) / Math.max(1, s.jobs.hauler || 0) || D.haul;
         if (!(s.jobs.hauler > 0)) per = D.haul * (1 + 0.2 * (s.lv.frames || 0)) * (s.cards.pathlore ? 1.5 : 1);

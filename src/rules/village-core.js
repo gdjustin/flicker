@@ -118,7 +118,7 @@ var VC = (function () {
     { id: 'shelter', group: 'homes', name: 'Shelter', cost: { wood: 25, fiber: 12 }, growth: 1.28, max: 10, room: 2, desc: 'Room for 2 more settlers.' },
     { id: 'hearth', group: 'light', name: 'Raise the hearth', cost: { stones: 40, wood: 20 }, growth: 1.5, max: 10, desc: 'All light {pct}% stronger. Ten levels in all.' },
     { id: 'brazier', group: 'light', name: 'Brazier', cost: { stones: 60, wood: 40 }, growth: 1.14, max: 20, desc: 'Burns nothing. Each makes {n} light a second, and adds {pb} to every Ember lamp ({nl} now).' },
-    { id: 'lamp', group: 'light', name: 'Ember lamp', cost: { stones: 40, fiber: 40 }, growth: 1.15, max: 25, desc: 'Burns nothing. Each makes {n} light a second: {own} of its own and {pb} for each of your {b} braziers.' },
+    { id: 'lamp', group: 'light', name: 'Ember lamp', cost: { stones: 40, fiber: 40 }, growth: 1.15, max: 20, desc: 'Burns nothing. Each makes {n} light a second: {own} of its own and {pb} for each of your {b} braziers.' },
     { id: 'firepit', group: 'light', name: 'Firepit', cost: { stones: 100, wood: 60 }, growth: 1.3, burns: 'wood', desc: 'Each burns {use} wood a second for {n} light.' },
     { id: 'limekiln', group: 'light', name: 'Lime kiln', cost: { stones: 120, wood: 60 }, growth: 1.3, burns: 'stones', desc: 'Each burns {use} stones a second for {n} light.' },
     { id: 'rushlight', group: 'light', name: 'Rushlight works', cost: { wood: 150, stones: 100 }, growth: 1.3, burns: 'fiber', desc: 'Each burns {use} fiber a second for {n} light.' },
