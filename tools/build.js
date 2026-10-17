@@ -1,9 +1,18 @@
 #!/usr/bin/env node
 // Builds the game page from src/. No dependencies.
 //
-//   node tools/build.js            -> dist/game.html  (bare page, for the Claude artifact, which adds its own <html> shell)
-//                                     dist/index.html (standalone page, for GitHub Pages and local play)
-//                                     dist/test.html  (bare page titled "Flicker test build", for a separate test link)
+//   node tools/build.js   makes two builds from the same source (v1s):
+//     the test build   (playtest tools, bot hooks, the text editor; the owner's save key)
+//       dist/game.html        bare page for the owner's playtest link (the Claude artifact adds its own <html> shell)
+//       dist/test.html        the same, titled "Flicker test build", for a separate check link
+//       dist/test/index.html  standalone, for GitHub Pages at /test/
+//     the public build (none of those; its own save key)
+//       dist/public.html      bare page, for a public preview link
+//       dist/index.html       standalone, for GitHub Pages
+//     dist/version.json and dist/test/version.json: the page checks these to offer a reload when a new version is out.
+//
+// Marked parts: in src/parts.json, "test": true parts go in the test build only. Inside files,
+// <!--@test-->...<!--@/test--> (HTML) and /*@if-test*/.../*@end-test*/ (JS) are test-only, and /*@test*/true becomes false in the public build.
 //
 // src/parts.json lists the page's pieces in order: {"file": path} or {"text": literal}.
 // Inside any file, /*@include path*/null is replaced by that file's contents (used for the map data).
@@ -22,11 +31,19 @@ function expand(text) {
 // The text of one source file with includes filled in (used by the tests to load rules in Node).
 function loadSource(p) { return expand(read(p)); }
 
-// The whole bare page.
-function assemble() {
+// The whole bare page. test: true for the test build (the default), false for the public build.
+function assemble(test) {
+  if (test == null) test = true;
   const { parts } = JSON.parse(read('src/parts.json'));
-  return parts.map(part => ('text' in part ? part.text : loadSource(part.file))).join('');
+  let page = parts.filter(part => test || !part.test).map(part => ('text' in part ? part.text : loadSource(part.file))).join('');
+  if (!test) {
+    page = page.replace(/<!--@test-->[\s\S]*?<!--@\/test-->/g, '').replace(/\/\*@if-test\*\/[\s\S]*?\/\*@end-test\*\//g, '').replace(/\/\*@test\*\/true/g, 'false');
+    page = page.replace(/<title>[^<]*<\/title>/, '<title>' + gameField('title') + '</title>');
+  }
+  return page;
 }
+// a field of GAME in src/config.js (version, internal, title)
+function gameField(k) { const m = read('src/config.js').match(new RegExp('\\b' + k + ":\\s*'([^']*)'")); return m ? m[1] : ''; }
 
 // The standalone page: the shell the artifact host would otherwise add.
 function standalone(bare) {
@@ -36,13 +53,16 @@ function standalone(bare) {
 }
 
 if (require.main === module) {
-  const bare = assemble();
-  fs.mkdirSync(path.join(ROOT, 'dist'), { recursive: true });
-  fs.writeFileSync(path.join(ROOT, 'dist/game.html'), bare);
-  fs.writeFileSync(path.join(ROOT, 'dist/index.html'), standalone(bare));
-  // the test build: the same page under its own name, for checks on a separate link (its own save, never the owner's)
-  fs.writeFileSync(path.join(ROOT, 'dist/test.html'), bare.replace(/<title>[^<]*<\/title>/, '<title>Flicker test build</title>'));
-  console.log('built dist/game.html and dist/index.html (' + bare.length + ' characters)');
+  const test = assemble(true), pub = assemble(false), out = p => path.join(ROOT, 'dist', p);
+  fs.mkdirSync(out('test'), { recursive: true });
+  fs.writeFileSync(out('game.html'), test);
+  fs.writeFileSync(out('test.html'), test.replace(/<title>[^<]*<\/title>/, '<title>Flicker test build</title>'));
+  fs.writeFileSync(out('test/index.html'), standalone(test));
+  fs.writeFileSync(out('public.html'), pub);
+  fs.writeFileSync(out('index.html'), standalone(pub));
+  const ver = JSON.stringify({ version: gameField('version'), internal: gameField('internal'), built: new Date().toISOString() }) + '\n';
+  fs.writeFileSync(out('version.json'), ver); fs.writeFileSync(out('test/version.json'), ver);
+  console.log('built ' + gameField('version') + ' (' + gameField('internal') + '): test build ' + test.length + ' characters, public build ' + pub.length);
 }
 
-module.exports = { assemble, loadSource, standalone };
+module.exports = { assemble, loadSource, standalone, gameField };

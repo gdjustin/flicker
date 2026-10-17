@@ -30,7 +30,7 @@ const LAND = (function () {
   };
   const P = {}; for (const k in PAL) P[k] = PAL[k].map(hx);
   const SAND = hx('#d9c995'), FOAM = hx('#d6e8f2'), RIV = hx('#4f8bcf'), RIVL = hx('#7fb0e4'), HEDGE = hx('#7d7a3a'), GREENISH = hx('#8a9a40'),
-    SNOW = hx('#f2f1f6'), SNOW2 = hx('#cfcde0'), DARK = hx('#16120f');
+    SNOW = hx('#f2f1f6'), SNOW2 = hx('#cfcde0'), DARK = hx('#16120f'), VOID = hx('#0a0908');   // v1s: the dark itself is near-black; glimpsed places still fade toward DARK
   const WATER = c => c === 'L' || c === 'S';
   let L = null, IMG = null, MAP = null;
   // window (lab) coordinates: pixel (0, 0) is the top-left of tile (-8, -8)
@@ -127,7 +127,7 @@ const LAND = (function () {
   const VIS = { lit: 1, reach: .48, far: .26, dark: 0 };
   function shade(c, v, out, o) {
     if (v >= .999) { out[o] = c[0]; out[o + 1] = c[1]; out[o + 2] = c[2]; }
-    else if (v <= .001) { out[o] = DARK[0]; out[o + 1] = DARK[1]; out[o + 2] = DARK[2]; }
+    else if (v <= .001) { out[o] = VOID[0]; out[o + 1] = VOID[1]; out[o + 2] = VOID[2]; }
     else { const g = .3 * c[0] + .59 * c[1] + .11 * c[2], k = .35 + (1 - v) * .3;
       for (let i = 0; i < 3; i++) { const d = Math.round(c[i] + (g - c[i]) * k); out[o + i] = Math.round(d + (DARK[i] - d) * (1 - v)); } }
     out[o + 3] = 255;
@@ -154,7 +154,7 @@ const LAND = (function () {
 })();
 
 const MC = MCORE(VC); MC.applySet('V3');   // v1q: Light Lab v3's dials (owner, 2026-10-16)
-const MB = MBOT(MC, VBOT);
+/*@if-test*/const MB = MBOT(MC, VBOT);/*@end-test*/
 const inMap = () => !!(S.w && S.w.m);
 const MV = { sel: null, ampDir: null, ampArm: false, perk: null, lastMap: 0, cells: null, prest: null };
 const LANDN = { meadow: 'Meadow', forest: 'Forest', hills: 'Hills', marsh: 'Marsh', river: 'River valley', mountain: 'Mountains', water: 'Water' };
@@ -211,7 +211,7 @@ function regionOf(t) { return MC.REGIONS[t.region]; }
 function regionCount(w, r) { return r.tiles.filter(k => w.m.tiles[k]).length; }
 function dirWord(t) { const a = Math.atan2(-t.y, t.x) * 180 / Math.PI; return a > 112.5 || a < -112.5 ? (a > 157.5 || a < -157.5 ? 'west' : a > 0 ? 'northwest' : 'southwest') : a > 67.5 ? 'north' : a < -67.5 ? 'south' : a > 22.5 ? 'northeast' : a < -22.5 ? 'southeast' : 'east'; }
 
-function fmtC(n) { n = Math.floor(n); return n >= 1e7 ? fmtW(n / 1e6, 1) + 'M' : n >= 1e5 ? fmtW(n / 1e3) + 'k' : fmtW(n); }
+function fmtC(n) { n = Math.floor(n); const nf = opt('num'); if (nf === 'full') return fmtW(n); if (nf === 'sci') return n >= 1e5 ? n.toExponential(2).replace('e+', 'e') : fmtW(n); return n >= 1e7 ? fmtW(n / 1e6, 1) + 'M' : n >= 1e5 ? fmtW(n / 1e3) + 'k' : fmtW(n); }
 /* ---------- starting the map ---------- */
 function startMap() {
   const w = W(); if (!w || w.m) return;

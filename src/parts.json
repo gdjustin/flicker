@@ -25,13 +25,16 @@
    "text": "</script>\n"
   },
   {
-   "text": "<script>\n"
+   "text": "<script>\n",
+   "test": true
   },
   {
-   "file": "src/bots/village-bot.js"
+   "file": "src/bots/village-bot.js",
+   "test": true
   },
   {
-   "text": "</script>\n"
+   "text": "</script>\n",
+   "test": true
   },
   {
    "text": "<script>\n"
@@ -43,13 +46,16 @@
    "text": "</script>\n"
   },
   {
-   "text": "<script>\n"
+   "text": "<script>\n",
+   "test": true
   },
   {
-   "file": "src/bots/checkin-bot.js"
+   "file": "src/bots/checkin-bot.js",
+   "test": true
   },
   {
-   "text": "</script>\n"
+   "text": "</script>\n",
+   "test": true
   },
   {
    "text": "<script>\n"
@@ -58,10 +64,16 @@
    "file": "src/ui/00-start-numbers-content.js"
   },
   {
+   "file": "src/config.js"
+  },
+  {
    "file": "src/ui/01-state-saves.js"
   },
   {
    "file": "src/text/game-text.js"
+  },
+  {
+   "file": "src/text/changelog.js"
   },
   {
    "file": "src/ui/02-prologue.js"
@@ -88,13 +100,17 @@
    "file": "src/ui/09-away-playtest.js"
   },
   {
-   "file": "src/ui/10-text-registry.js"
+   "file": "src/ui/10-text-registry.js",
+   "test": true
   },
   {
    "file": "src/ui/11-milestones.js"
   },
   {
    "file": "src/ui/12-loop-offline.js"
+  },
+  {
+   "file": "src/ui/12s-site.js"
   },
   {
    "file": "src/ui/13-wiring-end.js"

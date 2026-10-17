@@ -20,11 +20,15 @@ const check = (name, ok, detail) => { console.log((ok ? 'ok   ' : 'FAIL ') + nam
 const round = (x, d) => Math.round(x * Math.pow(10, d)) / Math.pow(10, d);
 
 // 1. The page builds, and every script in it parses (a stray edit that breaks the page fails here, not in a player's browser).
-const page = assemble();
-const scripts = [...page.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)].map(m => m[1]).filter(s => s.trim());
-let parseErr = null;
-scripts.forEach((s, i) => { try { new vm.Script(s, { filename: 'page-script-' + i }); } catch (e) { parseErr = parseErr || ('script ' + i + ': ' + e.message); } });
-check('page builds and every script parses', !parseErr, parseErr || scripts.length + ' scripts');
+for (const [name, test] of [['test build', true], ['public build', false]]) {
+  const page = assemble(test);
+  const scripts = [...page.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)].map(m => m[1]).filter(s => s.trim());
+  let parseErr = null;
+  scripts.forEach((s, i) => { try { new vm.Script(s, { filename: 'page-script-' + i }); } catch (e) { parseErr = parseErr || ('script ' + i + ': ' + e.message); } });
+  check(name + ': page builds and every script parses', !parseErr, parseErr || scripts.length + ' scripts');
+  // v1s: the public build carries no playtest tools, bot hooks or text editor
+  if (!test) check('public build: no playtest tools, bots or text editor', !/id="f-debug"|id="tx"|window\.__T|VBOT\.run|MBOT\(/.test(page) && /test: false/.test(page));
+}
 
 // 2. The rules, loaded the way the page loads them.
 function loadRules() {

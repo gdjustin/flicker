@@ -62,7 +62,7 @@ function showAway(rep) {
   $('away-ok').textContent = tx('a.ok'); $('away').classList.remove('hidden'); $('away-ok').focus();
 }
 function closeAway() { $('away').classList.add('hidden'); }
-try { applyElapsed((Date.now() - S.lastSeen) / 1000, true); } catch (err) { try { sys('Could not count your time away (' + err.message + '). Your save is fine.'); } catch (e2) {} }
+try { if (TAB.owner) applyElapsed((Date.now() - S.lastSeen) / 1000, true); } catch (err) { try { sys('Could not count your time away (' + err.message + '). Your save is fine.'); } catch (e2) {} }
 if (S.log.length === 0) say(tx('p.msg.start'));
 let last = Date.now(), lastMiles = 0;
 setInterval(() => {
@@ -83,6 +83,7 @@ function catchUp(sec) {
 setInterval(() => save(true), 10000);
 document.addEventListener('visibilitychange', () => { if (document.hidden) save(true); });
 
+/*@if-test*/
 /* ---------- Text editor ----------
    Changes are kept in this artifact's shared data (text/overrides), so everyone who plays the published page
    sees them and Claude can read them back. Only the owner and editors see the editor. */
@@ -234,4 +235,4 @@ if (/[?&]edit\b/.test(location.search)) $('f-text').classList.remove('hidden');
   }, () => { /* keep the text this browser has */ });
   } catch (err) { /* no shared text here: edits stay in this browser */ }
 })();
-
+/*@end-test*/

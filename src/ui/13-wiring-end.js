@@ -2,26 +2,6 @@
 $('b-gather').addEventListener('click', doGather);
 $('b-drift').addEventListener('click', doDrift);
 $('b-cohere').addEventListener('click', doCohere);
-$('f-save').addEventListener('click', () => save(false));
-$('f-export').addEventListener('click', () => {
-  show($('io')); $('io-load').classList.add('hidden');
-  $('io-text').value = btoa(unescape(encodeURIComponent(serialize(S))));
-  $('io-text').select(); notice('Copy this text somewhere safe.');
-});
-$('f-import').addEventListener('click', () => {
-  show($('io')); $('io-load').classList.remove('hidden'); $('io-text').value = ''; $('io-text').focus();
-  notice('Paste a save, then choose Load this save.');
-});
-$('io-load').addEventListener('click', () => {
-  try { const s = deserialize(decodeURIComponent(escape(atob($('io-text').value.trim())))); S = s; save(true); location.reload(); }
-  catch (e) { notice('That text is not a valid save. Check that you copied all of it.'); }
-});
-let resetArmed = false;
-$('f-reset').addEventListener('click', () => {
-  if (!resetArmed) { resetArmed = true; $('f-reset').textContent = 'Click again to erase everything'; setTimeout(() => { resetArmed = false; $('f-reset').textContent = 'Start over'; }, 4000); return; }
-  try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
-  S = fresh(); location.reload();
-});
 $('w-name-btn').addEventListener('click', wName);
 $('w-name-input').addEventListener('keydown', e => { if (e.key === 'Enter') wName(); });
 $('away-ok').addEventListener('click', closeAway);
@@ -32,6 +12,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (!$('aw
 document.addEventListener('animationend', e => { if (e.animationName === 'reveal' && e.target.classList) e.target.classList.remove('reveal'); });
 $('fs-feast').addEventListener('click', wFeast);
 $('dr-toggle').addEventListener('click', () => { const w = W(); if (!w) return; w.drawer = w.drawer === 'closed' ? 'open' : 'closed'; renderWorld(); });
+/*@if-test*/
 function renderDebug() { $('f-dbg').classList.toggle('hidden', !S.debug); $('f-debug').textContent = S.debug ? 'Hide playtest tools' : 'Playtest tools'; }
 let milesOpen = false;
 $('f-debug').addEventListener('click', () => { S.debug = !S.debug; renderDebug(); if (!S.debug && milesOpen) { $('io').classList.add('hidden'); milesOpen = false; } if (S.w) renderWorld(); save(true); });
@@ -43,7 +24,7 @@ $('f-skip1').addEventListener('click', () => skipAhead(3600));
 $('f-skip8').addEventListener('click', () => skipAhead(8 * 3600));
 $('f-skip24').addEventListener('click', () => skipAhead(86400));
 $('f-miles').addEventListener('click', () => {
-  checkMiles(); show($('io')); milesOpen = true; $('io-load').classList.add('hidden');
+  checkMiles(); show($('io')); milesOpen = true;
   $('io-text').value = 'Milestones (play time counts time away, up to the time-away limit)\n' + milesText(); $('io-text').select();
   notice('Milestones so far. Copy them into a message to share.');
 });
@@ -84,15 +65,18 @@ if (/[?&]bot\b/.test(location.search)) {
     x: src => eval(src) };   // v1g: playtest probes run inside the page (only with ?bot)
 }
 
+/*@end-test*/
 $('tab-village').addEventListener('click', () => { S.view = 'village'; hideTip(); renderWorld(); });
 $('tab-map').addEventListener('click', () => { S.view = 'map'; MV.lastMap = 0; hideTip(); renderWorld(); });
 $('tab-relics').addEventListener('click', () => { S.view = 'relics'; hideTip(); renderWorld(); });
 $('w-scatter').addEventListener('click', askScatter);
 $('m-grid').addEventListener('click', () => { MV.lastMap = 0; });
+/*@if-test*/
 $('f-skipmap').addEventListener('click', e => { const b = e.currentTarget; if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = 'Click again: the lab bot plays the village to its end'; setTimeout(() => { delete b.dataset.arm; b.textContent = 'Skip to the map phase'; }, 4000); return; }
   delete b.dataset.arm; b.textContent = 'Skip to the map phase'; skipToMap(); });
 [10, 20, 40].forEach(n => $('f-map' + n).addEventListener('click', e => { const b = e.currentTarget; if (!b.dataset.arm) { b.dataset.arm = '1'; const was = b.textContent; b.dataset.was = was; b.textContent = 'Click again: this replaces this run'; setTimeout(() => { delete b.dataset.arm; b.textContent = b.dataset.was; }, 4000); return; }
   delete b.dataset.arm; b.textContent = b.dataset.was; b.disabled = true; b.textContent = 'playing\u2026'; setTimeout(() => { try { botMap(n); } finally { b.disabled = false; b.textContent = b.dataset.was; } }, 30); }));
+/*@end-test*/
 // a card whose description is cut off shows it whole on hover (disabled buttons too, so this follows the pointer)
 { let tipBtn = null; document.addEventListener('mousemove', e => { const el = document.elementFromPoint(e.clientX, e.clientY), b = el && el.closest ? el.closest('button.act') : null;
   if (b === tipBtn) return; if (tipBtn) { hideTip(); tipBtn = null; } if (!b) return; const bd = b.querySelector('small.bd'); if (!bd || bd.scrollHeight <= bd.clientHeight + 1) return;

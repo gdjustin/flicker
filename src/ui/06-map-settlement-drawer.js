@@ -46,7 +46,7 @@ function mlDescBase(id) {
 function renderMapSettlement(w) {
   const showDone = !!S.showDone; let any = false;
   // every line on sale: the village's own (at village prices) and the phase-1 lines
-  const ids = VC.LADDERS.filter(l => l.group !== 'snails').map(l => l.id).concat(MC.ML.map(l => l.id));
+  const ids = VC.LADDERS.filter(l => l.group !== 'snails' && l.id !== 'songs').map(l => l.id).concat(MC.ML.map(l => l.id));
   let doneB = 0;
   for (const id of ids) {
     const bid = 'w-b-' + id, open = MC.levelOpen(w, id);
@@ -57,15 +57,15 @@ function renderMapSettlement(w) {
     if (maxed && tierable && MC.tierUpAvail(w, id)) {
       if ($(bid)) $(bid).remove();   // v1g: the tier card is its own button (reusing the level button kept its click on "buy a level", so it did nothing)
       const b = ensureBtn(g.querySelector('.acts'), tid, () => mTier(id)); const c = MC.tierUpCost(w, id), nt = MC.mtier(w, id) + 1, l = MC.MLAD[id];
-      setBtn(b, 'New tier: ' + (l.tierNames[nt - 1] || l.name + ' ' + nt), tierDesc(id), VC.canPay(w, c), { cost: c, note: tierNote(id) }); any = true; continue;
+      setBtn(b, 'New tier: ' + (l.tierNames[nt - 1] || l.name + ' ' + nt), tierDesc(id), VC.canPay(w, c), { kind: lineKind(id), cost: c, note: tierNote(id) }); any = true; continue;
     }
     if ($(tid)) $(tid).remove();
     if (maxed) { doneB++; if (!showDone) { if ($(bid)) $(bid).remove(); continue; }
-      const db = ensureBtn(g.querySelector('.acts'), bid, () => {}); db.classList.add('done'); setBtn(db, (isV ? VC.LAD[id].name : tierName(id)) + ' (' + n + ')', mlDesc(id), false, { note: tx('w.maxed', { n: mx }) }); any = true; continue; }
+      const db = ensureBtn(g.querySelector('.acts'), bid, () => {}); db.classList.add('done'); setBtn(db, (isV ? VC.LAD[id].name : tierName(id)) + ' (' + n + ')', mlDesc(id), false, { kind: lineKind(id), note: tx('w.maxed', { n: mx }) }); any = true; continue; }
     const b = ensureBtn(g.querySelector('.acts'), bid, () => mLevel(id)); b.classList.remove('done'); const c = MC.levelCost(w, id);
     impactTip(b, x => { if (VC.LAD[id]) { x.lv[id] = (x.lv[id] || 0) + 1; if (VC.LAD[id].burns && x.on[id] != null) x.on[id]++; } else x.m.lv[id] = MC.MLAD[id] && MC.MLAD[id].burner && MC.D.burnEff.rebuild ? MC.rebuildTo(x.m.lv[id] || 0) : (x.m.lv[id] || 0) + 1; });
     const rb = !isV && MC.MLAD[id] && MC.MLAD[id].burner && MC.D.burnEff.rebuild, shown = rb ? MC.rebuildNo(w, id) : n;   // v1j: burners count rebuilds, not levels
-    setBtn(b, (isV ? VC.LAD[id].name : tierName(id)) + (rb ? ': rebuild ' + (shown + 1) : shown ? ' (' + shown + ')' : ''), mlDesc(id), VC.canPay(w, c), { cost: c, note: mx ? tx('vw.levels', { n, max: mx }) : '' }); any = true;
+    setBtn(b, (isV ? VC.LAD[id].name : tierName(id)) + (rb ? ': rebuild ' + (shown + 1) : shown ? ' (' + shown + ')' : ''), mlDesc(id), VC.canPay(w, c), { kind: lineKind(id), cost: c, note: mx ? tx('vw.levels', { n, max: mx }) : '' }); any = true;
   }
   // burners: village burners and copper burners, lit or banked
   const rows = [['firepit', 'wood'], ['limekiln', 'stones'], ['rushlight', 'fiber']];
@@ -180,8 +180,12 @@ function renderMapCards(w) {
   const box = $('w-research'); let any = false;
   const vc = VC.CARDS.filter(c => w.cards[c.id] == null && VC.gateOk(w, c.at));
   const mc = MC.CARDS.filter(c => MC.cardAvail(w, c));
-  const want = new Set(vc.map(c => 'w-r-' + c.id).concat(mc.map(c => 'w-m-' + c.id)));
+  const songL = VC.LAD.songs, songOn = MC.levelOpen(w, 'songs') && !MC.levelMaxed(w, 'songs');   // v1s (owner): Fire song sits with the ideas and upgrades
+  const want = new Set(vc.map(c => 'w-r-' + c.id).concat(mc.map(c => 'w-m-' + c.id)).concat(songOn ? ['w-b-songs'] : []));
   Array.from(box.children).forEach(b => { if (!want.has(b.id)) b.remove(); });
+  if (songOn) { any = true; const n = w.lv.songs || 0, c = MC.levelCost(w, 'songs'), mx = MC.levelMax(w, 'songs'), sb = ensureBtn(box, 'w-b-songs', () => mLevel('songs')); sb.classList.remove('done');
+    setBtn(sb, songL.name + (n ? ' (' + n + ')' : ''), mlDesc('songs'), VC.canPay(w, c), { kind: 'upgrade', cost: c, note: mx ? tx('vw.levels', { n, max: mx }) : '' });
+    if (box.firstChild !== sb) box.insertBefore(sb, box.firstChild); }
   for (const c of vc) { any = true; const b = ensureBtn(box, 'w-r-' + c.id, () => mVCard(c.id)); setBtn(b, c.name, scholarText(c.desc), VC.canPay(w, c.cost), { kind: c.kind, cost: c.cost }); }
   for (const c of mc) { any = true; const b = ensureBtn(box, 'w-m-' + c.id, () => mCard(c.id)), cc = MC.cardCost(w, c);
     setBtn(b, c.name, c.desc, VC.canPay(w, cc), { kind: c.project ? 'building' : c.away ? 'upgrade' : 'idea', cost: cc }); }

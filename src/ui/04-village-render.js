@@ -208,16 +208,16 @@ function renderWorld() {
   // Buildings: every open ladder, grouped (light, homes, storage, tools)
   let anyMake = false, doneB = 0;
   for (const l of VC.LADDERS) {
-    if (l.group === 'snails' || !VC.ladderOpen(w, l)) continue;
+    if (l.group === 'snails' || l.id === 'songs' || !VC.ladderOpen(w, l)) continue;   // v1s: Fire song lives with the ideas and upgrades
     const id = 'w-b-' + l.id, n = w.lv[l.id] || 0, g = group('w-make', l.group, WORLD.groups[l.group]);
     if (VC.ladderMaxed(w, l)) { doneB++;
       if (!showDone) { if ($(id)) $(id).remove(); continue; }
       anyMake = true; const db = ensureBtn(g.querySelector('.acts'), id, () => {}); db.classList.add('done');
-      setBtn(db, l.name + ' (' + n + ')', ladderDesc(l), false, { note: tx('w.maxed', { n: l.max }), keys: ['world.lad.' + l.id + '.name', 'world.lad.' + l.id + '.desc', 'w.maxed'] }); continue; }
+      setBtn(db, l.name + ' (' + n + ')', ladderDesc(l), false, { kind: lineKind(l.id), note: tx('w.maxed', { n: l.max }), keys: ['world.lad.' + l.id + '.name', 'world.lad.' + l.id + '.desc', 'w.maxed'] }); continue; }
     anyMake = true;
     const bb = ensureBtn(g.querySelector('.acts'), id, () => wLevel(l.id)); impactTip(bb, x => { x.lv[l.id] = (x.lv[l.id] || 0) + 1; if (l.burns && x.on[l.id] != null) x.on[l.id]++; });
     const c = VC.ladderCost(w, l);
-    setBtn(bb, l.name + (n ? ' (' + n + ')' : ''), ladderDesc(l), VC.canPay(w, c), { cost: c, note: l.max ? tx('vw.levels', { n, max: l.max }) : '', keys: ['world.lad.' + l.id + '.name', 'world.lad.' + l.id + '.desc', 'w.cost', 'w.over', 'vw.levels'] });
+    setBtn(bb, l.name + (n ? ' (' + n + ')' : ''), ladderDesc(l), VC.canPay(w, c), { kind: lineKind(l.id), cost: c, note: l.max ? tx('vw.levels', { n, max: l.max }) : '', keys: ['world.lad.' + l.id + '.name', 'world.lad.' + l.id + '.desc', 'w.cost', 'w.over', 'vw.levels'] });
   }
   // burners: switch some off to save their fuel
   for (const id of ['firepit', 'limekiln', 'rushlight']) {
@@ -261,6 +261,13 @@ function renderWorld() {
   // Ideas & upgrades: every buy-once card in one box, each labelled with its kind
   if (w.seen.ideas || w.cards.lookcloser) {
     const box = $('w-research'); let any = false, doneC = 0;
+    { const l = VC.LAD.songs, id = 'w-b-songs';   // v1s (owner): Fire song is an upgrade bought with ideas, so it sits here, first
+      if (VC.ladderOpen(w, l)) { const n = w.lv.songs || 0;
+        if (VC.ladderMaxed(w, l)) { doneC++; if (!showDoneIdeas) { if ($(id)) $(id).remove(); }
+          else { any = true; const db = ensureBtn(box, id, () => {}); db.classList.add('done'); setBtn(db, l.name + ' (' + n + ')', ladderDesc(l), false, { kind: 'upgrade', note: tx('w.maxed', { n: l.max }) }); } }
+        else { any = true; const sb = ensureBtn(box, id, () => wLevel('songs')); sb.classList.remove('done'); impactTip(sb, x => { x.lv.songs = (x.lv.songs || 0) + 1; }); const c = VC.ladderCost(w, l);
+          setBtn(sb, l.name + (n ? ' (' + n + ')' : ''), ladderDesc(l), VC.canPay(w, c), { kind: 'upgrade', cost: c, note: tx('vw.levels', { n, max: l.max }), keys: ['world.lad.songs.name', 'world.lad.songs.desc', 'w.cost', 'w.over', 'vw.levels'] }); }
+        if ($(id) && box.firstChild !== $(id)) box.insertBefore($(id), box.firstChild); } }
     for (const c of VC.CARDS) {
       const id = 'w-r-' + c.id;
       if (w.cards[c.id] != null) { doneC++;
@@ -279,7 +286,7 @@ function renderWorld() {
   { let any = false; for (const l of VC.LADDERS) { if (l.group !== 'snails' || !VC.ladderOpen(w, l)) continue; any = true;
       const id = 'w-b-' + l.id, n = w.lv[l.id] || 0, maxed = VC.ladderMaxed(w, l), b = ensureBtn($('w-snails'), id, () => wLevel(l.id)); const c = VC.ladderCost(w, l);
       b.classList.toggle('done', maxed);
-      setBtn(b, l.name + (n ? ' (' + n + ')' : ''), ladderDesc(l), !maxed && VC.canPay(w, c), maxed ? { note: tx('w.maxed', { n: l.max }) } : { cost: c, keys: ['world.lad.' + l.id + '.name', 'world.lad.' + l.id + '.desc'] }); }
+      setBtn(b, l.name + (n ? ' (' + n + ')' : ''), ladderDesc(l), !maxed && VC.canPay(w, c), maxed ? { kind: 'upgrade', note: tx('w.maxed', { n: l.max }) } : { kind: 'upgrade', cost: c, keys: ['world.lad.' + l.id + '.name', 'world.lad.' + l.id + '.desc'] }); }
     $('h-snails').classList.toggle('hidden', !any); }
   $('w-naming').classList.toggle('hidden', !(w.flags.askName && !w.name));
   renderDrawer(w);

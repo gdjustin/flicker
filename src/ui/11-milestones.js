@@ -13,7 +13,7 @@ const MILES = [
   return [['map', 'Map opened (run 1)', () => !!M() && run() === 1], ['run2', 'First scatter (run 2 begun)', () => run() >= 2], ['run3', 'Run 3 begun', () => run() >= 3], ['best100', '100 places in one run', () => S.meta && (S.meta.best || 0) >= 100]]; })());
 function checkMiles() {
   const first = !S.miles; if (first) S.miles = {};
-  for (const [k, , cond] of MILES) { if (S.miles[k]) continue; let ok = false; try { ok = !!cond(); } catch (e) {} if (ok) S.miles[k] = first ? { t: null } : { t: S.playTime || 0, at: Date.now() }; }
+  for (const [k, , cond] of MILES) { if (S.miles[k]) continue; let ok = false; try { ok = !!cond(); } catch (e) {} if (ok) { S.miles[k] = first ? { t: null } : { t: S.playTime || 0, at: Date.now() }; if (!first) countMile(k); } }
   try { checkRun(); } catch (e) {}
 }
 /* v1n: milestones by run (owner, 2026-10-15): each run keeps its own marks, timed from that run's start (village included, on the run's own clock),

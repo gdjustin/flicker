@@ -20,7 +20,7 @@ const WORLD = {
     { res: 'food', label: 'Forage berries' }
   ],
   groups: { light: 'Light', homes: 'Homes', storage: 'Storage', tools: 'Tools' },
-  kinds: { idea: 'Idea', upgrade: 'Upgrade', tool: 'Tool', building: 'Building' },
+  kinds: { idea: 'Idea', upgrade: 'Upgrade', tool: 'Tool', building: 'Building', home: 'Home', store: 'Store', burner: 'Burner', light: 'Light' },
   milestones: [10, 25, 50, 75, 100],
   text: {
     stood: 'You stand. The motes you held scatter into the grey.',
@@ -46,8 +46,21 @@ const KIND_ICON = {
   idea: 'M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z',
   upgrade: 'M12 19V5M6 11l6-6 6 6',
   tool: 'M14 6l4 4-9 9H5v-4zM13 7l2-2 4 4-2 2',
-  building: 'M4 11l8-7 8 7M6 10v10h12V10M10 20v-5h4v5'
+  building: 'M4 11l8-7 8 7M6 10v10h12V10M10 20v-5h4v5',
+  // v1s (owner): every building line says what it is, like the ideas and upgrades do
+  home: 'M3 12l9-8 9 8M5 10.5V20h14v-9.5M10 20v-6h4v6',
+  store: 'M3 8l9-5 9 5v8l-9 5-9-5zM3 8l9 5 9-5M12 13v8',
+  burner: 'M12 3c.5 3 4 5 4 9.5a4 4 0 0 1-8 0c0-2 .8-3.3 2-4.5.2 1.8 1 2.8 2 3-.4-3 .3-5.5 0-8z',
+  light: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4'
 };
+// which kind each building line is: homes, stores, burners, lights that burn nothing, and upgrades (tools, light strength)
+function lineKind(id) {
+  if (/^(shelter|house)$/.test(id)) return 'home';
+  if (/^(stockpile|cache|tally|books)$/.test(id)) return 'store';
+  if (/^(firepit|limekiln|rushlight|cuburner)$/.test(id)) return 'burner';
+  if (/^(brazier|lamp|clamp|cbrazier)$/.test(id)) return 'light';
+  return 'upgrade';
+}
 const memoryMult = () => S.meta ? memMultFor(S.meta.hsLife) : 1;   // memory speeds the prologue too
 function renderScatterBtn() {}       // the prologue's render calls it
 const W = () => S.w;

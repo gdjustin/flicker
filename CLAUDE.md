@@ -7,7 +7,9 @@ Notes for Claude sessions. The owner (Justin) designs; Claude builds. The owner 
 - **Design bible:** the Claude Doc "Incremental Game Design Bible" (Current state: Next up, Open decisions, Polish and public playtest plan; History: the decision log). Read Current state at the start of a session. Update it every version: prototype notes, a History row, Open decisions, Next up.
 - **This repository (public):** the game, its rules and the tests. `src/rules/` is the only source of rules.
 - **gdjustin/flicker-lab (private):** balance labs, lab results, map scripts, later-phase design. Labs load rules from this repository; they never keep copies.
-- **The playtest link:** the Claude artifact "A flicker in the dark: map phase 1" (https://claude.ai/code/artifact/8cdc7b55-0a05-48ca-93d8-e285ae774514). Publish `dist/game.html` to it (the artifact host adds the outer page shell itself; `dist/index.html` is the standalone page for GitHub Pages).
+- **Two builds (v1s):** `node tools/build.js` makes the test build (playtest tools, bot hooks, text editor, the owner's save key) and the public build (none of those, its own save key). Test-only code is marked: `"test": true` parts in `src/parts.json`, `<!--@test-->...<!--@/test-->` in HTML, `/*@if-test*/.../*@end-test*/` in JS. Version, title and links live in `src/config.js`; the changelog and About text in `src/text/changelog.js`.
+- **The playtest link (the owner's, test build):** the Claude artifact "A flicker in the dark: map phase 1" (https://claude.ai/code/artifact/8cdc7b55-0a05-48ca-93d8-e285ae774514). Publish `dist/game.html` to it (the artifact host adds the outer page shell itself).
+- **The public preview link:** publish `dist/public.html` to the artifact "Flicker public preview" (see the bible for its link). `dist/index.html` and `dist/test/index.html` are the standalone pages for GitHub Pages (workflow `pages`, started by hand).
 
 ## Each version
 

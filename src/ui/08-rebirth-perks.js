@@ -10,6 +10,7 @@ function scatterPill(w) {
 }
 function askScatter() {
   const w = W(), m = meta(); if (!canScatter(w)) return;
+  if (opt('confirmRebirth') === false) { openPerks(); return; }   // v1s: a setting skips the summary
   const now = m.hsLife, before = now - (w.m.hsNew || 0), last = m.hist.length ? m.hist[m.hist.length - 1] : null;
   const play = Math.max(1, (S.playTime || 0) - (w.m.startPlay || 0)), perDay = (w.m.hsNew || 0) / (play / 86400);
   $('moment-h').textContent = MT.prestH; const body = $('moment-body'); body.innerHTML = '';
@@ -197,7 +198,8 @@ function commitScatter() {
 function beginRun() {
   const m = meta(); m.run++; S.inPerks = false;
   try { const was = S.w; S.w = null; runRec(); S.w = was; } catch (e) {}   // v1n: run records begin with the run
-  const keep = { meta: m, speed: S.speed, playTime: S.playTime, debug: S.debug, miles: S.miles, showDone: S.showDone };
+  const keep = { meta: m, speed: S.speed, playTime: S.playTime, debug: S.debug, miles: S.miles, showDone: S.showDone,
+    opt: S.opt, lastBackup: S.lastBackup, lastBuild: S.lastBuild, counted: S.counted, persistAsked: S.persistAsked };
   S = Object.assign(fresh(), keep);
   if (m.perks.skipPrologue) { S.flags.stood = true; S.flags.driftShown = true; S.flags.cohereShown = true; }
   S.log = []; say(m.perks.skipPrologue ? 'Run ' + m.run + '. You remember how to stand. The grey waits.' : 'Run ' + m.run + '. Nothing. Then, something. But you remember.');

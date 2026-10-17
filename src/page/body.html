@@ -85,6 +85,7 @@
   </div>
 </div>
 <div id="perk-screen" class="hidden" role="dialog" aria-label="Between runs"></div>
+<!--@test-->
 <div id="tx-shield" class="hidden" aria-hidden="true"></div>
 <div id="tx" class="tx hidden" role="dialog" aria-label="Game text">
   <div class="tx-top">
@@ -96,21 +97,44 @@
   </div>
   <div class="tx-list" id="tx-list"></div>
 </div>
+<!--@/test-->
+<div id="panel" class="away hidden" role="dialog" aria-modal="true" aria-labelledby="panel-h">
+  <div class="away-card panel-card">
+    <div class="panel-top"><h2 id="panel-h"></h2><button type="button" id="panel-x" class="panel-x" aria-label="Close">×</button></div>
+    <div id="panel-body"></div>
+  </div>
+</div>
+<div id="tabwall" class="away hidden" role="dialog" aria-modal="true" aria-labelledby="tabwall-h">
+  <div class="away-card">
+    <h2 id="tabwall-h">Open in another tab</h2>
+    <p id="tabwall-p">The game is open in another tab. This tab has paused and stopped saving, so the two never overwrite each other.</p>
+    <button class="act primary" id="tabwall-go" type="button">Play here instead</button>
+  </div>
+</div>
+<div id="newver" class="newver hidden" role="status"><span id="newver-t"></span> <button type="button" id="newver-go"></button></div>
 <footer>
-  <span id="notice"></span><br>
-  <button id="f-save">Save</button>
-  <button id="f-export">Export save</button>
-  <button id="f-import">Import save</button>
-  <button id="f-reset">Start over</button>
+  <p id="notice" aria-live="polite"></p>
+  <nav class="fnav" aria-label="Game">
+    <button type="button" id="f-save">Save</button>
+    <button type="button" id="f-settings">Settings</button>
+    <button type="button" id="f-changes">Changelog</button>
+    <a id="f-feedback" target="_blank" rel="noopener">Feedback</a>
+    <a id="f-discord" target="_blank" rel="noopener">Discord</a>
+    <button type="button" id="f-about">About</button>
+    <span class="ver" id="f-ver"></span>
+  </nav>
+  <!--@test-->
+  <div class="fdev">
   <button id="f-phase" class="hidden">Restart this phase</button>
   <button id="f-skipvillage" class="hidden">Skip to the village</button>
   <button id="f-skipmap">Skip to the map phase</button>
   <button id="f-text" class="hidden">Edit text</button>
-  <span class="ver">Map phase 1 branch v1q (Light Lab v3’s rules on v1p; Map A v4, the landscape map) · </span><span class="speed">Playtest speed: <button data-speed="1">1×</button><button data-speed="5">5×</button><button data-speed="20">20×</button><button data-speed="100">100×</button></span>
+  <span class="speed">Playtest speed: <button data-speed="1">1×</button><button data-speed="5">5×</button><button data-speed="20">20×</button><button data-speed="100">100×</button></span>
   <button id="f-debug">Playtest tools</button>
   <span id="f-dbg" class="hidden">Skip ahead: <button id="f-skip1">1 hour</button><button id="f-skip8">8 hours</button><button id="f-skip24">1 day</button> <button id="f-miles">Milestones</button> · Lab bot plays to: <button id="f-bot25">25%</button><button id="f-bot50">50%</button><button id="f-bot75">75%</button><button id="f-bot100">the end</button> · Lab bot plays this run’s map to: <button id="f-map10">10 places</button><button id="f-map20">20</button><button id="f-map40">40</button> · <button id="f-prest40">Play to 40 places and scatter</button></span>
   <div id="io" class="hidden">
-    <textarea id="io-text" aria-label="Save text"></textarea>
-    <button id="io-load" class="hidden">Load this save</button>
+    <textarea id="io-text" aria-label="Milestones"></textarea>
   </div>
+  </div>
+  <!--@/test-->
 </footer>

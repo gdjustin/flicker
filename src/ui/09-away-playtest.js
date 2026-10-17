@@ -31,6 +31,7 @@ function mapAwayReport(a, seconds, capped) {
   return rep;
 }
 
+/*@if-test*/
 /* ---------- playtest: skip to the map, or let the lab bot play the map ---------- */
 function adoptBotState(s, note) {
   s.stats = { buys: [], made: {} };
@@ -67,6 +68,7 @@ function skipToScatter(btn) {
   setTimeout(() => { try { const w = W(); if (!(w && w.m && w.m.restored >= 40)) botMap(40, 'keen'); askScatter(); } finally { btn.disabled = false; btn.textContent = 'Play to 40 places and scatter'; } }, 30);
 }
 
+/*@end-test*/
 // v1g: what needs the player, for the tab dots (owner, 2026-10-13)
 function mapNeedsYou(w) {
   const why = [];
@@ -106,7 +108,7 @@ function renderMapPhase(w) {
 function renderMapSnails(w) {
   let any = false; for (const l of VC.LADDERS) { if (l.group !== 'snails' || !VC.ladderOpen(w, l)) continue; any = true;
     const id = 'w-b-' + l.id, n = w.lv[l.id] || 0, maxed = VC.ladderMaxed(w, l), b = ensureBtn($('w-snails'), id, () => mLevel(l.id)); const c = VC.ladderCost(w, l);
-    b.classList.toggle('done', maxed); setBtn(b, l.name + (n ? ' (' + n + ')' : ''), ladderDesc(l), !maxed && VC.canPay(w, c), maxed ? { note: tx('w.maxed', { n: l.max }) } : { cost: c }); }
+    b.classList.toggle('done', maxed); setBtn(b, l.name + (n ? ' (' + n + ')' : ''), ladderDesc(l), !maxed && VC.canPay(w, c), maxed ? { kind: 'upgrade', note: tx('w.maxed', { n: l.max }) } : { kind: 'upgrade', cost: c }); }
   $('h-snails').classList.toggle('hidden', !any);
 }
 
