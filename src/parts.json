@@ -1,0 +1,106 @@
+{
+ "parts": [
+  {
+   "file": "src/page/head.html"
+  },
+  {
+   "text": "<style>\n"
+  },
+  {
+   "file": "src/styles/game.css"
+  },
+  {
+   "text": "</style>\n"
+  },
+  {
+   "file": "src/page/body.html"
+  },
+  {
+   "text": "<script>\n"
+  },
+  {
+   "file": "src/rules/village-core.js"
+  },
+  {
+   "text": "</script>\n"
+  },
+  {
+   "text": "<script>\n"
+  },
+  {
+   "file": "src/bots/village-bot.js"
+  },
+  {
+   "text": "</script>\n"
+  },
+  {
+   "text": "<script>\n"
+  },
+  {
+   "file": "src/rules/light-core.js"
+  },
+  {
+   "text": "</script>\n"
+  },
+  {
+   "text": "<script>\n"
+  },
+  {
+   "file": "src/bots/checkin-bot.js"
+  },
+  {
+   "text": "</script>\n"
+  },
+  {
+   "text": "<script>\n"
+  },
+  {
+   "file": "src/ui/00-start-numbers-content.js"
+  },
+  {
+   "file": "src/ui/01-state-saves.js"
+  },
+  {
+   "file": "src/text/game-text.js"
+  },
+  {
+   "file": "src/ui/02-prologue.js"
+  },
+  {
+   "file": "src/ui/03-village-state.js"
+  },
+  {
+   "file": "src/ui/04-village-render.js"
+  },
+  {
+   "file": "src/ui/05-map-phase.js"
+  },
+  {
+   "file": "src/ui/06-map-settlement-drawer.js"
+  },
+  {
+   "file": "src/ui/07-map-view.js"
+  },
+  {
+   "file": "src/ui/08-rebirth-perks.js"
+  },
+  {
+   "file": "src/ui/09-away-playtest.js"
+  },
+  {
+   "file": "src/ui/10-text-registry.js"
+  },
+  {
+   "file": "src/ui/11-milestones.js"
+  },
+  {
+   "file": "src/ui/12-loop-offline.js"
+  },
+  {
+   "file": "src/ui/13-wiring-end.js"
+  },
+  {
+   "text": "</script>\n"
+  }
+ ]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "flicker",
+  "private": true,
+  "description": "A browser incremental game. No dependencies: build with node tools/build.js, test with node tests/run.js.",
+  "license": "MIT",
+  "scripts": {
+    "build": "node tools/build.js",
+    "test": "node tests/run.js"
+  }
+}

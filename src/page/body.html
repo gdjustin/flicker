@@ -1,0 +1,116 @@
+
+<main id="prologue">
+  <p class="self" id="self" aria-live="polite" data-tkeys="p.self.0 p.self.1 p.self.2 p.self.3 p.self.4 p.self.5 p.stood">You are nothing.</p>
+  <div class="field" id="field" aria-hidden="true"></div>
+  <p class="have" id="have"></p>
+
+  <section id="s-acts">
+    <div class="acts">
+      <button class="act primary" id="b-gather" data-tkeys="p.gather p.gather.none p.gather.hand p.gather.see"><span class="bt" id="gather-t">Gather</span><small id="gather-sub">Reach for a mote of light</small></button>
+      <button class="act hidden" id="b-drift" data-tkeys="p.drift p.drift.none p.drift.see p.cost.see p.cost.vague"><span class="bt" id="drift-t">Draw in</span><small id="drift-sub"></small></button>
+      <button class="act hidden" id="b-cohere" data-tkeys="p.cohere p.cohere.sub p.cost.see p.cost.vague"><span class="bt" id="cohere-t">Press</span><small id="cohere-sub"></small></button>
+    </div>
+  </section>
+
+  <section id="s-parts" class="hidden">
+    <h2 id="h-parts" data-tkeys="p.h.parts">Becoming</h2>
+    <div class="acts" id="parts"></div>
+  </section>
+
+  <section id="s-ups" class="hidden">
+    <h2 id="h-ups" data-tkeys="p.h.ups">Learning</h2>
+    <div class="acts" id="ups"></div>
+  </section>
+
+  <section id="s-end" class="end hidden"></section>
+
+  <div class="log" id="log" aria-live="polite"></div>
+</main>
+<div id="world" class="hidden">
+  <div id="w-tip" class="tip hidden" role="tooltip"></div>
+  <header class="wtop"><div class="whead"><h1 id="w-title" data-tkeys="w.title.start w.title.fire w.title.one w.title.camp"></h1><p id="w-sub" tabindex="0" data-tkeys="w.sub vw.set.room vw.set.light vw.set.arrive"></p></div>
+    <div class="wbar"><nav class="wtabs hidden" id="w-tabs" aria-label="Views"><button type="button" id="tab-village">Settlement</button><button type="button" id="tab-map">Map</button><button type="button" id="tab-relics">Relics</button></nav><button type="button" id="w-scatter" class="scatter hidden">Scatter the light</button><span id="w-feast" class="feastpill hidden"><button type="button" id="fs-feast" data-tkeys="f.pill f.pill.on w.feast.sub vw.feast.cost"></button><i class="fbar" aria-hidden="true"><i id="fs-bar"></i></i></span></div></header>
+  <div id="w-drawer" class="drawer hidden">
+  <div id="dr-body">
+  <div id="w-vstrip" class="strip hidden">
+    <div class="st-who"><p class="st-lab" id="vl-lab" data-tkeys="vl.lab"></p><p class="st-name" id="vl-name" data-tkeys="vl.name"></p><p class="st-rate"><span id="vl-rate" class="lrate" tabindex="0" data-tkeys="w.lrate"></span></p></div>
+    <div class="st-prog"><p class="st-line"><span id="vl-pct" data-tkeys="vl.lit"></span><span id="vl-left" data-tkeys="world.text.hint vl.full vl.wait vw.done vw.settler.at vw.settler.soon vl.settler.room"></span></p><div class="st-bar"><i id="vl-bar"></i></div></div>
+    <div class="st-act"></div>
+  </div>
+  <div id="w-pstrip" class="strip rstrip hidden">
+    <div class="st-who"><p class="st-lab" id="vp-lab" data-tkeys="vp.lab"></p><p class="st-name" id="vp-name"></p><p class="st-rate" id="vp-step" data-tkeys="vp.step vw.next"></p></div>
+    <div class="st-prog"><p class="st-line"><span id="vp-pct" data-tkeys="vp.built"></span><span id="vp-left" data-tkeys="vw.stage.left vp.paused vp.nohaul"></span></p><div class="st-bar rs-bar vp-bar" id="vp-track" tabindex="0" data-tkeys="vp.tip.needs vp.tip.done vw.tip.store"><i id="vp-bar"></i></div><p class="st-draw" id="vp-draw" data-tkeys="vl.draw vl.draw.rate"></p></div>
+    <div class="st-act" id="vp-act"></div>
+  </div>
+  </div>
+  <div class="drhead"><span id="dr-sum" class="drsum" data-tkeys="dr.sum.home dr.sum.vp"></span><button type="button" id="dr-toggle" class="drtog" data-tkeys="dr.hide dr.show"></button></div>
+  </div>
+  <div class="cols">
+    <aside class="col rescol" aria-label="Resources"><div id="w-res"></div></aside>
+    <section class="col mid">
+      <div id="v-village">
+      <div class="acts" id="w-acts"></div>
+      <div id="w-naming" class="naming hidden"><label for="w-name-input" id="w-name-label" data-tkeys="w.name.label">Name this place</label><input id="w-name-input" maxlength="40" autocomplete="off"><button class="act" id="w-name-btn" data-tkeys="w.name.btn">Name it</button></div>
+      <h2 id="h-make" class="hidden"><span id="h-make-t" data-tkeys="w.h.make">Buildings</span><button class="showdone" id="w-showdone" data-tkeys="w.showdone w.hidedone"></button></h2><div id="w-make" class="bgroups"></div>
+      <h2 id="h-jobs" class="hidden"><span id="h-jobs-t" data-tkeys="w.h.jobs">Settlers</span><button class="showdone" id="w-unassign" data-tkeys="w.unassign"></button><span id="w-idle" class="idle" data-tkeys="w.idle w.idle.hungry"></span></h2><div id="w-jobs"></div>
+      <h2 id="h-ideas" class="hidden"><span id="h-ideas-t" data-tkeys="vw.h.cards">Ideas and upgrades</span><button class="showdone" id="w-showdone-ideas" data-tkeys="w.showdone w.hidedone"></button></h2><div class="acts" id="w-research"></div>
+      <h2 id="h-snails" class="hidden"><span id="h-snails-t" data-tkeys="vw.h.snails">Snails</span></h2><div class="acts" id="w-snails"></div>
+      </div>
+      <div id="v-map" class="hidden"><p class="mmut" id="m-world"></p><div class="mstage" id="m-stage"><canvas id="m-land" class="mland" aria-hidden="true"></canvas><div class="mgrid" id="m-grid"></div><svg id="m-beam" class="mbeam" preserveAspectRatio="none" aria-hidden="true"></svg><div id="m-home" class="mhome" aria-hidden="true"><svg width="100%" height="100%" viewBox="-64 -64 128 128" role="img" aria-label="Home: hearth"><defs><radialGradient id="hghearth" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#ffd27a" stop-opacity="0.8"></stop><stop offset="0.55" stop-color="#ffb04a" stop-opacity="0.3"></stop><stop offset="1" stop-color="#ffb04a" stop-opacity="0"></stop></radialGradient></defs><circle cx="0" cy="0" r="62" fill="url(#hghearth)"></circle><ellipse cx="0" cy="12" rx="34" ry="13" fill="#000" opacity="0.2"></ellipse><ellipse cx="0" cy="9" rx="30" ry="11" fill="#8a7a52" opacity="0.55"></ellipse><rect x="-30" y="-8" width="8" height="15" rx="3" fill="#a59c8e" stroke="#2a1a10" stroke-width="1.6" stroke-linejoin="round"></rect><rect x="-22" y="-16" width="8" height="15" rx="3" fill="#a59c8e" stroke="#2a1a10" stroke-width="1.6" stroke-linejoin="round"></rect><rect x="-4" y="-20" width="8" height="15" rx="3" fill="#a59c8e" stroke="#2a1a10" stroke-width="1.6" stroke-linejoin="round"></rect><rect x="14" y="-16" width="8" height="15" rx="3" fill="#a59c8e" stroke="#2a1a10" stroke-width="1.6" stroke-linejoin="round"></rect><rect x="22" y="-8" width="8" height="15" rx="3" fill="#a59c8e" stroke="#2a1a10" stroke-width="1.6" stroke-linejoin="round"></rect><ellipse cx="0" cy="13.75" rx="11.25" ry="4.0" fill="#6d655c" stroke="#2a1a10" stroke-width="1.6" stroke-linejoin="round"></ellipse><path d="M0 -7.5 C8.75 2.5 10.0 11.25 0 13.75 C-10.0 11.25 -8.75 2.5 0 -7.5z" fill="#f08a2a" stroke="#2a1a10" stroke-width="1.6" stroke-linejoin="round"></path><path d="M0 1.25 C4.375 6.25 4.375 11.25 0 12.5 C-4.375 11.25 -4.375 6.25 0 1.25z" fill="#ffe08a"></path><rect x="11.5" y="1" width="9" height="16" rx="3" fill="#b8b0a2" stroke="#2a1a10" stroke-width="1.6" stroke-linejoin="round"></rect><rect x="-20.5" y="1" width="9" height="16" rx="3" fill="#b8b0a2" stroke="#2a1a10" stroke-width="1.6" stroke-linejoin="round"></rect><rect x="-4.5" y="4" width="9" height="16" rx="3" fill="#b8b0a2" stroke="#2a1a10" stroke-width="1.6" stroke-linejoin="round"></rect></svg></div></div><p class="mmut mkey">Bright land: called back. Dimmed, inside the grid: beside your land, with the time to call it back. Fainter: seen from afar. Gold corners: where your light is going. Medallions: a number is lined up; a gem is a claimed relic (pale rim: an anchor holds it); a hammer is a build under way; a tower is the broken tower or an amplifier. A gold spark: something waits there. Ember edge: remembered from an earlier run.</p></div>
+      <div id="v-relics" class="hidden"></div>
+    </section>
+    <aside class="col side">
+      <div id="m-panel" class="mpanel hidden"></div>
+      <div id="m-regions" class="mregions hidden"><p class="msec">Regions</p><div id="m-reglist"></div></div>
+      <div class="log" id="w-log" aria-live="polite"></div>
+    </aside>
+  </div>
+</div>
+<div id="moment" class="away hidden" role="dialog" aria-modal="true" aria-labelledby="moment-h">
+  <div class="away-card moment-card" data-tkeys="k.settler.h k.settler.p k.settler.ok k.map.h k.map.p1 k.map.p2 k.map.p3 k.map.ok">
+    <h2 id="moment-h"></h2>
+    <div id="moment-body"></div>
+    <button class="act primary" id="moment-ok" type="button"></button>
+  </div>
+</div>
+<div id="away" class="away hidden" role="dialog" aria-modal="true" aria-labelledby="away-h">
+  <div class="away-card" data-tkeys="a.title a.time.full a.time.capped a.more.learn a.more.later a.row.restored a.row.regions a.row.relay a.row.journal a.row.settlers a.row.light a.row.now a.res.h a.new.h a.ok">
+    <h2 id="away-h"></h2>
+    <p id="away-time" class="away-time"></p>
+    <p id="away-more" class="away-more hidden"></p>
+    <dl id="away-list" class="away-list"></dl>
+    <div id="away-res"></div>
+    <div id="away-new"></div>
+    <button class="act primary" id="away-ok" type="button"></button>
+  </div>
+</div>
+<div id="perk-screen" class="hidden" role="dialog" aria-label="Between runs"></div>
+<div id="tx-shield" class="hidden" aria-hidden="true"></div>
+<div id="tx" class="tx hidden" role="dialog" aria-label="Game text">
+  <div class="tx-top">
+    <div class="tx-row"><strong>Game text</strong><button id="tx-pick">Pick on screen</button><button id="tx-close">Close</button></div>
+    <input type="search" id="tx-search" placeholder="Search names, descriptions and messages" aria-label="Search game text">
+    <div class="tx-row"><label><input type="checkbox" id="tx-changed"> Changed only</label><button id="tx-all" class="hidden">Show all</button><button id="tx-copy">Copy changes</button></div>
+    <p class="tx-status" id="tx-status"></p>
+    <textarea id="tx-out" class="hidden" readonly aria-label="Changed text as data"></textarea>
+  </div>
+  <div class="tx-list" id="tx-list"></div>
+</div>
+<footer>
+  <span id="notice"></span><br>
+  <button id="f-save">Save</button>
+  <button id="f-export">Export save</button>
+  <button id="f-import">Import save</button>
+  <button id="f-reset">Start over</button>
+  <button id="f-phase" class="hidden">Restart this phase</button>
+  <button id="f-skipvillage" class="hidden">Skip to the village</button>
+  <button id="f-skipmap">Skip to the map phase</button>
+  <button id="f-text" class="hidden">Edit text</button>
+  <span class="ver">Map phase 1 branch v1q (Light Lab v3’s rules on v1p; Map A v4, the landscape map) · </span><span class="speed">Playtest speed: <button data-speed="1">1×</button><button data-speed="5">5×</button><button data-speed="20">20×</button><button data-speed="100">100×</button></span>
+  <button id="f-debug">Playtest tools</button>
+  <span id="f-dbg" class="hidden">Skip ahead: <button id="f-skip1">1 hour</button><button id="f-skip8">8 hours</button><button id="f-skip24">1 day</button> <button id="f-miles">Milestones</button> · Lab bot plays to: <button id="f-bot25">25%</button><button id="f-bot50">50%</button><button id="f-bot75">75%</button><button id="f-bot100">the end</button> · Lab bot plays this run’s map to: <button id="f-map10">10 places</button><button id="f-map20">20</button><button id="f-map40">40</button> · <button id="f-prest40">Play to 40 places and scatter</button></span>
+  <div id="io" class="hidden">
+    <textarea id="io-text" aria-label="Save text"></textarea>
+    <button id="io-load" class="hidden">Load this save</button>
+  </div>
+</footer>
