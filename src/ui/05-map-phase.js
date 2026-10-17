@@ -297,7 +297,7 @@ function relicGain(w, key) { const t = tileOf(key), D = MC.D;
   const g = n ? (LR.eachOf && LR.eachOf[t.land] != null ? LR.eachOf[t.land] : LR.each) : (LR.firstOf[t.land] != null ? LR.firstOf[t.land] : LR.first);
   const rings = D.resonance.on && regionOf(t).tiles.every(q => w.m.tiles[q]);
   return (RES_WORD[E] || E) + ' +' + Math.round(g * 100) + '%' + (n ? '' : ' (the first ' + LANDN[t.land].toLowerCase() + ' relic)') + ', all light +' + fmtW(LR.light * 100, 1) + '%' + (rings ? '; its region is whole, so it rings: counts ' + (1 + D.resonance.R) + ' times' : ''); }
-function mRelic(key) { const w = W(), gainTxt = relicGain(w, key); if (MC.buyRelic(w, key)) { w.stats.buys.length = 0; sys('The relic of ' + shortName(tileOf(key)) + ' is claimed: ' + gainTxt + '.'); renderWorld(); } }
+function mRelic(key) { const w = W(), gainTxt = relicGain(w, key); if (MC.buyRelic(w, key)) { w.stats.buys.length = 0; sys(relicName(key) + ' is claimed: ' + gainTxt + '.'); /* v1s fix: the journal names relics by region too */ renderWorld(); } }
 function mAnchor(key) { const w = W(); if (MC.planAnchor(w, key)) { sys('A Light Anchor is planned for ' + shortName(tileOf(key)) + '. Haulers will build it.'); renderWorld(); } }
 function mTarget(key) { const w = W(); const had = w.m.pool || 0; if (MC.setTarget(w, key)) { if (had >= 1) sys('The light you saved, ' + fmtC(had) + ', pours into ' + shortName(tileOf(key)) + '.'); mapTick(0); renderWorld(); } }
 function mLineup(key) { const w = W(); if (MC.lineupAdd(w, key)) renderWorld(); }
