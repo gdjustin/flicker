@@ -33,11 +33,15 @@ function mapAwayReport(a, seconds, capped) {
 
 /*@if-test*/
 /* ---------- playtest: skip to the map, or let the lab bot play the map ---------- */
-function adoptBotState(s, note) {
+function worldFromBot(s) {   // a bot's state as the game's world (the screens' own fields added)
   s.stats = { buys: [], made: {} };
   const w = Object.assign(freshWorld(), s, { looks: WORLD.looks.length, haulFrom: {}, leftStack: [] });
   ['wood', 'stones', 'fiber', 'food', 'ideas'].forEach(k => { w.seen[k] = true; }); if (s.cards.snails) w.seen.snails = true;
   ['ideasMsg', 'stoked', 'quietMind', 'askName', 'snailSeen', 'full', 'great', 'lights', 'end'].forEach(k => { w.flags[k] = true; });
+  return w;
+}
+function adoptBotState(s, note) {
+  const w = worldFromBot(s);
   S.flags.stood = true; S.w = w; S.log = []; sys(note);
   try { $('moment').classList.add('hidden'); hideTip(); } catch (e) {}
   MV.cells = null; resetWorldDom(); enterWorld();
@@ -68,11 +72,52 @@ function skipToScatter(btn) {
   setTimeout(() => { try { const w = W(); if (!(w && w.m && w.m.restored >= 40)) botMap(40, 'keen'); askScatter(); } finally { btn.disabled = false; btn.textContent = 'Play to 40 places and scatter'; } }, 30);
 }
 
+// the rebirth branch (2026-10-18): the bot plays this run to its rebirth, or every run left to the last rebirth (whole)
+function botPerks(m) {   // spend free heartstones the way the lab bot does: the cheapest next rank of a power perk first
+  const lv = m.perks = m.perks || {}; let g = 0;
+  while (g++ < 500) { const free = m.hsLife - perkSpent(lv); let best = null, bc = Infinity;
+    for (const id in MC.D.perks) { const p = MC.D.perks[id]; if (!perkShown(id) || p.kind === 'comfort' || perkLocked(id, lv)) continue; const n = lv[id] || 0; if (n >= MC.perkMax(id)) continue; const c = MC.perkCost(id, n); if (c <= free && c < bc) { bc = c; best = id; } }
+    if (!best) break; lv[best] = (lv[best] || 0) + 1; }
+}
+function botToRebirth() {
+  const w = W(), m = meta(); if (!w || !MC.D.rb.on || m.whole) return;
+  if (w.m && w.m.rbReady) { askScatter(); return; }
+  botMap(MC.rbAt(m.run)); askScatter();
+}
+function botToWhole(btn) {
+  const m = meta(); if (!MC.D.rb.on || m.whole) return;
+  btn.disabled = true; const was = btn.textContent;
+  const step = () => {
+    try {
+      const run = m.run, at = MC.rbAt(run); btn.textContent = 'playing run ' + run + ' of ' + MC.D.rb.last + '\u2026';
+      const r = MB.run({ preset: 'checkin', pick: 'need', leak: 'fuel', days: 30, stopTiles: at, prestige: prestigeObj() }), s = r.s;
+      let gain = 0, fresh = 0; r.tileT.forEach(([, k]) => { if (!m.ever[k]) { m.ever[k] = true; const h = MC.hsFor(tileOf(k).dstep); m.hsLife += h; gain += h; fresh++; } });
+      if (s.m.restored > (m.best || 0)) m.best = s.m.restored;
+      if (run >= MC.D.rb.last || !s.m.rbReady) {   // the last run (or a run that stalls): it's yours, at its rebirth
+        adoptBotState(s, 'Playtest: the lab bot played every run to its rebirth. This is run ' + run + ', at ' + s.m.restored + ' places.');
+        S.w.m.run = run; S.w.m.hsNew = gain; S.w.m.newPlaces = fresh; S.w.m.flags = {}; S.w.m.startPlay = S.playTime || 0; S.playTime = (S.playTime || 0) + s.t;
+        botPerks(m); S.view = 'map'; save(true); renderWorld(); btn.disabled = false; btn.textContent = was; askScatter(); return;
+      }
+      m.hist.push({ run, tiles: s.m.restored, regions: MC.regionsDone(s), hsNew: gain, play: s.t, at: Date.now(), bot: true });
+      m.cards = Array.from(new Set((m.cards || []).concat(Object.keys(s.m.cards))));
+      m.built = Array.from(new Set(m.built.concat(Object.keys(s.done || {}), Object.keys(s.m.done || {}))));
+      m.relics = Array.from(new Set(m.relics.concat(Object.keys(s.m.relicT || {}))));
+      m.levels = { lv: JSON.parse(JSON.stringify(s.m.lv || {})), tier: JSON.parse(JSON.stringify(s.m.tier || {})) };
+      MC.REGIONS.forEach((rg, i) => { const c = rg.tiles.filter(k => s.m.tiles[k]).length; if (c > (m.regBest[i] || 0)) m.regBest[i] = c; if (c === rg.tiles.length && !m.regFin[i]) m.regFin[i] = run; });
+      if (r.villageSnap) m.villageSnap = worldFromBot(JSON.parse(JSON.stringify(r.villageSnap)));
+      S.playTime = (S.playTime || 0) + s.t; botPerks(m); m.run++; save(true);
+      setTimeout(step, 30);
+    } catch (e) { btn.disabled = false; btn.textContent = was; notice('Playtest: the bot stopped: ' + e.message); }
+  };
+  setTimeout(step, 30);
+}
+function callMerchant() { const w = W(); if (!w || !w.m || !w.m.whole) { notice('The traveler comes once you are whole.'); return; } MC.merchantArrive(w, Date.now() / 1000); w.m.merch.next = 0; MC.merchantArrive(w, Date.now() / 1000); mapTick(0); renderWorld(); save(true); }
 /*@end-test*/
 // v1g: what needs the player, for the tab dots (owner, 2026-10-13)
 function mapNeedsYou(w) {
   const why = [];
-  if (!w.m.target) why.push('your light has no place to go');
+  if (w.m.rbReady) why.push('you are ready to be reborn'); else if (!w.m.target) why.push('your light has no place to go');
+  if (MC.merchantHere(w)) why.push('a traveler waits');
   if (MC.repairOpen(w)) why.push('the old tower waits to be repaired');
   return why;
 }
@@ -101,7 +146,10 @@ function renderMapPhase(w) {
   if (view === 'village') { renderMapSettlement(w); renderMapSnails(w); }
   else if (view === 'relics') renderRelicsTab(w);
   else { const now = Date.now(); if (now - MV.lastMap > 250) { MV.lastMap = now; renderMap(w); } }
-  $('w-scatter').classList.toggle('hidden', !canScatter(w)); if (canScatter(w)) scatterPill(w);
+  // the rebirth branch: a rebirth reached while away (or before a reload) asks once the player is back and nothing else is open
+  if (MC.D.rb.on && w.m.rbReady && !MV.rbAsked && !S.inPerks && $('away').classList.contains('hidden') && $('moment').classList.contains('hidden')) { MV.rbAsked = true; setTimeout(askScatter, 300); }
+  { const showP = MC.D.rb.on ? !!(w.m.rbAt || w.m.rbReady) : canScatter(w); $('w-scatter').classList.toggle('hidden', !showP); if (showP) scatterPill(w); }
+  $('w-merch').classList.toggle('hidden', !MC.merchantHere(w)); if (MC.merchantHere(w)) $('w-merch').textContent = MT.merchPill;
   $('w-naming').classList.toggle('hidden', !(w.flags.askName && !w.name));
   renderMapDrawer(w);
 }

@@ -196,20 +196,23 @@ function renderMapCards(w) {
 function renderMapDrawer(w) {
   const dr = $('w-drawer'), vs = $('w-vstrip'), ps = $('w-pstrip'); dr.classList.remove('hidden');
   const closed = w.drawer === 'closed'; dr.classList.toggle('closed', closed); $('dr-toggle').textContent = tx(closed ? 'dr.show' : 'dr.hide');
-  const t = w.m.target ? tileOf(w.m.target) : null, L = MC.lightRate(w), amp = t ? MC.ampMult(w, t.key) : 1;
-  const need = t ? MC.tileCost(t, w) : 0, got = t ? (w.m.got[t.key] || 0) : 0, f = t ? Math.min(1, got / need) : 0;
+  const t = w.m.target ? tileOf(w.m.target) : null, L = MC.lightRate(w), amp = t ? MC.ampMult(w, t.key) * (w.m.tiles[t.key] ? 1 : MC.masteryMult(w)) : 1;
+  // the rebirth branch: light into a place already back masters it; the strip counts clears to its next tier
+  const mast = !!(t && w.m.tiles[t.key]), mc = mast ? MC.mClears(w, t.key) : 0, mtr = mast ? MC.mTier(w, t.key) : 0, mnd = mast ? MC.mNeed(w, t.key) : 0;
+  const need = t ? (mast ? mnd * MC.mClearCost(t) : MC.tileCost(t, w)) : 0, got = t ? (mast ? mc * MC.mClearCost(t) : (w.m.got[t.key] || 0)) : 0, f = t ? Math.min(1, got / need) : 0;
   if (closed) { const parts = [t ? 'Calling back ' + shortName(t) + ', ' + Math.floor(f * 100) + '%' : MT.stripNone + (w.m.pool >= 1 ? ', ' + fmtC(w.m.pool) + ' saved up' : '')]; if (w.m.proj) parts.push(pname(w, w.m.proj.id) + ', ' + Math.floor(mProjFrac(w) * 100) + '% built'); $('dr-sum').textContent = parts.join(' · '); return; }
   $('dr-sum').textContent = ''; vs.classList.remove('hidden');
-  $('vl-lab').textContent = t ? MT.stripTo : MT.stripNone; $('vl-name').textContent = t ? tileName(t) : MT.stripPick;
+  $('vl-lab').textContent = mast ? 'Mastering' + (w.m.mreg != null ? ' ' + MC.REGIONS[w.m.mreg].name : '') : t ? MT.stripTo : w.m.rbReady ? 'The land waits' : MT.stripNone; $('vl-name').textContent = t ? tileName(t) : w.m.rbReady ? MT.rbWait : MT.stripPick;
   $('vl-rate').textContent = tx('w.lrate', { n: fmtW(L * amp, L < 100 ? 2 : 0) }) + (amp > 1 ? ' (amplified ×' + fmtW(amp, 0) + ')' : '');
   const pool = w.m.pool || 0, pcap = MC.poolCap(w);
-  const pt = t ? fmtW(Math.floor(f * 1000) / 10, 1) + '%' : fmtC(pool), pe = $('vl-pct'), rest = t ? ' ' + fmtW(got) + ' of ' + fmtW(need) + ' light' : fill(MT.poolSaved, { cap: fmtC(pcap) });
+  const pt = mast ? mastPct(mtr) + '%' : t ? fmtW(Math.floor(f * 1000) / 10, 1) + '%' : fmtC(pool), pe = $('vl-pct'), rest = mast ? ' ' + fmtW(Math.floor(mc)) + ' of ' + fmtW(mnd) + ' clears to ' + mastPct(mtr + 1) + '%' : t ? ' ' + fmtW(got) + ' of ' + fmtW(need) + ' light' : fill(MT.poolSaved, { cap: fmtC(pcap) });
   if (pe.dataset.s !== pt + rest) { pe.dataset.s = pt + rest; pe.textContent = ''; const bb = document.createElement('b'); bb.textContent = pt; pe.append(bb, rest); }
   const lu = (w.m.lineup || []).filter(k => !w.m.tiles[k]), then = lu.length ? fill(MT.thenLine, { list: lu.slice(0, 3).map(k => shortName(tileOf(k))).join(', ') + (lu.length > 3 ? ' and ' + (lu.length - 3) + ' more' : '') }) : MC.perk(w, 'waymarks') ? MT.thenOn : '';
   $('vl-left').textContent = t ? 'about ' + fmtTime((need - got) / Math.max(1e-9, L * amp)) + ' left' + then : (pool >= pcap - 1 ? MT.poolFull : MT.poolLeft);
   $('vl-bar').style.width = ((t ? f : Math.min(1, pool / pcap)) * 100).toFixed(2) + '%'; $('vl-bar').parentNode.classList.toggle('pooling', !t);
   // stoke sends a burst to the tile
-  const va = vs.querySelector('.st-act'); { const om = $('vl-map'); if (om) om.remove(); } if (w.cards.stoking) { const sb = ensureBtn(va, 'm-stoke', mBurst, 'slim');
+  const va = vs.querySelector('.st-act'); { const om = $('vl-map'); if (om) om.remove(); }
+  { const rb = $('vl-rebirth'); if (w.m.rbReady) setBtn(ensureBtn(va, 'vl-rebirth', askScatter, 'primary'), MT.rbBtn, rbPct(w.m.run, true) + '% of yourself, after it', true, {}); else if (rb) rb.remove(); } if (w.cards.stoking) { const sb = ensureBtn(va, 'm-stoke', mBurst, 'slim');
     const bc = MC.burstCost(w), bcs = Object.keys(bc).map(k => fmtW(bc[k]) + ' ' + resName(k).toLowerCase()).join(', ');
     if (w.m.trip > 0) setBtn(sb, MT.burst, fill(MT.burstAway, { t: fmtTime(w.m.trip) }), false, {});
     else setBtn(sb, MT.burst, fill(MT.burstShort, { c: bcs, n: fmtC(MC.burstLight(w)), where: t ? 'here' : 'saved' }), VC.canPay(w, bc), {});

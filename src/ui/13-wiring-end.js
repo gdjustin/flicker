@@ -6,7 +6,7 @@ $('w-name-btn').addEventListener('click', wName);
 $('w-name-input').addEventListener('keydown', e => { if (e.key === 'Enter') wName(); });
 $('away-ok').addEventListener('click', closeAway);
 $('moment-ok').addEventListener('click', () => { const k = $('moment').dataset.kind; $('moment').classList.add('hidden'); $('moment').dataset.kind = ''; const no = $('moment-no'); if (no) no.classList.add('hidden');
-  if (k === 'map') startMap(); if (k === 'scatter') openPerks(); });
+  if (k === 'map') startMap(); if (k === 'scatter') openPerks(); if (k === 'whole') showCombatMoment(); });
 $('away').addEventListener('click', e => { if (e.target === $('away')) closeAway(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (!$('away').classList.contains('hidden')) closeAway(); if (!$('moment').classList.contains('hidden')) $('moment').classList.add('hidden'); } });
 document.addEventListener('animationend', e => { if (e.animationName === 'reveal' && e.target.classList) e.target.classList.remove('reveal'); });
@@ -45,6 +45,12 @@ function botPlay(pct, btn) {
 }
 [25, 50, 75, 100].forEach(p => $('f-bot' + p).addEventListener('click', e => botPlay(p, e.currentTarget)));
 $('f-prest40').addEventListener('click', e => skipToScatter(e.currentTarget));
+$('f-prest40').classList.toggle('hidden', !!MC.D.rb.on);
+$('f-rbnext').addEventListener('click', e => { const b = e.currentTarget; if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = 'Click again: the bot plays this run'; setTimeout(() => { delete b.dataset.arm; b.textContent = 'Play to the next rebirth'; }, 4000); return; }
+  delete b.dataset.arm; b.textContent = 'playing\u2026'; b.disabled = true; setTimeout(() => { try { botToRebirth(); } finally { b.disabled = false; b.textContent = 'Play to the next rebirth'; } }, 30); });
+$('f-rbwhole').addEventListener('click', e => { const b = e.currentTarget; if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = 'Click again: about a minute of bot play'; setTimeout(() => { delete b.dataset.arm; b.textContent = 'Play every run to the last rebirth'; }, 4000); return; }
+  delete b.dataset.arm; b.textContent = 'Play every run to the last rebirth'; botToWhole(b); });
+$('f-merch').addEventListener('click', callMerchant);
 function renderSpeed() { document.querySelectorAll('footer .speed button').forEach(b => b.classList.toggle('on', Number(b.dataset.speed) === (S.speed || 1))); }
 document.querySelectorAll('footer .speed button').forEach(b => b.addEventListener('click', () => { S.speed = Number(b.dataset.speed); renderSpeed(); save(true); }));
 renderSpeed();
@@ -61,7 +67,7 @@ if (/[?&]bot\b/.test(location.search)) {
   window.__T = { S: () => S, VC, VBOT, worldTick, look: wLook, gather: wGather, stoke: wStoke, card: wCard, level: wLevel, job: wJob, feast: wFeast, burn: wBurn, pause: wPause,
     stand: () => { S.flags.stood = true; enterWorld(); }, render: () => render(), serialize: () => serialize(S), botPlay: p => { botArm[p] = true; botPlay(p, $('f-bot' + p)); },
     advance: (sec) => { for (let t = 0; t < sec; t++) { worldTick(1); S.playTime = (S.playTime || 0) + 1; } },
-    MC, skipToMap: () => skipToMap(), botMap: n => botMap(n), mTarget: k => mTarget(k), mRelic: k => mRelic(k), mAnchor: k => mAnchor(k), mFinish: () => mFinish(), mCard: id => mCard(id), mLevel: id => mLevel(id), askScatter: () => askScatter(), openPerks: () => openPerks(), beginRun: () => beginRun(), MV, adv: (sec) => { for (let t = 0; t < sec; t += 5) worldTick(5); },
+    MC, skipToMap: () => skipToMap(), botMap: n => botMap(n), mTarget: k => mTarget(k), mRelic: k => mRelic(k), mAnchor: k => mAnchor(k), mFinish: () => mFinish(), mCard: id => mCard(id), mLevel: id => mLevel(id), askScatter: () => askScatter(), openPerks: () => openPerks(), beginRun: () => beginRun(), commitScatter: () => commitScatter(), botToRebirth: () => botToRebirth(), botToWhole: () => botToWhole($('f-rbwhole')), callMerchant: () => callMerchant(), openMerchant: () => openMerchant(), mMaster: k => mMaster(k), mMasterRegion: r => mMasterRegion(r), MV, adv: (sec) => { for (let t = 0; t < sec; t += 5) worldTick(5); },
     x: src => eval(src) };   // v1g: playtest probes run inside the page (only with ?bot)
 }
 
@@ -70,6 +76,7 @@ $('tab-village').addEventListener('click', () => { S.view = 'village'; hideTip()
 $('tab-map').addEventListener('click', () => { S.view = 'map'; MV.lastMap = 0; hideTip(); renderWorld(); });
 $('tab-relics').addEventListener('click', () => { S.view = 'relics'; hideTip(); renderWorld(); });
 $('w-scatter').addEventListener('click', askScatter);
+$('w-merch').addEventListener('click', openMerchant);   // the rebirth branch
 $('m-grid').addEventListener('click', () => { MV.lastMap = 0; });
 /*@if-test*/
 $('f-skipmap').addEventListener('click', e => { const b = e.currentTarget; if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = 'Click again: the lab bot plays the village to its end'; setTimeout(() => { delete b.dataset.arm; b.textContent = 'Skip to the map phase'; }, 4000); return; }

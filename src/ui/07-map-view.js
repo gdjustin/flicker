@@ -58,8 +58,12 @@ function cellMarks(k, cls, qn, rel, anchors, towers) {
   if (anchors[k] === 'plan' || (towers[k] && !towers[k].lit)) s += medal('hammer', 'tl', 31, '#d9a64e', '#f3dfae');
   if (cls.includes('ruin') || (towers[k] && towers[k].lit)) s += medal('tower', 'c', 56, towers[k] && towers[k].lit ? '#f3dfae' : '#d9a64e', '#f3dfae');
   if (cls.includes('motes')) s += MK_SPARK;
+  { const mt = cls.includes('m3') ? 3 : cls.includes('m2') ? 2 : cls.includes('m1') ? 1 : 0; if (mt) s += mastStars(mt); }
   return s;
 }
+// the rebirth branch: mastery's mark, one star a tier along the bottom of the place (bronze, silver, gold)
+const MSTAR_COL = ['', '#c98a4b', '#d7dde4', '#f3d48a'];
+function mastStars(n) { let s = '<i class="mstars t' + n + '">'; for (let i = 0; i < n; i++) s += '<svg viewBox="0 0 12 12"><path d="M6 0l1.6 4.4L12 6 7.6 7.6 6 12 4.4 7.6 0 6l4.4-1.6z" fill="' + MSTAR_COL[n] + '" stroke="#1f1813" stroke-width="0.9"/></svg>'; return s + '</i>'; }
 function renderMap(w) {
   buildMapGrid(mapRadius(w)); renderBeam(w, mapRadius(w));
   const water = {}; MC.MAP.water.forEach(x => { water[x.key] = x; });
@@ -78,6 +82,7 @@ function renderMap(w) {
       cls.push('done', 'land-' + LANDC[t.land]);
       const r0 = t.region; [['bt', 0, -1], ['bb', 0, 1], ['bl', -1, 0], ['br', 1, 0]].forEach(([b, dx, dy]) => { const n = tileOf((t.x + dx) + ',' + (t.y + dy)); if (!n || n.region !== r0) cls.push(b); });
       if (rel[k]) cls.push('relic'); if (anchors[k]) cls.push(anchors[k] === 'lit' ? 'anchored' : 'anchorplan');
+      { const mt = MC.masteryOn(w) ? MC.mTier(w, k) : 0; if (mt) cls.push('m' + Math.min(3, mt)); }   // the rebirth branch: mastery shows on the land
     } else if (t) {
       cls.push('dark'); if (MC.reachable(w, t)) { cls.push('reach', 'scout', 'land-' + LANDC[t.land]); lb = etaShort((MC.tileCost(t, w) - (w.m.got[k] || 0)) / Math.max(1e-9, L0 * MC.ampMult(w, k))); }
       else if (seen[k] || rev[k]) { cls.push('scout', 'far', 'land-' + LANDC[t.land]); lb = etaShort((MC.tileCost(t, w) - (w.m.got[k] || 0)) / Math.max(1e-9, L0 * MC.ampMult(w, k))); }
@@ -114,7 +119,10 @@ function renderMap(w) {
   // the world so far
   const m = meta(), hsNow = m.hsLife;
   { const pl = (n, one, many) => fmtW(n) + ' ' + (n === 1 ? one : many), rd = MC.regionsDone(w), hn = w.m.hsNew || 0;   // v1r (owner): run 1 shows only what run 1 has
-    $('m-world').textContent = m.run > 1
+    $('m-world').textContent = w.m.whole
+      ? 'Whole · ' + pl(w.m.restored, 'place', 'places') + ' called back · ' + pl(rd, 'region', 'regions') + ' finished · memory ×' + fmtW(MC.memMult(w), 2) + ' (' + fmtW(hsNow) + ' heartstones)' + (MC.masteryOn(w) ? ' · mastery: new land ×' + fmtW(MC.masteryMult(w), 2) : '')
+      : MC.D.rb.on && w.m.rbAt ? 'Run ' + m.run + ' of ' + MC.D.rb.last + ' · ' + pl(w.m.restored, 'place', 'places') + ' called back · rebirth at ' + w.m.rbAt + ' · ' + pl(rd, 'region', 'regions') + ' finished · memory ×' + fmtW(MC.memMult(w), 2) + (m.run > 1 ? ' · ' + pl(hn, 'new heartstone', 'new heartstones') + ' this run' : ' · ' + pl(hn, 'heartstone', 'heartstones'))
+      : m.run > 1
       ? 'Run ' + m.run + ' · ' + pl(w.m.restored, 'place', 'places') + ' called back (best ' + Math.max(m.best || 0, w.m.restored) + ') · ' + pl(rd, 'region', 'regions') + ' finished · memory ×' + fmtW(MC.memMult(w), 2) + ' · ' + pl(hn, 'new heartstone', 'new heartstones') + ' this run (' + fmtW(hsNow) + ' remembered)'
       : pl(w.m.restored, 'place', 'places') + ' called back · ' + pl(rd, 'region', 'regions') + ' finished · ' + pl(hn, 'heartstone', 'heartstones'); }
   renderPanel(w); renderRegions(w);
@@ -123,7 +131,7 @@ function renderMap(w) {
 function renderRegions(w) {
   const seenR = {}; Object.keys(w.m.tiles).forEach(k => { const t = tileOf(k); if (t) seenR[t.region] = true; });
   const regs = Object.keys(seenR).map(Number).sort((a, b) => a - b).map(i => MC.REGIONS[i]).map(r => ({ r, n: regionCount(w, r), N: r.tiles.length }));
-  const lu = w.m.lineup || [], sig = regs.map(x => x.r.i + ':' + x.n).join('|') + '#' + w.m.target + lu.join(';');
+  const mOn = MC.masteryOn(w), lu = w.m.lineup || [], sig = regs.map(x => x.r.i + ':' + x.n + (mOn ? ':' + Math.round(MC.regionMastery(w, x.r.i) * 100) : '')).join('|') + '#' + w.m.target + lu.join(';') + (w.m.mreg != null ? '@' + w.m.mreg : '');
   const box = $('m-reglist'); if (box.dataset.s === sig) return; box.dataset.s = sig; box.innerHTML = '';
   const xy = k => k.split(',').map(Number);
   regs.forEach(({ r, n, N }) => {
@@ -134,12 +142,13 @@ function renderRegions(w) {
       const v = w.m.tiles[k] ? ' on' : (w.m.target === k || lu.includes(k)) ? ' nx' : '';
       const d = document.createElement('i'); d.className = 'pip' + v; tl.appendChild(d); });
     const ct = document.createElement('span'); ct.className = 'tct'; ct.textContent = fin ? '\u2713' : n + ' of ' + N;
+    if (mOn) { const mp = Math.round(MC.regionMastery(w, r.i) * 100); if (mp > 0 || w.m.mreg === r.i) { ct.textContent += ' \u00b7 \u2605' + mp + '%'; ct.title = mp + '% mastered' + (w.m.mreg === r.i ? ' (mastering now)' : ''); } }
     tl.appendChild(ct); row.append(nm, tl); box.appendChild(row);
   });
 }
 function renderPanel(w) {
   const box = $('m-panel'); const k = MV.sel;
-  const sig = JSON.stringify([k, S.debug, MC.scoutDepth(w), w.m.target, (w.m.lineup || []).join(';'), MC.lineupMax(w), w.m.pool >= 1, !!(k && w.m.tiles[k]), w.m.relicT && w.m.relicT[k], (w.m.anchors || []).length, w.m.amps.length, MV.ampDir, MV.ampArm, Math.floor((S.playTime || 0) / 2), w.res.copper > 0 ? Math.floor(Math.log2(w.res.copper + 1)) : 0]);
+  const sig = JSON.stringify([k, S.debug, MC.scoutDepth(w), w.m.target, (w.m.lineup || []).join(';'), MC.lineupMax(w), w.m.pool >= 1, !!(k && w.m.tiles[k]), w.m.relicT && w.m.relicT[k], (w.m.anchors || []).length, w.m.amps.length, MV.ampDir, MV.ampArm, Math.floor((S.playTime || 0) / 2), w.res.copper > 0 ? Math.floor(Math.log2(w.res.copper + 1)) : 0, k && MC.masteryOn(w) && w.m.tiles[k] ? [MC.mTier(w, k), Math.floor(MC.mClears(w, k) / Math.max(1, MC.mNeed(w, k) / 100)), w.m.mreg, MC.masteryPoints(w)] : 0, !!w.m.rbReady]);
   if (box.dataset.s === sig) return; box.dataset.s = sig; box.innerHTML = '';
   const add = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; box.appendChild(e); return e; };
   if (!k) { add('p', 'msec', 'Picked place'); add('p', 'mmut', 'Pick a place on the map. Places beside your land show their land; send your light to one to call it back.'); return; }
@@ -178,8 +187,22 @@ function renderPanel(w) {
     const tw = w.m.amps.find(a => a.x === t.x && a.y === t.y); if (tw) g.push(tw.lit ? 'an amplifier tower stands here' : 'an amplifier tower is being built');
     if (g.length) line(capFirst(g.join(' · ')) + '.');
   }
+  if (lit && MC.masteryOn(w)) {   // the rebirth branch: mastery
+    const tr = MC.mTier(w, k), c = MC.mClears(w, k), nd = MC.mNeed(w, k), cap = MC.D.mastery.tiers, hs = MC.hsFor(t.dstep);
+    const L = MC.lightRate(w) * MC.ampMult(w, k), left = Math.max(0, nd - c) * MC.mClearCost(t) / Math.max(1e-9, L);
+    const mb = document.createElement('div'); mb.className = 'mmast t' + tr;
+    mb.innerHTML = '<p class="mm-h">Mastery <b>' + mastPct(tr) + '%</b>' + (tr ? ' · ' + MASTER_WORD[tr] : '') + '</p>' +
+      (tr < cap ? '<div class="mm-bar"><i style="width:' + (Math.min(1, c / nd) * 100).toFixed(1) + '%"></i></div><p class="mm-l">' + fmtW(Math.floor(c)) + ' of ' + fmtW(nd) + ' clears to ' + mastPct(tr + 1) + '% · about ' + fmtTime(left) + ' at your light</p>' : '<p class="mm-l">As far as it can be mastered for now.</p>') +
+      '<p class="mm-l sub">' + (MC.D.mastery.weight === 'hs' ? 'Each tier counts its ' + fmtW(hs) + ' heartstone' + (hs === 1 ? '' : 's') + ' toward mastery' : 'Each star anywhere adds ' + Math.round(MC.D.mastery.per * 100) + '% to light reaching new land') + ': ×' + fmtW(MC.masteryMult(w), 2) + ' now' + (tr < cap ? ', ×' + fmtW(MC.masteryMultAt(MC.masteryPoints(w) + MC.mPointsOf(t)), 2) + ' after the next' : '') + '.</p>';
+    lines.appendChild(mb);
+  }
   const acts = document.createElement('div'); acts.className = 'mpacts'; box.appendChild(acts);
   const btn = (title, sub, on, fn, cls) => { const b = document.createElement('button'); b.className = 'act' + (cls ? ' ' + cls : ''); b.type = 'button'; b.addEventListener('click', fn); setBtn(b, title, sub, on, {}); acts.appendChild(b); return b; };
+  if (lit && MC.masteryOn(w)) {
+    const tr = MC.mTier(w, k), cap = MC.D.mastery.tiers, rgl = MC.regionToMaster(w, t.region);
+    if (tr < cap) btn(w.m.target === k ? 'Mastering this place' : 'Master this place', w.m.target === k ? 'All your light flows here.' : 'All your light flows here until it is ' + MASTER_WORD[cap] + ' (' + mastPct(cap) + '%), then back to new land.', w.m.target !== k || w.m.mreg != null, () => mMaster(k), w.m.target === k ? '' : 'primary');
+    if (rgl.length > 1 || (rgl.length === 1 && rgl[0] !== k)) btn(w.m.mreg === t.region ? 'Mastering ' + r.name : 'Master all of ' + r.name, w.m.mreg === t.region ? 'Your light moves from place to place in it, the least mastered first.' : Math.round(MC.regionMastery(w, t.region) * 100) + '% mastered. Your light moves from place to place in it, the least mastered first, until all of it is ' + MASTER_WORD[cap] + '.', w.m.mreg !== t.region, () => mMasterRegion(t.region));
+  }
   if (!lit && reach) btn(w.m.target === k ? 'Calling this land back' : 'Send light here', w.m.target === k ? 'All your light flows here.' : 'All your light flows here' + (w.m.pool >= 1 ? ', and the ' + fmtC(w.m.pool) + ' saved up pours in at once.' : '.'), w.m.target !== k, () => mTarget(k), 'primary');
   const lmax = MC.lineupMax(w), lu = w.m.lineup || [], qi = lu.indexOf(k);
   if (lmax > 0 && !lit && w.m.target !== k) {

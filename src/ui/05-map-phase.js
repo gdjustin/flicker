@@ -153,7 +153,7 @@ const LAND = (function () {
   return { paint, build: m => build(m) };
 })();
 
-const MC = MCORE(VC); MC.applySet('V3');   // v1q: Light Lab v3's dials (owner, 2026-10-16)
+const MC = MCORE(VC); MC.applySet(GAME.branch === 'rebirth' ? 'R1' : 'V3');   // the rebirth branch (2026-10-18): dial set R1   // v1q: Light Lab v3's dials (owner, 2026-10-16)
 /*@if-test*/const MB = MBOT(MC, VBOT);/*@end-test*/
 const inMap = () => !!(S.w && S.w.m);
 const MV = { sel: null, ampDir: null, ampArm: false, perk: null, lastMap: 0, cells: null, prest: null };
@@ -190,6 +190,24 @@ const MT = {   // the map's text, in one place for the text editor
   prest2: 'You remember {hs} heartstones ({new} new this run). Memory makes all light ×{m1} now; next run ×{m2}.',
   prest3: 'You choose your gifts before the run ends. Gifts you chose before stay yours; change your mind and you come back here with nothing lost. Places you have called back before come back faster (paved path).',
   prestGo: 'See what you would remember', prestNo: 'Not yet',
+  // the rebirth branch (2026-10-18): Claude's drafts, for the owner's text pass
+  rbLog: 'You have called back enough of the land to remember more of yourself. The dark beyond will not answer until you are reborn ({n} of 5).',
+  rbLastLog: 'The last of you comes back. You are nearly whole.',
+  rbH: 'You remember more of yourself', rbLastH: 'You remember all of yourself',
+  rb1: 'The land you called back has given you back a piece of who you were. Hold on to it: let this body go, and wake again remembering more.',
+  rb1Last: 'This time you do not come apart. Everything you called back stays called back, and you stay with it.',
+  rbGo: 'Choose what you remember', rbLastGo: 'Choose what you remember',
+  rbWait: 'The land beyond waits until you are reborn.', rbBtn: 'Be reborn',
+  rbPill: 'Remembered {pct}% · {n} of {at} places', rbPillReady: 'Ready to be reborn',
+  wholeH: 'Whole', whole1: 'You remember all of yourself. From now on nothing you call back fades: the land stays, and every new place adds to what you remember at once.',
+  whole2: 'You can go back over land you know and master it, and a traveler has started walking toward your light.',
+  combatH: 'Something has seen your light', combat1: 'Smoke rises past the ford. Not everything you called back is friendly, and not all of this land is yours.',
+  combatTest: 'Playtest: in the game, combat opens here. This branch has no combat: keep playing to try mastery and the traveling merchant.',
+  combatOk: 'Keep playing',
+  mastLog: '{name} is {word}: {pct}%.', mastRegion: 'All of {region} is mastered.',
+  merchLog: 'A traveler has come to the edge of your land. He trades in heartstones, and he will wait.',
+  merchPill: 'A traveler waits', merchH: 'The traveler', merchKick: 'A traveling merchant · he comes every two days and waits',
+  merchSub: 'He wants heartstones and knows the old gifts. What you buy works at once.', merchGo: 'Send him on his way',
   glow: 'A glowstone is cut and set by the fire. ({n} now)',
   // v1g: the broken tower, found on the map (owner, 2026-10-13)
   ruinGlimpse: 'Something tall stands up out of the dark here, too straight to be a hill.',
@@ -203,10 +221,13 @@ function pname(w, id) { if (String(id).indexOf('anchor:') === 0) return 'Light A
 /* ---------- meta: what lasts between runs ---------- */
 function meta() { if (!S.meta) S.meta = { run: 1, ever: {}, hsLife: 0, perks: {}, cards: [], hist: [], best: 0 }; const m = S.meta; m.built = m.built || []; m.relics = m.relics || []; m.regBest = m.regBest || {}; m.regFin = m.regFin || {}; return m; }
 function memMultFor(hs) { return 1 + MC.D.memPct * Math.pow(hs || 0, MC.D.memExp); }
-function prestigeObj() { const m = meta(); return m.run > 1 ? { hs: m.hsLife, known: Object.keys(m.ever), perks: m.perks, cards: m.cards, built: m.built, relics: m.relics, levels: m.levels || null } : null; }
+function prestigeObj() { const m = meta(); return m.run > 1 ? { run: m.run, hs: m.hsLife, known: Object.keys(m.ever), perks: m.perks, cards: m.cards, built: m.built, relics: m.relics, levels: m.levels || null, villageSnap: m.villageSnap || null } : null; }
 function tileOf(key) { const i = MC.MAP.idx[key]; return i == null ? null : MC.MAP.tiles[i]; }
 function tileName(t) { if (!t) return ''; const r = MC.REGIONS[t.region]; return (t.name || LANDN[t.land]) + (r ? ', in ' + r.name : ''); }
 function shortName(t) { return t ? (t.name || LANDN[t.land]) : ''; }
+// the rebirth branch: mastery's words. A place's percent: 100% called back, 101% bronze (10 clears), 102% silver (100), 103% gold (1,000)
+const MASTER_WORD = ['', 'bronze', 'silver', 'gold', 'radiant', 'radiant'];
+const mastPct = tier => 100 + tier;
 function regionOf(t) { return MC.REGIONS[t.region]; }
 function regionCount(w, r) { return r.tiles.filter(k => w.m.tiles[k]).length; }
 function dirWord(t) { const a = Math.atan2(-t.y, t.x) * 180 / Math.PI; return a > 112.5 || a < -112.5 ? (a > 157.5 || a < -157.5 ? 'west' : a > 0 ? 'northwest' : 'southwest') : a > 67.5 ? 'north' : a < -67.5 ? 'south' : a > 22.5 ? 'northeast' : a < -22.5 ? 'southeast' : 'east'; }
@@ -215,6 +236,7 @@ function fmtC(n) { n = Math.floor(n); const nf = opt('num'); if (nf === 'full') 
 /* ---------- starting the map ---------- */
 function startMap() {
   const w = W(); if (!w || w.m) return;
+  if (MC.D.rb.on) { try { meta().villageSnap = JSON.parse(JSON.stringify(w)); } catch (e) {} }   // the rebirth branch: what The village stands brings back
   MC.init(w, prestigeObj());
   w.m.run = meta().run; w.m.hsNew = 0; w.m.startPlay = S.playTime || 0; w.m.flags = {};
   w.seen.copper = false; S.view = 'map';
@@ -253,7 +275,7 @@ function mapTick(dt, away) {
       MV.floats = MV.floats || []; MV.floats.push([e[1], gain ? fill(MT.newHS, { n: fmtW(gain), s: gain === 1 ? '' : 's' }) : MT.oldHS]);
       if (MV.sel === e[1]) MV.sel = e[1];
       if (w.m.restored > (m.best || 0)) m.best = w.m.restored;
-      if (w.m.restored >= 30 && m.run === 1 && !w.m.flags.thirty) { w.m.flags.thirty = true; showThirty(); }
+      if (w.m.restored >= 30 && m.run === 1 && !w.m.flags.thirty && !MC.D.rb.on) { w.m.flags.thirty = true; showThirty(); }
       if (e[1] === MC.ruinKey() && !w.m.done.repair) wsay(MT.ruinFound);
     }
     if (e[0] === 'next') sys('Your light moves on to ' + shortName(tileOf(e[1])) + '.');
@@ -264,7 +286,13 @@ function mapTick(dt, away) {
     if (e[0] === 'built') { const p = MC.projDef(w, e[1]); if (p) wsay(pname(w, e[1]) + ' is built. ' + (p.gives || '')); }
     if (e[0] === 'await') sys(pname(w, e[1]) + ': ready. Finish it from the projects strip.');
     if (e[0] === 'glowstone') sys(fill(MT.glow, { n: e[1] }));
+    // the rebirth branch
+    if (e[0] === 'rebirth') { wsay(e[1] >= MC.D.rb.last ? MT.rbLastLog : fill(MT.rbLog, { n: e[1] })); MV.lastMap = 0; if (!away) { MV.rbAsked = true; setTimeout(askScatter, 400); } }
+    if (e[0] === 'mastery') { const t = tileOf(e[1]); MV.floats = MV.floats || []; MV.floats.push([e[1], mastPct(e[2]) + '%']); MV.lastMap = 0;
+      if (!away) sys(fill(MT.mastLog, { name: shortName(t), pct: mastPct(e[2]), word: MASTER_WORD[e[2]] })); }
+    if (e[0] === 'regionMastered' && !away) wsay(fill(MT.mastRegion, { region: MC.REGIONS[e[1]].name }));
   }
+  if (w.m.whole && MC.merchantArrive(w, Date.now() / 1000)) { wsay(MT.merchLog); MV.lastMap = 0; }
   const regAfter = MC.regionsDone(w);
   if (regAfter > regBefore) { const rl = w.m.regionList[w.m.regionList.length - 1], r = MC.REGIONS[rl[1]]; wsay(MC.D.resonance.on ? fill(MT.resonate, { region: r.name, k: 1 + MC.D.resonance.R }) : fill(MT.region, { region: r.name, pct: Math.round((MC.D.regionX - 1) * 100) })); }
   if (w.res.copper > 0 || w.m.copperFound) w.seen.copper = true;
@@ -300,6 +328,8 @@ function relicGain(w, key) { const t = tileOf(key), D = MC.D;
 function mRelic(key) { const w = W(), gainTxt = relicGain(w, key); if (MC.buyRelic(w, key)) { w.stats.buys.length = 0; sys(relicName(key) + ' is claimed: ' + gainTxt + '.'); /* v1s fix: the journal names relics by region too */ renderWorld(); } }
 function mAnchor(key) { const w = W(); if (MC.planAnchor(w, key)) { sys('A Light Anchor is planned for ' + shortName(tileOf(key)) + '. Haulers will build it.'); renderWorld(); } }
 function mTarget(key) { const w = W(); const had = w.m.pool || 0; if (MC.setTarget(w, key)) { if (had >= 1) sys('The light you saved, ' + fmtC(had) + ', pours into ' + shortName(tileOf(key)) + '.'); mapTick(0); renderWorld(); } }
+function mMaster(key) { const w = W(); if (MC.masterPlace(w, key)) { sys('Your light turns back to ' + shortName(tileOf(key)) + ', to master it.'); mapTick(0); renderWorld(); } }
+function mMasterRegion(ri) { const w = W(); if (MC.masterRegion(w, ri)) { sys('Your light turns back to ' + MC.REGIONS[ri].name + ', to master all of it.'); mapTick(0); renderWorld(); } }
 function mLineup(key) { const w = W(); if (MC.lineupAdd(w, key)) renderWorld(); }
 function mUnline(key) { const w = W(); if (MC.lineupRemove(w, key)) { renderWorld(); } }
 function mFinish() { const w = W(); const id = w.m.awaitClick; if (MC.clickFinish(w)) { const p = MC.projDef(w, id); wsay(pname(w, id) + ' is finished.'); renderWorld(); save(true);
@@ -365,6 +395,7 @@ function mapLightTip(anchor) {
   const rl = MC.relicMult(w); if (rl > 1.001) mult.push('Relics, ' + (w.m.relicsN || 0) + ': ×' + x(rl));
   const bl = MC.beaconLv(w); if (bl) mult.push('Beacon upgrades, ' + bl + ': ×' + x(1 + MC.beaconStepOf(w) * bl));
   const am = w.m.target ? MC.ampMult(w, w.m.target) : 1; if (am > 1) mult.push('An amplifier on the tile you call back: ×' + x(am));
+  if (MC.masteryOn(w)) mult.push({ t: 'Mastery (' + fmtW(MC.masteryPoints(w)) + (MC.D.mastery.weight === 'hs' ? ' mastered heartstones' : ' stars') + '): light reaching new land ×' + x(MC.masteryMult(w)) + '. Light into land you master is not.', cls: 'tipx' });
   const ls = MC.mlv(w, 'longsong'); const kept = keptLightLines(w); if (ls || kept.length) mult.push({ t: 'On single lines:', cls: 'tipsep' }); if (ls) mult.push('Long songs, ' + ls + ': firekeepers ×' + x(1 + MC.D.longSong * ls)); kept.forEach(t => mult.push(t));
   if (!w.m.target) mult.push({ cls: 'tipx', t: MT.poolTip + ' Saved now: ' + fmtC(w.m.pool || 0) + ' of ' + fmtC(MC.poolCap(w)) + '.' });
   showTextTip(anchor, 'Light', lines.concat(mult));

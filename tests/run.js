@@ -78,6 +78,24 @@ const { VC, VBOT, MCORE, MBOT } = loadRules();
   results.mapRun1 = { villageMinutes: round(r.villageMin, 1), hoursTo10: round(r.marks[10], 2), hoursTo20: round(r.marks[20], 2), hoursTo40: round(r.marks[40], 2) };
 }
 
+// 4b. The rebirth branch (dial set R1, 2026-10-18): the milestone holds the land, gifts add up, the last rebirth makes the run whole,
+// mastery multiplies light reaching new land, and the traveler comes and goes. Main's numbers above never use R1.
+{
+  const MC = MCORE(VC); MC.applySet('R1');
+  const g3 = MC.giftsFor(3), g5 = MC.giftsFor(5);
+  check('rebirth branch: gifts add up, each at its highest level', g3.skipPrologue === 1 && g3.oldLessons === 2 && g3.lightRemembers === 2 && g5.villageSkip === 1 && g5.lightRemembers === 4 && !MC.giftsFor(1).skipPrologue, JSON.stringify(g5));
+  const r = MBOT(MC, VBOT).run({ preset: 'checkin', econ: 'full', pick: 'need', days: 12, stopFn: s => !!s.m.rbReady });
+  const s = r.s, at = MC.rbAt(1), key = MC.cheapestTarget(s);
+  check('rebirth branch: run 1 stops at its milestone and the land beyond waits', s.m.restored === at && !!s.m.rbReady && !MC.setTarget(s, key), s.m.restored + ' places, rebirth at ' + at);
+  MC.becomeWhole(s, 100, {}, s.t);
+  check('rebirth branch: the last rebirth makes the run whole, and the land answers again', s.m.whole && MC.masteryOn(s) && MC.setTarget(s, MC.cheapestTarget(s)));
+  const home = Object.keys(s.m.tiles).sort((a, b) => MC.mClearCost(MC.MAP.tiles[MC.MAP.idx[a]]) - MC.mClearCost(MC.MAP.tiles[MC.MAP.idx[b]]))[0], m0 = MC.masteryMult(s);
+  MC.masterPlace(s, home); for (let i = 0; i < 600 && MC.mTier(s, home) < MC.D.mastery.tiers; i++) MC.tick(s, 10, false);
+  check('rebirth branch: mastering a place reaches gold and raises light to new land', MC.mTier(s, home) === MC.D.mastery.tiers && MC.masteryMult(s) > m0 && s.m.target !== home, 'tier ' + MC.mTier(s, home) + ', ×' + MC.masteryMult(s).toFixed(2));
+  const here = MC.merchantArrive(s, s.t + MC.D.merchant.first + 1); MC.merchantLeave(s, s.t + MC.D.merchant.first + 2);
+  check('rebirth branch: the traveler comes, waits and goes', here && !MC.merchantHere(s) && s.m.merch.visits === 1);
+}
+
 // 5. Same rules, same numbers: compare with the recorded results.
 if (update || !fs.existsSync(GOLDEN)) {
   fs.writeFileSync(GOLDEN, JSON.stringify(results, null, 2) + '\n');

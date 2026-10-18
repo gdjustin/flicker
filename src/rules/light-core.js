@@ -112,14 +112,16 @@ var MCORE = function (VC) {
       sureHands: { kind: 'comfort', tier: 'medium', name: 'Sure hands I, II', desc: 'Hand gathering gives twice, then four times as much', hand: [2, 4], costs: [12, 30] },
       stewardsKept: { kind: 'comfort', tier: 'medium', name: 'Stewards kept', desc: 'Your stewards are there from the first place: when a store is full, they buy the next stockpile if you can afford it', costs: [20] },
       openDoors: { kind: 'comfort', tier: 'medium', name: 'Open doors I\u2013IV', desc: 'The village starts with 5, 15, 25, then 50 settlers (past 25 they wait at the reveal)', pop: [5, 15, 25, 50], costs: [15, 30, 60, 100] },
-      lightRemembers: { kind: 'comfort', tier: 'medium', name: 'The light remembers I\u2013III', desc: 'Remembered places need {x}% less light again a level (the paved path deepens)', x: 0.33, costs: [20, 40, 70] },
+      lightRemembers: { kind: 'comfort', tier: 'medium', name: 'The light remembers I\u2013IV', desc: 'Remembered places need {x}% less light again a level (the paved path deepens)', x: 0.33, costs: [20, 40, 70, 110] },   // IV: the rebirth branch's last gift (2026-10-18)
       headStart: { kind: 'comfort', tier: 'medium', name: 'Head start', desc: 'The map opens with wood, stone, fiber, food and copper stores full', costs: [20] },
       practisedHaulers: { kind: 'comfort', tier: 'medium', name: 'Practised haulers', desc: 'Projects built in an earlier run haul 2.5\u00d7 as fast (village and map)', x: 2.5, costs: [20] },
       relicsRemembered: { kind: 'comfort', tier: 'medium', name: 'Relics remembered I, II', desc: 'I: relics claimed in an earlier run cost half. II: buy all (no effect in the lab: the bot buys them anyway)', f: 0.5, costs: [15, 30] },
       oldFlames: { kind: 'comfort', tier: 'medium', name: 'Old flames I\u2013IV', desc: 'Last run\u2019s upgrade lines come back already bought: I copper tools, books and timber houses; II + fire-tending and long songs; III + copper lamps and braziers; IV + burner rebuilds and copper burners', costs: [10, 25, 50, 90], share: 1,
         lines: [['ct_axes', 'ct_mattocks', 'ct_spindles', 'ct_baskets', 'books', 'house'], ['ctend', 'longsong'], ['clamp', 'cbrazier'], ['eff_firepit', 'eff_limekiln', 'eff_rushlight', 'cuburner', 'eff_cuburner']] },
       keptLights: { kind: 'comfort', tier: 'late', name: 'Kept lights', desc: 'Light projects built in an earlier run stay built (not the beacon, the amplifiers or the tower)', costs: [80] },
-      villageComplete: { kind: 'comfort', tier: 'late', name: 'The village complete', desc: 'Village projects build themselves, free, as soon as they are planned (end of phase 1)', costs: [120] }
+      villageComplete: { kind: 'comfort', tier: 'late', name: 'The village complete', desc: 'Village projects build themselves, free, as soon as they are planned (end of phase 1)', costs: [120] },
+      // the rebirth branch (2026-10-18): a gift only, never sold. The run wakes at the map, the village as it stood when the map last opened
+      villageSkip: { kind: 'comfort', tier: 'gift', name: 'The village stands', desc: 'You wake at the edge of your land: the village is as it stood when you last looked out', costs: [], gift: 1 }
     },
     // Light Anchors (Considering): built in the village, one per restored tile; the last step installs a relic of that tile's land (a click).
     // Each returns `r` of its tile's darkness as light a day, outside the light multipliers (it calls light back from the land).
@@ -152,7 +154,28 @@ var MCORE = function (VC) {
     relicMode: 'tile', relicSmall: 0.02, relicChunky: 0.2, relicEvery: 4, relicCopper: 40, relicGrowth: 2.2,
     // time away
     awaySteps: [1, 2, 4, 6, 8, 12],
-    feastBoost: 0.5
+    feastBoost: 0.5,
+    // ------------------------------------------------ the rebirth branch (2026-10-18, Considering; off unless dial set R1 is applied)
+    // rb: rebirths come at scripted milestones (places called back in one run). `at[i]` ends run i+1. A rebirth is forced, on screen:
+    // at the milestone the land beyond stops answering until the player is reborn. Rebirths 1 to last-1 reset the run and hand everyone a
+    // packet of gifts (the comforts, now free and automatic, cumulative); the last one resets nothing: the self is whole, the land stays,
+    // memory grows as you go, and combat would open. Heartstones then buy power only (the comforts leave the heartstone screen).
+    rb: { on: 0, at: [35, 55, 80, 100, 115], last: 5,
+      packets: [
+        { skipPrologue: 1, waymarks: 1, oldLessons: 1, sureHands: 1, lightRemembers: 1, stewardsKept: 1 },
+        { openDoors: 2, oldLessons: 2, sureHands: 2, practisedHaulers: 1, relicsRemembered: 1, oldFlames: 1, lightRemembers: 2 },
+        { villageSkip: 1, lightRemembers: 3, oldFlames: 2, headStart: 1 },
+        { lightRemembers: 4, oldFlames: 4, relicsRemembered: 2, keptLights: 1 }
+      ] },
+    // mastery (Leaning shape, math tentative; opens once the self is whole): light sent to a place already called back masters it.
+    // Tier n needs base^n clears (10, 100, 1,000); a clear costs the place's full darkness (no paved path). Each tier on a place adds its
+    // heartstones to your mastery; light reaching NEW land is x(1 + mastery / k). The bonus never speeds mastering itself (owner + Claude, 2026-10-18).
+    // weight 'star': every tier on any place is one star, and light reaching new land is x(1 + per x stars), adding up (Claude, 2026-10-18);
+    // weight 'hs': each tier counts the place's heartstones, x(1 + points / k)
+    mastery: { on: 0, tiers: 3, base: 10, weight: 'star', per: 0.02, k: 200 },
+    // the traveling merchant (Considering): once the self is whole he comes every `every` seconds (real time in the game, game time in the lab),
+    // waits until visited and sent on, and sells the heartstone perks at their usual prices. `first`: his first visit after the self is whole
+    merchant: { on: 0, every: 172800, first: 3600 }
   };
 
   // ---------------------------------------------------------------- Map A v4 (v1o, 2026-10-16; was draft 1): 33x33, 1,088 tiles, 106 regions
@@ -326,8 +349,10 @@ var MCORE = function (VC) {
     s.res.copper = s.res.copper || 0;
     s.m = { tiles: {}, target: null, got: {}, restored: 0, pending: 0, cards: {}, lv: {}, tier: {}, done: {}, proj: null, queue: [], lineup: [], pool: 0,
       amps: [], awaitClick: null, away: 1, copperFound: false, made: { copper: 0, light: 0 }, relics: {}, relicsN: 0, log: [],
-      t0: s.t, wasted: 0, autoBuys: 0, spent: {}, memHS: prestige ? prestige.hs : 0, known: {}, perks: prestige && prestige.perks ? JSON.parse(JSON.stringify(prestige.perks)) : {},
+      t0: s.t, wasted: 0, autoBuys: 0, spent: {}, memHS: prestige ? prestige.hs : 0, known: {}, perks: prPerks(prestige),
       knownCards: {}, noEnabling: !!(prestige && prestige.noEnabling) };
+    // the rebirth branch: which run this is, and the milestone that ends it (none once the self is whole)
+    s.m.run = (prestige && prestige.run) || 1; s.m.rbAt = rbAt(s.m.run); s.m.rbReady = 0; s.m.whole = !!(D.rb.on && s.m.run > D.rb.last);
     if (prestige && prestige.cards) prestige.cards.forEach(function (k) { s.m.knownCards[k] = true; });
     if (prestige && prestige.known) prestige.known.forEach(function (k) { s.m.known[k] = true; });
     s.jobs.smelter = s.jobs.smelter || 0; s.jobs.glowcrafter = 0; s.pv = null;   // the village's prestige hook switches off once the map opens (the map phase counts memory itself)
@@ -620,7 +645,7 @@ var MCORE = function (VC) {
   function bPhase(s, b) { var e = effMult(s, b).light, hh = famBuff(s, 'hotHearths'); return 1 + D.src.burners * hh * (e / hh - 1); }
   function lightRate(s) { return lightParts(s).reduce(function (a, p) { return a + p[1]; }, 0); }
   // the parts that come from the village tail, for the lab: what the village lines alone would give
-  function sentRate(s) { return s.m.target ? lightRate(s) * ampMult(s, s.m.target) : 0; }
+  function sentRate(s) { return s.m.target ? lightRate(s) * ampMult(s, s.m.target) * (s.m.tiles[s.m.target] ? 1 : masteryMult(s)) : 0; }
 
   // ---------------------------------------------------------------- projects
   function projNeeds(s) {
@@ -675,10 +700,10 @@ var MCORE = function (VC) {
   // the light store (restored from v24e): with no place picked, light saves up to an hour of output, and pours into the next place picked
   function poolCap(s) { return 3600 * Math.max(1, lightRate(s)); }
   function setTarget(s, key) {
-    if (!key) { s.m.target = null; return true; }
-    var t = MAP.tiles[MAP.idx[key]]; if (!t || !reachable(s, t)) return false;
-    s.m.target = key; s.m.lineup = (s.m.lineup || []).filter(function (k) { return k !== key; });
-    if (s.m.pool > 0) { s.m.got[key] = (s.m.got[key] || 0) + s.m.pool * ampMult(s, key); s.m.pool = 0; }
+    if (!key) { s.m.target = null; s.m.mreg = null; return true; }
+    var t = MAP.tiles[MAP.idx[key]]; if (!t || !reachable(s, t) || s.m.rbReady) return false;   // the rebirth branch: past the milestone the land beyond waits
+    s.m.target = key; s.m.mreg = null; s.m.lineup = (s.m.lineup || []).filter(function (k) { return k !== key; });
+    if (s.m.pool > 0) { s.m.got[key] = (s.m.got[key] || 0) + s.m.pool * ampMult(s, key) * masteryMult(s); s.m.pool = 0; }
     return true;
   }
   // scouting: how many rings past the places beside your land you can see (Reading the dark 1, Far sight 2)
@@ -703,7 +728,8 @@ var MCORE = function (VC) {
   function burst(s) {
     if (!burstReady(s)) return 0; var c = burstCost(s); if (!VC.canPay(s, c)) return 0;
     var L = burstLight(s), trip = burstTrip(s); for (var k in c) s.res[k] -= c[k]; spend(s, 'burst', c);
-    if (s.m.target) s.m.got[s.m.target] = (s.m.got[s.m.target] || 0) + L; else s.m.pool = Math.min(poolCap(s) + L, (s.m.pool || 0) + L);
+    if (s.m.target && s.m.tiles[s.m.target]) { var bt = MAP.tiles[MAP.idx[s.m.target]]; s.m.mast = s.m.mast || {}; s.m.mast[bt.key] = mClears(s, bt.key) + L / mClearCost(bt); s.m.mastN = (s.m.mastN || 0) + 1; }   // the rebirth branch: a burst into mastery
+    else if (s.m.target) s.m.got[s.m.target] = (s.m.got[s.m.target] || 0) + L * masteryMult(s); else s.m.pool = Math.min(poolCap(s) + L, (s.m.pool || 0) + L);
     s.m.trip = trip; s.m.bursts = (s.m.bursts || 0) + 1; return L;
   }
   // the line-up: places to call back next, in order. A place can be lined up if it touches your land, the place you call back, or a place already lined up
@@ -718,6 +744,7 @@ var MCORE = function (VC) {
   function lineupRemove(s, key) { var lu = s.m.lineup || [], i = lu.indexOf(key); if (i < 0) return false; lu.splice(i, 1); return true; }
   // the next place to call back: the first lined-up place you can reach (places already back drop out), else Waymarks' cheapest
   function nextTarget(s) {
+    if (s.m.rbReady) return null;
     var lu = s.m.lineup = (s.m.lineup || []).filter(function (k) { return !restored(s, k); });
     for (var i = 0; i < lu.length; i++) { var t = MAP.tiles[MAP.idx[lu[i]]]; if (t && reachable(s, t)) return lu[i]; }
     return perk(s, 'waymarks') ? cheapestTarget(s) : null;
@@ -744,16 +771,90 @@ var MCORE = function (VC) {
     if (t.tag === 'copper') { s.m.copperFound = true; s.res.copper += 1; s.m.smelting = true; ev.push(['copper']); }
     var sg = startSurge(s, t); if (sg) ev.push(['surge', t.key, sg]);
     ev.push(['restored', t.key]);
+    // the rebirth branch: once whole, memory grows as new land comes back; before that, the run's milestone holds the land beyond
+    if (s.m.whole && !s.m.known[t.key]) { s.m.known[t.key] = true; s.m.memHS = (s.m.memHS || 0) + hsFor(t.dstep); }
+    if (s.m.rbAt && s.m.restored >= s.m.rbAt && !s.m.rbReady) { s.m.rbReady = s.t || 1e-6; ev.push(['rebirth', s.m.run]); }
   }
 
   // ---------------------------------------------------------------- room and settlers
   function hsFor(step) { return step <= D.hs.kick ? 1 : Math.pow(D.hs.G, step - D.hs.kick); }
   function heartstones(s) { var n = 0; for (var k in s.m.tiles) n += hsFor(MAP.tiles[MAP.idx[k]].dstep); return n; }
   function perk(s, id) { return (s.m && s.m.perks && s.m.perks[id]) || 0; }
+  // ---------------------------------------------------------------- the rebirth branch (dial set R1; Considering, 2026-10-18)
+  // the gifts a run holds: every packet from the rebirths before it (packet i comes with rebirth i+1), each comfort at its highest level
+  function giftsFor(run) {
+    var g = {}; if (!D.rb.on) return g;
+    for (var i = 0; i < Math.min(run - 1, D.rb.packets.length); i++) { var p = D.rb.packets[i]; for (var id in p) g[id] = Math.max(g[id] || 0, p[id]); }
+    return g;
+  }
+  // a run's perk levels: the heartstone perks bought, plus its gifts
+  function prPerks(pr) {
+    var lv = pr && pr.perks ? JSON.parse(JSON.stringify(pr.perks)) : {};
+    if (pr && D.rb.on) { var g = giftsFor(pr.run || 1); for (var id in g) lv[id] = Math.max(lv[id] || 0, g[id]); }
+    return lv;
+  }
+  // the milestone that ends run n (null once the self is whole, or with the branch off)
+  function rbAt(run) { return D.rb.on && run <= D.rb.last ? D.rb.at[Math.min(run, D.rb.at.length) - 1] : null; }
+  // how far the self is remembered, 0..1: one share for each rebirth taken
+  function wholeShare(run) { return D.rb.on ? Math.min(1, (run - 1) / D.rb.last) : 0; }
+  // the last rebirth: nothing resets. Memory takes in every heartstone, perks are what the player chose, and from now on
+  // memory grows as new land comes back; mastery and the merchant open.
+  function becomeWhole(s, hsLife, perks, now) {
+    s.m.memHS = hsLife; s.m.perks = prPerks({ perks: perks, run: D.rb.last + 1 }); s.m.run = D.rb.last + 1; s.m.rbAt = null; s.m.rbReady = 0; s.m.whole = true;
+    for (var k in s.m.tiles) s.m.known[k] = true;
+    if (D.merchant.on) s.m.merch = { next: (now != null ? now : s.t) + D.merchant.first, here: false, visits: 0 };
+    s.m.wholeAt = s.t; return true;
+  }
+  function perkSpentOf(lv) { var t = 0; for (var id in lv) { if (!D.perks[id] || D.perks[id].kind === 'comfort') continue; for (var i = 0; i < lv[id]; i++) t += perkCost(id, i); } return t; }
+  // ---------------------------------------------------------------- mastery
+  function masteryOn(s) { return !!(D.mastery.on && s.m && s.m.whole); }
+  function mClears(s, key) { return (s.m.mast && s.m.mast[key]) || 0; }
+  function mTierOf(c) { var t = 0; while (t < D.mastery.tiers && c >= Math.pow(D.mastery.base, t + 1) - 1e-9) t++; return t; }
+  function mTier(s, key) { return mTierOf(mClears(s, key)); }
+  function mNeed(s, key) { var t = mTier(s, key); return t >= D.mastery.tiers ? 0 : Math.pow(D.mastery.base, t + 1); }   // clears needed for the next tier (counting from zero)
+  function mClearCost(t) { return D.C1 * Math.pow(D.F, t.dstep - 1) * (t.dmul != null ? t.dmul : D.terrain[t.land] || 1); }   // a clear: the place's full darkness, no paved path
+  var MP_CACHE = { k: '', v: 0 };
+  function masteryPoints(s) {
+    var key = (s.m.mastN || 0) + '|' + s.m.restored; if (MP_CACHE.s === s.m && MP_CACHE.k === key) return MP_CACHE.v;
+    var p = 0; if (s.m.mast) for (var k in s.m.mast) { var tr = mTierOf(s.m.mast[k]); if (tr) p += tr * mPointsOf(MAP.tiles[MAP.idx[k]]); }
+    MP_CACHE = { s: s.m, k: key, v: p }; return p;
+  }
+  function mPointsOf(t) { return D.mastery.weight === 'hs' ? hsFor(t.dstep) : 1; }   // what one tier on this place adds to mastery
+  function masteryMultAt(p) { return D.mastery.weight === 'hs' ? 1 + p / D.mastery.k : 1 + D.mastery.per * p; }
+  function masteryMult(s) { return masteryOn(s) ? masteryMultAt(masteryPoints(s)) : 1; }
+  function canMaster(s, key) { return masteryOn(s) && !!s.m.tiles[key] && mTier(s, key) < D.mastery.tiers; }
+  // a region's places still to master, the least mastered first
+  function regionToMaster(s, ri) {
+    var rg = REGIONS[ri]; if (!rg) return [];
+    return rg.tiles.filter(function (k) { return canMaster(s, k); }).sort(function (a, b) { return mClears(s, a) - mClears(s, b) || tileCost(MAP.tiles[MAP.idx[a]]) - tileCost(MAP.tiles[MAP.idx[b]]); });
+  }
+  function regionMastery(s, ri) {   // 0..1: the region's share of all its tiers
+    var rg = REGIONS[ri]; if (!rg) return 0; var got = 0;
+    rg.tiles.forEach(function (k) { got += mTier(s, k); }); return got / (rg.tiles.length * D.mastery.tiers);
+  }
+  function masterPlace(s, key) { if (!canMaster(s, key)) return false; s.m.target = key; s.m.mreg = null; return true; }
+  function masterRegion(s, ri) { var l = regionToMaster(s, ri); if (!l.length) return false; s.m.mreg = ri; s.m.target = l[0]; return true; }
+  // when a mastery target is done (its next tier, in a region; its last tier alone): the region's next place, else back to new land
+  function afterMastery(s, ev) {
+    if (s.m.mreg != null) { var l = regionToMaster(s, s.m.mreg); if (l.length) { s.m.target = l[0]; return; } ev.push(['regionMastered', s.m.mreg]); s.m.mreg = null; }
+    s.m.target = null; var nk = nextTarget(s); if (nk) { setTarget(s, nk); ev.push(['next', nk]); }
+  }
+  // ---------------------------------------------------------------- the merchant (clock: real seconds in the game, s.t in the lab)
+  function merchantArrive(s, now) {
+    if (!D.merchant.on || !s.m.whole) return false; var M = s.m.merch; if (!M) M = s.m.merch = { next: now + D.merchant.first, here: false, visits: 0 };
+    if (!M.here && now >= M.next) { M.here = true; M.came = now; return true; } return false;
+  }
+  function merchantHere(s) { return !!(s.m && s.m.merch && s.m.merch.here); }
+  function merchantLeave(s, now) { var M = s.m.merch; if (!M) return false; M.here = false; M.visits = (M.visits || 0) + 1; M.next = now + D.merchant.every; return true; }
+  // a heartstone perk bought now (from the merchant): it works at once
+  function buyPerkNow(s, id, free) {
+    var p = D.perks[id]; if (!p || p.kind === 'comfort') return false; var n = perk(s, id); if (n >= perkMax(id)) return false;
+    var c = perkCost(id, n); if (c > free) return false; s.m.perks[id] = n + 1; return c;
+  }
   // Light Lab v1 (owner): memory and the family buff perks reach the village (the village has no other prestige term)
   function villagePrestige(pr) {
     if (!pr) return null;
-    if (!D.villageReach) return null; var lv = pr.perks || {}, P = D.perks;
+    if (!D.villageReach) return null; var lv = prPerks(pr), P = D.perks;
     var fb = function (id) { var n = lv[id] || 0, x = P[id].x; return D.perkCompound ? Math.pow(1 + x, n) : 1 + x * n; };
     var sh = lv.sureHands || 0, od = lv.openDoors || 0, built = {}; (pr.built || []).forEach(function (k) { built[k] = true; });
     var vf = D.srcScope === 'phase' ? function () { return 1; } : fb;   // Light Lab v2 (owner): the family perks don't buff the village; memory still does
@@ -819,12 +920,21 @@ var MCORE = function (VC) {
     if (s.m.trip > 0) s.m.trip = Math.max(0, s.m.trip - dt);
     // light into the target tile
     var L = lightRate(s), sent = 0;
-    if (s.m.target) {
+    if (s.m.target && s.m.tiles[s.m.target]) {   // the rebirth branch: mastery, light into a place already back
+      var mt = MAP.tiles[MAP.idx[s.m.target]], mc0 = mClears(s, mt.key), tr0 = mTierOf(mc0);
+      if (!masteryOn(s) || tr0 >= D.mastery.tiers) { s.m.target = null; afterMastery(s, ev); }
+      else {
+        sent = L * ampMult(s, mt.key) * dt; s.m.mast = s.m.mast || {};
+        var mc1 = mc0 + sent / mClearCost(mt), tr1 = mTierOf(mc1); s.m.mast[mt.key] = mc1; s.m.mastLight = (s.m.mastLight || 0) + L * dt;
+        if (tr1 > tr0) { s.m.mastN = (s.m.mastN || 0) + 1; ev.push(['mastery', mt.key, tr1]);
+          if (tr1 >= D.mastery.tiers || s.m.mreg != null) afterMastery(s, ev); }
+      }
+    } else if (s.m.target) {
       var t = MAP.tiles[MAP.idx[s.m.target]], need = tileCost(t, s);
-      sent = L * ampMult(s, t.key) * dt;
+      sent = L * ampMult(s, t.key) * masteryMult(s) * dt;
       s.m.got[t.key] = (s.m.got[t.key] || 0) + sent;
       if (s.m.got[t.key] >= need) {
-        var spill = (s.m.got[t.key] - need) / ampMult(s, t.key);
+        var spill = (s.m.got[t.key] - need) / (ampMult(s, t.key) * masteryMult(s));
         restoreTile(s, t, ev); s.m.target = null; s.m.got[t.key] = need;
         s.m.pool = Math.min(poolCap(s), (s.m.pool || 0) + spill);   // what spilled over waits in the store
         var nk = nextTarget(s); if (nk) { setTarget(s, nk); ev.push(['next', nk]); }
@@ -971,8 +1081,14 @@ var MCORE = function (VC) {
   };
   // V3 (owner, 2026-10-16): the v1q build. L1 plus Light Lab v3's dials (S3's fires on this phase's lines only, hearth 7, the comforts, perks stay spent)
   DIAL_SETS.V3 = Object.assign({}, DIAL_SETS.L1, {"src.keepers": 4, "burnEff.Lx": 2.5, "src.lamps": 4, "houseGrowth": 1.25, "perks.beaconFire.base": 4, "perks.beaconSurvey.base": 4, "perks.ampSites.base": 4, "perks.firewright.base": 4, "perks.lampwright.base": 4, "perks.kilnwright.base": 4, "perks.bankedFires.base": 4, "perks.keeperLore.base": 4, "perks.brightGlass.base": 4, "perks.hotHearths.base": 4, "perks.fireWarden.base": 4, "perks.relicLore.base": 4, "perkCompound": 1, "perks.keeperLore.x": 0.15, "perks.brightGlass.x": 0.15, "perks.hotHearths.x": 0.15, "perks.relicLore.x": 0.15, "perks.keeperLore.g": 1.5, "perks.brightGlass.g": 1.5, "perks.hotHearths.g": 1.5, "perks.relicLore.g": 1.5, "perks.keeperLore.max": 40, "perks.brightGlass.max": 40, "perks.hotHearths.max": 40, "perks.relicLore.max": 40, "srcScope": "phase", "perks.bankedFires.max": 5, "perks.beaconWrights.base": 4, "villageStart.wood": 40, "villageStart.stones": 40, "surge.reclear": 0, "vHearthMax": 7});
+  // R1 (the rebirth branch, 2026-10-18, Considering): V3 plus scripted rebirths with gifts, the self made whole at the fifth, mastery and the merchant after it
+  DIAL_SETS.R1 = Object.assign({}, DIAL_SETS.V3, { 'rb.on': 1, 'mastery.on': 1, 'merchant.on': 1 });
   function applySet(name) { var o = DIAL_SETS[name] || name; for (var p in o) { var ks = p.split('.'), last = ks.pop(); var host = ks.reduce(function (a, k) { return a && a[k]; }, D); if (host) host[last] = o[p]; } if (VC.LAD && VC.LAD.hearth) { VC.LAD.hearth.max = D.vHearthMax; VC.LAD.hearth.desc = 'All light {pct}% stronger. ' + D.vHearthMax + ' levels in all.'; } refreshCards(); applyDeal(); }
   return {
+    giftsFor: giftsFor, prPerks: prPerks, rbAt: rbAt, wholeShare: wholeShare, becomeWhole: becomeWhole, perkSpentOf: perkSpentOf,
+    masteryOn: masteryOn, mPointsOf: mPointsOf, masteryMultAt: masteryMultAt, mClears: mClears, mTier: mTier, mTierOf: mTierOf, mNeed: mNeed, mClearCost: mClearCost, masteryPoints: masteryPoints, masteryMult: masteryMult,
+    canMaster: canMaster, regionToMaster: regionToMaster, regionMastery: regionMastery, masterPlace: masterPlace, masterRegion: masterRegion,
+    merchantArrive: merchantArrive, merchantHere: merchantHere, merchantLeave: merchantLeave, buyPerkNow: buyPerkNow,
     perkMax: perkMax, smeltUse: smeltUse, kPhase: kPhase, bPhase: bPhase, perkDesc: perkDesc, DIAL_SETS: DIAL_SETS, applySet: applySet, awayHours: awayHours, applyDeal: applyDeal, villagePrestige: villagePrestige, tendCap: tendCap, runCapOf: runCapOf, famBuff: famBuff,
     D: D, MAP: MAP, CARDS: CARDS, CARD: CARD, PROJECTS: PROJECTS, PROJ: PROJ, ML: ML, MLAD: MLAD, VC: VC,
     init: init, tick: tick, tileCost: tileCost, reachable: reachable, restored: restored, coneTiles: coneTiles, ampMult: ampMult,

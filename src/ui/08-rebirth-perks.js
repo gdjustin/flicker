@@ -1,8 +1,43 @@
 /* ---------- the scatter (prestige) and the perk screen ---------- */
 // v1q (owner, 2026-10-16): the scatter preview and "between runs" from the Relics and Remembering mock-ups, on the V3 rules.
 // Gifts and comforts stay spent from run to run; only a respec (free, here, chosen on this screen) gives them back.
-function canScatter(w) { const m = meta(); return w && w.m && (m.run === 1 ? w.m.restored >= 30 : (w.m.hsNew || 0) > 0); }
+function canScatter(w) { const m = meta(); if (MC.D.rb.on) return !!(w && w.m && w.m.rbReady); return w && w.m && (m.run === 1 ? w.m.restored >= 30 : (w.m.hsNew || 0) > 0); }
+/* ---------- the rebirth branch (2026-10-18, Considering): scripted rebirths, gifts, the self made whole ---------- */
+const RB_LAST = () => MC.D.rb.last;
+// how much of yourself you remember: one share a rebirth taken (after this run's rebirth: one more)
+const rbPct = (run, after) => Math.round(Math.min(1, ((run - 1) + (after ? 1 : 0)) / RB_LAST()) * 100);
+// the gifts a rebirth brings (packet n-1 comes with rebirth n), as names
+function giftName(id, lv) { const p = MC.D.perks[id]; if (!p) return id; return MC.perkMax(id) > 1 || (p.costs && p.costs.length > 1) ? comfortLevelName(id, lv) : p.name; }
+// what each gift does, at the level it comes with (Claude's drafts, for the owner's text pass)
+const GIFT_TEXT = {
+  skipPrologue: () => 'Runs begin in the village.',
+  waymarks: () => 'When a place comes back and nothing is lined up, your light moves on to the cheapest place beside your land.',
+  oldLessons: n => 'Research learned in an earlier run costs ' + (n >= 2 ? 'a quarter' : 'half') + '.',
+  sureHands: n => 'Gathering by hand brings ' + (n >= 2 ? 'four' : 'twice') + ' times as much.',
+  lightRemembers: n => 'Places you called back before need ' + Math.round(100 / (MC.D.pave * Math.pow(1 / (1 - MC.D.perks.lightRemembers.x), n))) + '% of their light.',
+  stewardsKept: () => 'Your stewards are there from the first place: when a store is full, they buy the next stockpile if you can afford it.',
+  openDoors: n => 'The village starts with ' + MC.D.perks.openDoors.pop[n - 1] + ' settlers.',
+  practisedHaulers: () => 'Projects built in an earlier run haul ' + fmtW(MC.D.perks.practisedHaulers.x, 1) + '× as fast.',
+  relicsRemembered: n => n >= 2 ? 'Relics claimed in an earlier run cost half, and can all be claimed at once.' : 'Relics claimed in an earlier run cost half.',
+  oldFlames: n => 'Last run’s upgrade lines come back already bought: ' + ['copper tools, books and timber houses', 'fire-tending and long songs', 'copper lamps and braziers', 'burner rebuilds and copper burners'].slice(0, n).join('; ') + '.',
+  villageSkip: () => 'You wake at the edge of your land: the village stands as it was when you last looked out.',
+  headStart: () => 'The map opens with the wood, stone, fiber, food and copper stores full.',
+  keptLights: () => 'Light projects built in an earlier run stay built (not the beacon or the towers).'
+};
+function giftLines(pk) { return Object.keys(pk || {}).map(id => ({ id, lv: pk[id], name: giftName(id, pk[id]), desc: GIFT_TEXT[id] ? GIFT_TEXT[id](pk[id]) : MC.D.perks[id] ? MC.perkDesc(id) : '' })); }
+function rbBar(run, after, big) {   // five segments: filled for every rebirth taken, the next one glowing
+  let h = '<div class="rbbar' + (big ? ' big' : '') + '" role="img" aria-label="' + rbPct(run, after) + '% of yourself remembered">';
+  for (let i = 1; i <= RB_LAST(); i++) { const done = i < run || (after && i === run), nxt = !done && i === run; h += '<i class="' + (done ? 'on' : nxt ? 'nx' : '') + '"></i>'; }
+  return h + '</div>';
+}
+function rbPill(w) {
+  const b = $('w-scatter'); b.classList.toggle('ready', !!w.m.rbReady); b.classList.toggle('quiet', !w.m.rbReady);
+  const txt = w.m.rbReady ? MT.rbPillReady : fill(MT.rbPill, { pct: rbPct(w.m.run, false), n: w.m.restored, at: w.m.rbAt });
+  const sig = txt + '|' + w.m.run; if (b.dataset.s !== sig) { b.dataset.s = sig; b.innerHTML = rbBar(w.m.run, false) + '<span>' + txt + '</span>'; }
+  b.title = w.m.rbReady ? MT.rbWait : 'Rebirth ' + w.m.run + ' of ' + RB_LAST() + ' comes when ' + w.m.rbAt + ' places are back in one run. It brings: ' + giftLines(MC.D.rb.packets[w.m.run - 1]).map(g => g.name).join(', ') + (w.m.run >= RB_LAST() ? 'nothing lost: you become whole' : '') + '.';
+}
 function scatterPill(w) {
+  if (MC.D.rb.on) { rbPill(w); return; }
   const b = $('w-scatter'), n = w && w.m ? (w.m.hsNew || 0) : 0, m = meta(), last = m.hist.length ? m.hist[m.hist.length - 1] : null;
   const t = MT.prestBtn + ' · +' + fmtW(n); if (b.textContent !== t) b.textContent = t;
   const play = Math.max(1, (S.playTime || 0) - ((w && w.m && w.m.startPlay) || 0)), perDay = n / (play / 86400);
@@ -10,6 +45,7 @@ function scatterPill(w) {
 }
 function askScatter() {
   const w = W(), m = meta(); if (!canScatter(w)) return;
+  if (MC.D.rb.on) { askRebirth(w, m); return; }
   if (opt('confirmRebirth') === false) { openPerks(); return; }   // v1s: a setting skips the summary
   const now = m.hsLife, before = now - (w.m.hsNew || 0), last = m.hist.length ? m.hist[m.hist.length - 1] : null;
   const play = Math.max(1, (S.playTime || 0) - (w.m.startPlay || 0)), perDay = (w.m.hsNew || 0) / (play / 86400);
@@ -29,15 +65,48 @@ function askScatter() {
   let no = $('moment-no'); if (!no) { no = document.createElement('button'); no.id = 'moment-no'; no.className = 'act'; no.type = 'button'; no.style.marginLeft = '0.6rem'; no.addEventListener('click', () => { $('moment').classList.add('hidden'); no.classList.add('hidden'); }); $('moment-ok').after(no); }
   no.textContent = MT.prestNo; no.classList.remove('hidden');
 }
+// the rebirth branch: the forced moment, on screen. One button, to the perk screen; the land waits until the rebirth
+function askRebirth(w, m) {
+  const last = m.run >= RB_LAST(), now = m.hsLife, before = now - (w.m.hsNew || 0);
+  $('moment-h').textContent = last ? MT.rbLastH : MT.rbH; const body = $('moment-body'); body.innerHTML = '';
+  const p1 = document.createElement('p'); p1.textContent = last ? MT.rb1Last : MT.rb1; body.appendChild(p1);
+  const bar = document.createElement('div'); bar.className = 'rbwrap'; bar.innerHTML = rbBar(m.run, true, true) + '<p class="rbcap">' + rbPct(m.run, true) + '% of yourself remembered</p>'; body.appendChild(bar);
+  const led = document.createElement('div'); led.className = 'ledger';
+  const row = (a, b, cls) => { const x = document.createElement('span'), y = document.createElement('span'); x.innerHTML = a; y.innerHTML = b; if (cls) { x.className = cls; y.className = cls; } led.appendChild(x); led.appendChild(y); };
+  row('New heartstones from this run', '<b class="hl">+' + fmtW(w.m.hsNew || 0) + '</b>');
+  row('Memory, all light', '×' + fmtW(memMultFor(before), 2) + ' → <b class="hl">×' + fmtW(memMultFor(now), 2) + '</b>');
+  row('Free to spend on the other side', fmtW(now - perkSpent(m.perks)));
+  body.appendChild(led);
+  const gl = giftLines(MC.D.rb.packets[m.run - 1]);
+  if (gl.length) { const h = document.createElement('p'); h.className = 'rbgh'; h.textContent = 'This rebirth also brings, for every run after it:'; body.appendChild(h);
+    const ul = document.createElement('ul'); ul.className = 'rbgifts'; gl.forEach(g => { const li = document.createElement('li'); li.innerHTML = '<b>' + g.name + '</b> <span>' + g.desc + '</span>'; ul.appendChild(li); }); body.appendChild(ul); }
+  else if (last) { const p2 = document.createElement('p'); p2.className = 'sub'; p2.textContent = 'Nothing resets. The land you called back stays, and from now on memory grows as new land comes back.'; body.appendChild(p2); }
+  $('moment-ok').textContent = last ? MT.rbLastGo : MT.rbGo; $('moment').dataset.kind = 'scatter'; $('moment').classList.remove('hidden');
+  const no = $('moment-no'); if (no) no.classList.add('hidden');
+}
+// the last rebirth and what follows: whole, then the moment combat would open
+function showWhole() {
+  $('moment-h').textContent = MT.wholeH; const body = $('moment-body'); body.innerHTML = '';
+  const bar = document.createElement('div'); bar.className = 'rbwrap'; bar.innerHTML = rbBar(RB_LAST() + 1, false, true) + '<p class="rbcap">100% of yourself remembered</p>'; body.appendChild(bar);
+  [MT.whole1, MT.whole2].forEach(x => { const p = document.createElement('p'); p.textContent = x; body.appendChild(p); });
+  $('moment-ok').textContent = 'Look out over the land'; $('moment').dataset.kind = 'whole'; $('moment').classList.remove('hidden');
+}
+function showCombatMoment() {
+  $('moment-h').textContent = MT.combatH; const body = $('moment-body'); body.innerHTML = '';
+  [MT.combat1].forEach(x => { const p = document.createElement('p'); p.textContent = x; body.appendChild(p); });
+  if (GAME.test) { const p = document.createElement('p'); p.className = 'sub'; p.textContent = MT.combatTest; body.appendChild(p); }
+  $('moment-ok').textContent = MT.combatOk; $('moment').dataset.kind = ''; $('moment').classList.remove('hidden');
+}
 // opening the screen changes nothing: close it (or Esc) and the run goes on; the scatter happens only from its button
 function openPerks() {
   const m = meta();
   MV.prest = { lv: Object.assign({}, m.perks), base: Object.assign({}, m.perks), respec: false, open: true };
-  S.inPerks = true; save(true); renderPerks();
+  S.inPerks = true; save(true); renderPerks(); $('perk-screen').scrollTop = 0;
 }
-function closePerks() { S.inPerks = false; MV.prest = null; hidePtip(); $('perk-screen').classList.add('hidden'); save(true); if (S.w) renderWorld(); }
+function closePerks() { if (MV.prest && MV.prest.merchant) merchantApply(); S.inPerks = false; MV.prest = null; hidePtip(); $('perk-screen').classList.add('hidden'); save(true); if (S.w) renderWorld(); }
 function perkSpent(lv) { let t = 0; for (const id in lv) { if (!MC.D.perks[id]) continue; for (let i = 0; i < lv[id]; i++) t += MC.perkCost(id, i); } return t; }
-function perkShown(id) { const p = MC.D.perks[id]; if (!p || !(MC.perkMax(id) > 0)) return false; if (p.role === 'unlock') { const u = MC.D.unlock[p.sys]; return !!(u && u.perk); } return true; }
+function perkShown(id) { const p = MC.D.perks[id]; if (!p || !(MC.perkMax(id) > 0)) return false; if (MC.D.rb.on && p.kind === 'comfort') return false;   // the rebirth branch: comforts come as gifts, never sold
+  if (p.role === 'unlock') { const u = MC.D.unlock[p.sys]; return !!(u && u.perk); } return true; }
 function perkLocked(id, lv) { const p = MC.D.perks[id]; return p.needs && !MC.sysHeld(p.needs, lv); }
 // how each gift looks and reads on the screen: an icon, a line of story, and what it does now and at the next rank
 const PK_FAMS = [
@@ -107,10 +176,13 @@ function renderPerks() {
   const ps = $('perk-screen'); if (!S.inPerks) { ps.classList.add('hidden'); return; }
   if (!MV.prest) MV.prest = { lv: Object.assign({}, meta().perks), base: Object.assign({}, meta().perks), respec: false };
   ps.classList.remove('hidden'); const m = meta(), w = W(), P = MV.prest, lv = P.lv, spent = perkSpent(lv), free = m.hsLife - spent;
-  const newHs = w && w.m ? (w.m.hsNew || 0) : 0, before = m.hsLife - newHs, sel = MV.perk;
-  let h = '<div class="pk-sky"></div><div class="pk-glow"></div><div class="pk"><div class="pk-top"><div><div class="pk-kicker">Between runs · run ' + m.run + ' is ending</div><h1>What will you remember?</h1>' +
-    '<div class="pk-sub">Run ' + m.run + ' called back ' + (w && w.m ? w.m.restored : 0) + ' places, ' + (w && w.m ? (w.m.newPlaces || 0) : 0) + ' of them new: ' + fmtW(newHs) + ' new heartstones. What you remembered before stays remembered.</div></div>' +
-    '<button type="button" class="pk-x" data-close="1" aria-label="Close, back to run ' + m.run + ' (Esc)">' + pkSvg('x', '#cfc5ae', 22, 2) + '</button></div>';
+  const newHs = w && w.m ? (w.m.hsNew || 0) : 0, before = m.hsLife - newHs, sel = MV.perk, RBon = MC.D.rb.on, merch = !!P.merchant, lastRb = RBon && m.run >= RB_LAST();
+  const kick = merch ? MT.merchKick : RBon ? (lastRb ? 'The last rebirth · nothing will reset' : 'Between runs · rebirth ' + m.run + ' of ' + RB_LAST()) : 'Between runs · run ' + m.run + ' is ending';
+  const sub = merch ? MT.merchSub : 'Run ' + m.run + ' called back ' + (w && w.m ? w.m.restored : 0) + ' places, ' + (w && w.m ? (w.m.newPlaces || 0) : 0) + ' of them new: ' + fmtW(newHs) + ' new heartstones. What you remembered before stays remembered.';
+  let h = '<div class="pk-sky"></div><div class="pk-glow"></div><div class="pk"><div class="pk-top"><div><div class="pk-kicker">' + kick + '</div><h1>' + (merch ? MT.merchH : 'What will you remember?') + '</h1>' +
+    '<div class="pk-sub">' + sub + '</div></div>' +
+    '<button type="button" class="pk-x" data-close="1" aria-label="Close (Esc)">' + pkSvg('x', '#cfc5ae', 22, 2) + '</button></div>';
+  if (RBon && !merch) h += '<div class="rbwrap pk-rb">' + rbBar(m.run, true, true) + '<p class="rbcap">After this rebirth you remember ' + rbPct(m.run, true) + '% of yourself' + (lastRb ? ': all of it. The land stays.' : '. The next comes at ' + (MC.D.rb.at[m.run] || '') + ' places in one run.') + '</p></div>';
   const lo = P.open !== false;
   h += '<section class="cur' + (lo ? ' open' : '') + '"><button type="button" class="cur-strip" data-toggle="1" aria-expanded="' + lo + '">' +
     '<span class="cur-name"><span class="hex" style="width:30px;height:27px;background:#e0a34a">' + pkSvg('flame', '#2a1d10', 17, 2) + '</span><span><span class="cz cur-t">Light</span><span class="cur-s">Heartstones</span></span></span>' +
@@ -118,8 +190,8 @@ function renderPerks() {
     '<span class="cur-purse">' + pkHeart(20) + '<span><b>' + fmtW(free) + '</b><span>of ' + fmtW(m.hsLife) + ' free</span></span></span>' +
     '<span class="cur-chev" aria-hidden="true">' + pkSvg(lo ? 'up' : 'down', '#d7b277', 20, 2) + '</span></button>';
   if (lo) {
-    h += '<div class="cur-body"><div class="cur-bar"><span>' + (P.respec ? 'Respec: every gift and comfort comes back to you when you scatter. Choose again, or undo it.' : 'Gifts you remembered before stay yours. New heartstones buy new ranks; a respec gives everything back to choose again.') + '</span>' +
-      '<span style="display:flex;gap:8px;flex-wrap:wrap">' + (pkPending().length ? '<button type="button" class="pk-respec" data-undoall="1">Take back this time’s picks</button>' : '') + '<button type="button" class="pk-respec" data-respec="1">' + (P.respec ? 'Undo the respec' : 'Respec (free)') + '</button></span></div>' +
+    h += '<div class="cur-body"><div class="cur-bar"><span>' + (merch ? 'What you buy works at once. He sells the same gifts the rebirths did, at the same prices.' : P.respec ? 'Respec: every gift and comfort comes back to you when you scatter. Choose again, or undo it.' : 'Gifts you remembered before stay yours. New heartstones buy new ranks; a respec gives everything back to choose again.') + '</span>' +
+      '<span style="display:flex;gap:8px;flex-wrap:wrap">' + (pkPending().length ? '<button type="button" class="pk-respec" data-undoall="1">Take back this time’s picks</button>' : '') + (merch ? '' : '<button type="button" class="pk-respec" data-respec="1">' + (P.respec ? 'Undo the respec' : 'Respec (free)') + '</button>') + '</span></div>' +
       (pkPending().length ? '<div class="cur-bar" style="padding-top:0">New this time: ' + pkPending().map(id => (MC.D.perks[id].kind === 'comfort' ? comfortLevelName(id, lv[id]) : MC.D.perks[id].name + ' ' + lv[id])).join(', ') + '</div>' : '') + '<div class="pk-fams">';
     for (const f of PK_FAMS) {
       const ids = Object.keys(MC.D.perks).filter(id => MC.D.perks[id].fam === f.id && perkShown(id)); if (!ids.length) continue;
@@ -137,7 +209,9 @@ function renderPerks() {
       h += '</div></section>';
     }
     h += '</div><div class="pk-bottom">';
-    const cids = Object.keys(MC.D.perks).filter(id => MC.D.perks[id].kind === 'comfort'), owned = cids.filter(id => lv[id]).length;
+    if (RBon) h += merch ? '' : giftsHTML(m.run);
+    const cids = RBon ? [] : Object.keys(MC.D.perks).filter(id => MC.D.perks[id].kind === 'comfort'), owned = cids.filter(id => lv[id]).length;
+    if (!RBon) {
     h += '<div class="pk-comforts"><div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><div class="cz" style="font-size:14px;letter-spacing:0.14em;color:#9fe3c5">COMFORTS</div><div style="font-size:13.5px;color:#a9bdb4">Catching up faster, never further. ' + owned + ' of ' + cids.length + ' kept.</div></div><div class="pk-chips">';
     for (const id of cids) { const p = MC.D.perks[id], u = PK_UI[id] || {}, n = lv[id] || 0, max = MC.perkMax(id), done = n >= max, price = done ? 0 : MC.perkCost(id, n), afford = !done && free >= price, picked = sel === id;
       const name = done ? comfortLevelName(id, n) : comfortLevelName(id, n + 1);
@@ -145,23 +219,48 @@ function renderPerks() {
         pkSvg(u.icon, n ? '#9fe3c5' : afford ? '#cfeee0' : '#7d8a86', 17, 1.8) + '<span style="flex:1;font-size:12.5px;line-height:1.15">' + name + (n && !done ? ' <span style="color:#7fb8a6">(' + ROMAN[n - 1] + ' kept)</span>' : '') + '</span>' +
         (done ? '<svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l5 5L20 6" fill="none" stroke="#9fe3c5" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>'
           : '<span style="display:flex;align-items:center;gap:3px;font-size:12.5px;color:' + (afford ? '#ffd0d8' : '#a69ead') + '">' + pkHeart(7) + fmtW(price) + '</span>') + '</button>'; }
-    h += '</div></div></div></div>';
+    h += '</div></div>'; }
+    h += '</div></div>';
   }
   h += '</section>';
   h += '<section class="cur locked"><div class="cur-strip"><span class="cur-name"><span class="hex" style="width:30px;height:27px;background:#26233a">' + pkSvg('lock', '#8a8399', 15) + '</span><span><span class="cz cur-t" style="color:#8f8798">Something older</span><span class="cur-s">Chained in the dark</span></span></span>' +
     '<span class="cur-mem" style="color:#8f8798;font-style:italic;font-size:15px">Its stones are not heartstones.</span><span></span><span></span></div></section>';
   const hist = m.hist.map(x => 'Run ' + x.run + ': ' + x.tiles + ' places, +' + fmtW(x.hsNew)).concat(w && w.m ? ['Run ' + m.run + ': ' + w.m.restored + ' places, +' + fmtW(newHs)] : []);
-  h += '<div class="pk-foot"><div class="pk-last">' + hist.join(' · ') + ' · Close or press Esc to go back to run ' + m.run + '</div><button type="button" class="pk-return" id="pk-go">' + pkSvg('flame', '#ffb35c', 19, 1.8) + 'Scatter, and begin run ' + (m.run + 1) + '</button></div></div>';
+  const goTxt = merch ? MT.merchGo : RBon ? (lastRb ? 'Remember all of yourself' : 'Be reborn, and begin run ' + (m.run + 1)) : 'Scatter, and begin run ' + (m.run + 1);
+  h += '<div class="pk-foot"><div class="pk-last">' + (merch ? 'His next visit: about two days after you send him on.' : hist.join(' · ') + ' · Close or press Esc to go back to run ' + m.run) + '</div><button type="button" class="pk-return" id="pk-go">' + pkSvg('flame', '#ffb35c', 19, 1.8) + goTxt + '</button></div></div>';
   ps.innerHTML = h;
+}
+// the rebirth branch: the gifts held, the ones this rebirth brings, and the ones still to come (dimmed), so a player can plan for them
+function giftsHTML(run) {
+  const held = MC.giftsFor(run), packs = MC.D.rb.packets;
+  let h = '<div class="pk-comforts"><div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><div class="cz" style="font-size:14px;letter-spacing:0.14em;color:#9fe3c5">GIFTS</div><div style="font-size:13.5px;color:#a9bdb4">Each rebirth brings gifts of its own, free, for every run after it. They catch you up; heartstones buy power.</div></div>';
+  for (let i = 0; i < packs.length; i++) {
+    const n = i + 1, state = n < run ? 'held' : n === run ? 'now' : 'later', gl = giftLines(packs[i]);
+    h += '<div class="rbpack ' + state + '"><span class="rbp-h">' + (state === 'now' ? 'This rebirth brings' : state === 'held' ? 'Rebirth ' + n + ' brought' : 'Rebirth ' + n + ' will bring') + '</span><span class="pk-chips">';
+    gl.forEach(g => { h += '<span class="chip gift ' + state + '" title="' + g.desc.replace(/"/g, '&quot;') + '">' + (state === 'later' ? pkSvg('lock', '#7d8a86', 15, 1.8) : '<svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l5 5L20 6" fill="none" stroke="#9fe3c5" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>') + '<span>' + g.name + '</span></span>'; });
+    h += '</span></div>';
+  }
+  h += '<div class="rbpack ' + (run >= RB_LAST() ? 'now' : 'later') + '"><span class="rbp-h">Rebirth ' + RB_LAST() + ' (the last)</span><span class="pk-chips"><span class="chip gift ' + (run >= RB_LAST() ? 'now' : 'later') + '"><span>Nothing resets: you become whole, and the land stays</span></span></span></div>';
+  return h + '</div>';
+}
+// the traveling merchant: the same screen, his stock the heartstone perks, what you buy working at once
+function openMerchant() {
+  const m = meta(), w = W(); if (!w || !w.m || !MC.merchantHere(w)) return;
+  MV.prest = { lv: Object.assign({}, m.perks), base: Object.assign({}, m.perks), respec: false, open: true, merchant: true };
+  S.inPerks = true; save(true); renderPerks(); $('perk-screen').scrollTop = 0;
+}
+function merchantApply() {   // what was chosen at his table works at once
+  const m = meta(), w = W(); if (!MV.prest || !MV.prest.merchant || !w || !w.m) return;
+  m.perks = Object.assign({}, MV.prest.lv); w.m.perks = MC.prPerks({ perks: m.perks, run: RB_LAST() + 1 });
 }
 function pkPending() { const P = MV.prest; if (!P) return []; return Object.keys(P.lv).filter(id => (P.lv[id] || 0) > (P.respec ? 0 : (P.base[id] || 0))); }
 function pkBuy(id) {
   const P = MV.prest, lv = P.lv, m = meta(), n = lv[id] || 0, p = MC.D.perks[id]; if (!p) return;
   if (n >= MC.perkMax(id) || perkLocked(id, lv)) return;
-  const c = MC.perkCost(id, n); if (c <= m.hsLife - perkSpent(lv)) lv[id] = n + 1;
+  const c = MC.perkCost(id, n); if (c <= m.hsLife - perkSpent(lv)) { lv[id] = n + 1; if (P.merchant) { merchantApply(); renderWorld(); } }
 }
 function pkUndo(id) {   // only a rank chosen on this screen can be taken back without a respec
-  const P = MV.prest, lv = P.lv, n = lv[id] || 0, floor = P.respec ? 0 : (P.base[id] || 0); if (n > floor) { lv[id] = n - 1; if (!lv[id]) delete lv[id]; }
+  const P = MV.prest, lv = P.lv, n = lv[id] || 0, floor = P.respec ? 0 : (P.base[id] || 0); if (n > floor) { lv[id] = n - 1; if (!lv[id]) delete lv[id]; if (P.merchant) { merchantApply(); renderWorld(); } }
 }
 function perkTipHTML(id) {
   const P = MV.prest, lv = P.lv, m = meta(), p = MC.D.perks[id], u = PK_UI[id] || {}, n = lv[id] || 0, max = MC.perkMax(id), done = n >= max, free = m.hsLife - perkSpent(lv), price = done ? 0 : MC.perkCost(id, n);
@@ -186,6 +285,11 @@ function perkTip(el) {
 // the scatter itself: what this run leaves behind for the next, then a fresh run
 function commitScatter() {
   const m = meta(), w = W();
+  if (MV.prest && MV.prest.merchant) { merchantApply(); MC.merchantLeave(w, Date.now() / 1000); MV.prest = null; S.inPerks = false; hidePtip(); $('perk-screen').classList.add('hidden');
+    sys('The traveler goes on his way. He will be back in about two days.'); renderWorld(); save(true); return; }
+  if (MC.D.rb.on && w && w.m && !w.m.rbReady) return;   // the rebirth branch: a rebirth only at its milestone
+  if (MC.D.rb.on) { try { localStorage.setItem(SAVE_KEY + '.back', serialize(S)); } catch (e) {} }   // the rebirth branch: Settings can go back to this moment
+  if (MC.D.rb.on && m.run >= RB_LAST()) { becomeWholeNow(); return; }
   if (w && w.m) { try { checkRun(); const rr = runRec(); rr.end = { tiles: w.m.restored, t: w.t, hs: w.m.hsNew || 0, pop: w.pop, light: MC.lightRate(w), regions: MC.regionsDone(w) }; } catch (e) {}
     m.hist.push({ run: m.run, tiles: w.m.restored, regions: MC.regionsDone(w), hsNew: w.m.hsNew || 0, play: (S.playTime || 0) - (w.m.startPlay || 0), at: Date.now() });
     m.cards = Array.from(new Set((m.cards || []).concat(Object.keys(w.m.cards))));
@@ -195,14 +299,28 @@ function commitScatter() {
     MC.REGIONS.forEach((rg, i) => { const c = rg.tiles.filter(k => w.m.tiles[k]).length; if (c > (m.regBest[i] || 0)) m.regBest[i] = c; if (c === rg.tiles.length && !m.regFin[i]) m.regFin[i] = m.run; }); }
   m.perks = Object.assign({}, MV.prest.lv); MV.prest = null; hidePtip(); beginRun();
 }
+// the last rebirth: nothing resets. The run carries on, whole
+function becomeWholeNow() {
+  const m = meta(), w = W();
+  try { checkRun(); const rr = runRec(); rr.end = { tiles: w.m.restored, t: w.t, hs: w.m.hsNew || 0, pop: w.pop, light: MC.lightRate(w), regions: MC.regionsDone(w) }; } catch (e) {}
+  m.hist.push({ run: m.run, tiles: w.m.restored, regions: MC.regionsDone(w), hsNew: w.m.hsNew || 0, play: (S.playTime || 0) - (w.m.startPlay || 0), at: Date.now(), whole: true });
+  m.perks = Object.assign({}, MV.prest.lv); MV.prest = null; hidePtip(); S.inPerks = false; $('perk-screen').classList.add('hidden');
+  MC.becomeWhole(w, m.hsLife, m.perks, Date.now() / 1000); m.whole = true; m.run = RB_LAST() + 1; w.m.hsNew = 0;
+  if (!w.m.target) { const nk = MC.nextTarget(w) || MC.cheapestTarget(w); if (nk) MC.setTarget(w, nk); }   // the land beyond answers again
+  wsay('You remember all of yourself. The land stays.'); renderWorld(); save(true); showWhole();
+}
 function beginRun() {
   const m = meta(); m.run++; S.inPerks = false;
   try { const was = S.w; S.w = null; runRec(); S.w = was; } catch (e) {}   // v1n: run records begin with the run
   const keep = { meta: m, speed: S.speed, playTime: S.playTime, debug: S.debug, miles: S.miles, showDone: S.showDone,
     opt: S.opt, lastBackup: S.lastBackup, lastBuild: S.lastBuild, counted: S.counted, persistAsked: S.persistAsked, born: S.born };
   S = Object.assign(fresh(), keep);
-  if (m.perks.skipPrologue) { S.flags.stood = true; S.flags.driftShown = true; S.flags.cohereShown = true; }
-  S.log = []; say(m.perks.skipPrologue ? 'Run ' + m.run + '. You remember how to stand. The grey waits.' : 'Run ' + m.run + '. Nothing. Then, something. But you remember.');
+  const gifts = Object.assign({}, MC.giftsFor(m.run)), skipP = m.perks.skipPrologue || gifts.skipPrologue;
+  if (skipP) { S.flags.stood = true; S.flags.driftShown = true; S.flags.cohereShown = true; }
+  S.log = []; say(skipP ? 'Run ' + m.run + '. You remember how to stand. The grey waits.' : 'Run ' + m.run + '. Nothing. Then, something. But you remember.');
+  // the rebirth branch: The village stands. The run wakes at the edge of the land, the village as it stood when the map last opened
+  if (gifts.villageSkip && m.villageSnap) { try { S.w = JSON.parse(JSON.stringify(m.villageSnap)); S.w.stats = { buys: [], made: {} }; S.w.playStart = S.playTime || 0; S.flags.stood = true;
+    say('You wake at the edge of your land. The village stands as you left it.'); startMap(); } catch (e) { S.w = null; } }
   save(true); location.reload();
 }
 $('perk-screen').addEventListener('click', e => {

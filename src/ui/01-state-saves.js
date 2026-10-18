@@ -1,6 +1,6 @@
 /* ---------- State and saves (keyed, versioned, migratable) ---------- */
 // The test build keeps the save key the owner's playtests have always used; the public build has its own.
-const SAVE_KEY = GAME.test ? 'flicker-map1-branch-v1' : 'flicker-v0';
+const SAVE_KEY = GAME.branch ? 'flicker-' + GAME.branch + '-branch-v1' + (GAME.test ? '' : '-public') : GAME.test ? 'flicker-map1-branch-v1' : 'flicker-v0';   // the rebirth branch keeps its own save
 const GOOD_KEY = SAVE_KEY + '.good';       // v1s: an automatic copy of the last save that loaded cleanly
 const SAVE_VERSION = 1;
 const MIGRATIONS = {};                     // MIGRATIONS[n](o) turns a version-n save into version n+1; every public save must keep loading
@@ -58,7 +58,7 @@ function save(quiet) {
 let LOAD_NOTE = '';
 function loadSaved() {
   let raw = null;
-  try { raw = localStorage.getItem(SAVE_KEY) || (GAME.test ? localStorage.getItem('flicker-village-rebuild-v1') : null); } catch (e) { return null; }
+  try { raw = localStorage.getItem(SAVE_KEY) || (GAME.test && !GAME.branch ? localStorage.getItem('flicker-village-rebuild-v1') : null); } catch (e) { return null; }
   if (!raw) return null;
   try { const s = deserialize(raw); try { localStorage.setItem(GOOD_KEY, JSON.stringify({ at: Date.now(), raw })); lastGood = Date.now(); } catch (e) {} return s; }
   catch (err) {

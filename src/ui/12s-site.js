@@ -95,6 +95,13 @@ function panelSettings(body) {
   choice('Before a rebirth', 'confirmRebirth', [[true, 'Show what it brings, and ask first'], [false, 'Go straight to choosing gifts']]);
   if (GAME.countUrl && !GAME.test) choice('Anonymous counts', 'counts', [[true, 'Send them'], [false, 'Don’t send them']], ABOUT.privacyCounts);
   const f = el('fieldset', 'pset'); f.appendChild(el('legend', '', 'Saves')); const r = el('div', 'prow'); r.appendChild(pbtn('Open the save tools', () => openPanel('save'))); f.appendChild(r); body.appendChild(f);
+  // the rebirth branch (Considering, owner 2026-10-18): go back to the moment before the last rebirth and choose again
+  { let back = null; try { back = MC.D.rb.on ? localStorage.getItem(SAVE_KEY + '.back') : null; } catch (e) {}
+    if (back) { const g = el('fieldset', 'pset'); g.appendChild(el('legend', '', 'Your last rebirth'));
+      g.appendChild(el('p', 'pmut', 'Go back to the moment before your last rebirth, with the same heartstones, and choose your gifts again. Everything since then is lost.'));
+      const gr = el('div', 'prow'); g.appendChild(gr);
+      gr.appendChild(armBtn('Go back to the last rebirth', 'Click again: everything since is lost', () => { try { localStorage.setItem(SAVE_KEY + '.before-back', serialize(S)); localStorage.setItem(SAVE_KEY, back); } catch (e) {} TAB.owner = false; location.reload(); }));
+      body.appendChild(g); } }
   const z = el('fieldset', 'pset danger'); z.appendChild(el('legend', '', 'Start over'));
   z.appendChild(el('p', 'pmut', 'Erases this game: every run, heartstone and gift. The game downloads a copy first, so you can come back to it.'));
   const zr = el('div', 'prow'); z.appendChild(zr);
@@ -171,7 +178,7 @@ setTimeout(checkVersion, 60000); setInterval(checkVersion, 15 * 60000);
    nothing identifies the player. Only the public build sends, only from a real web address, and only if the setting allows. */
 function countMile(k) {
   const name = ({ prologue: 'prologue', stood: 'village', map: 'map', run2: 'rebirth1', demoEnd: 'end' })[k]; if (!name) return;
-  if (GAME.test || !GAME.countUrl || opt('counts') === false) return;
+  if (GAME.test || GAME.branch || !GAME.countUrl || opt('counts') === false) return;   // a design branch never counts
   if (!(location.protocol === 'https:' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) || /claude\.ai|claudeusercontent/.test(location.hostname)) return;
   S.counted = S.counted || {}; if (S.counted[name]) return; S.counted[name] = 1;
   const born = S.born || (S.stats && S.stats.startedAt) || Date.now();

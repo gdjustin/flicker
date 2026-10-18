@@ -18,7 +18,11 @@ var MBOT = function (MC, VBOT) {
     opt = Object.assign({ preset: 'checkin', days: 9, revealHour: 18, burnPlay: 'income', burnShare: 0.6, econ: 'full', smeltMax: 0.35, keeperShare: 0.22, storyShare: 0.14, smeltShare: 0.12, glowShare: 0.06, haulShare: 0.45,
       dtActive: 10, dtAway: 60, horizonH: 2, ampSpot: 'auto', minGain: 0.01, pick: 'cheapest', needK: 4, needH: 48 }, PRESETS[opt && opt.preset || 'checkin'], opt || {});
     var pr = opt.prestige, pv = MC.villagePrestige(pr), vkept = !!(pr && pr.perks && pr.perks.villageComplete);
-    var vr = VBOT.run(VC, Object.assign({}, VILLAGE, { pv: pv, instantProj: vkept, startRes: pr ? D0.villageStart : null }));   // v1r: the opening stores come from run 2 on
+    // the rebirth branch: with The village stands, the run wakes at the map with the village as it stood when the map last opened
+    var vskip = !!(pr && pr.villageSnap && MC.prPerks(pr).villageSkip);
+    var vr = vskip ? { s: JSON.parse(JSON.stringify(pr.villageSnap)) } : VBOT.run(VC, Object.assign({}, VILLAGE, { pv: pv, instantProj: vkept, startRes: pr ? D0.villageStart : null }));   // v1r: the opening stores come from run 2 on
+    if (vskip) { vr.s.pv = pv; vr.s.t = 60; vr.s.stats = { buys: [], made: {} }; }
+    var villageSnap = JSON.parse(JSON.stringify(vr.s));   // what the next run's village would be
     var s = MC.init(vr.s, opt.prestige), T0 = s.t, D = MC.D;
     var snap = {}; TAIL.forEach(function (id) { snap[id] = s.lv[id] || 0; });
     var handLight = MC.lightRate(s) / (s.feast > 0 ? 1 + VC.feastSpec(s).boost : 1);
@@ -257,14 +261,48 @@ var MBOT = function (MC, VBOT) {
       }
     }
 
+    // ------------------------------------------------ the rebirth branch: mastery and the merchant (2026-10-18)
+    // Mastery: a tier is worth it when the frontier time it saves over the next mastH hours beats the time it takes now.
+    // opt.mastery 0 switches mastery off (a lab replay); opt.mastAll masters everything it can first (an all-in probe).
+    function masteryPick() {
+      if (!MC.masteryOn || !MC.masteryOn(s) || opt.mastery === 0) return null;
+      // a sensible player masters the tier that adds the most mastery for its light, while it costs less than mastGate x the next new place
+      var L = Math.max(1e-9, MC.lightRate(s)), best = null, bs = 0, fr = Infinity;
+      MC.nearTiles(s).forEach(function (t) { if (MC.reachable(s, t)) fr = Math.min(fr, (MC.tileCost(t, s) - (s.m.got[t.key] || 0)) / (L * MC.ampMult(s, t.key) * MC.masteryMult(s))); });
+      var gate = (opt.mastGate != null ? opt.mastGate : 0.25) * fr;   // lab 2026-10-18: a quarter of the next new place beat a whole one (+166 places in 20 days against +156) and the all-in master-everything probe (+159)
+      Object.keys(s.m.tiles).forEach(function (key) {
+        if (!MC.canMaster(s, key)) return; var t = MC.MAP.tiles[MC.MAP.idx[key]];
+        var tau = Math.max(0, MC.mNeed(s, key) - MC.mClears(s, key)) * MC.mClearCost(t) / (L * MC.ampMult(s, key));
+        if (!opt.mastAll && tau > gate) return;   // dearer than it's worth next to new land
+        var sc = MC.mPointsOf(t) / Math.max(1, tau);   // mastery gained for each second of light
+        if (sc > bs) { bs = sc; best = key; }
+      });
+      return best;
+    }
+    function merchantVisit() {
+      if (!MC.merchantArrive) return; MC.merchantArrive(s, s.t); if (!MC.merchantHere(s)) return;
+      var guard = 0, bought = 0;
+      while (guard++ < 400) {   // the cheapest next rank first, power perks only
+        var free = (s.m.memHS || 0) - MC.perkSpentOf(s.m.perks), best = null, bc = Infinity;
+        Object.keys(D.perks).forEach(function (id) { var p = D.perks[id]; if (p.kind === 'comfort' || (p.role === 'unlock' && !(D.unlock[p.sys] && D.unlock[p.sys].perk))) return;
+          var n = MC.perk(s, id); if (n >= MC.perkMax(id)) return; var c = MC.perkCost(id, n); if (c <= free && c < bc) { bc = c; best = id; } });
+        if (!best || !MC.buyPerkNow(s, best, free)) break; bought++;
+      }
+      s.m.merchBought = (s.m.merchBought || 0) + bought; MC.merchantLeave(s, s.t);
+    }
+
     // ------------------------------------------------ one decision pass during a session
     function decide() {
       var n = 0;
       if (MC.clickFinish(s)) n++;
       // target: the copper tile first, then the cheapest light-for-light (or, with pick 'need', what you're short of)
       var copperTile = MC.MAP.tiles.find(function (t) { return t.tag === 'copper'; });
-      var want = (!s.m.tiles[copperTile.key] && MC.reachable(s, copperTile)) ? copperTile.key : pickTarget();
-      if (want && want !== s.m.target) { MC.setTarget(s, want); n++; }
+      if (MC.masteryOn && MC.masteryOn(s) && s.m.target && s.m.tiles[s.m.target] && MC.mTier(s, s.m.target) <= (s.m.botMast || 0)) { /* mastering: keep at it until its next tier */ }
+      else { var mp = masteryPick();
+        if (mp) { if (mp !== s.m.target && MC.masterPlace(s, mp)) n++; s.m.botMast = MC.mTier(s, mp); }
+        else { var want = (!s.m.tiles[copperTile.key] && MC.reachable(s, copperTile)) ? copperTile.key : pickTarget();
+          if (want && want !== s.m.target) { MC.setTarget(s, want); n++; } } }
+      merchantVisit();
       if (opt.pick === 'need') lineupNeed(); else if (MC.lineupAuto) MC.lineupAuto(s);   // plan ahead for time away
       // cards: village leftovers and phase-1 research, cheapest first
       VC.CARDS.filter(function (c) { return VC.cardAvail(s, c) && VC.canPay(s, c.cost); }).forEach(function (c) { if (VC.buyCard(s, c.id)) n++; });
@@ -412,7 +450,7 @@ var MBOT = function (MC, VBOT) {
       if (stop) break;
       if (opt.stopFn && opt.stopFn(s, tileT, hr())) { marks.stop = hr(); break; }
     }
-    return { s: s, samples: samples, sessions: sessions, marks: marks, cardT: cardT, projT: projT, tileT: tileT, handLight: handLight, villageMin: T0 / 60, snap: snap, opt: opt };
+    return { s: s, samples: samples, sessions: sessions, marks: marks, cardT: cardT, projT: projT, tileT: tileT, handLight: handLight, villageMin: T0 / 60, snap: snap, opt: opt, villageSnap: villageSnap };
   }
   return { run: run, PRESETS: PRESETS };
 };

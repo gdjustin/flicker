@@ -760,3 +760,50 @@ footer #f-save.bdot::after { content: ''; position: absolute; right: -2px; top: 
 .newver button { font: inherit; min-height: 36px; padding: 0 0.8rem; background: none; border: 1px solid var(--line); border-radius: 3px; color: var(--ember); cursor: pointer; }
 /* reduce motion: glows, pulses, drifting motes and the light stream all hold still */
 body.calm *, body.calm *::before, body.calm *::after { animation: none !important; transition: none !important; }
+
+/* ---------- the rebirth branch (2026-10-18): rebirth progress, gifts, mastery, the merchant ---------- */
+.rbbar { display: inline-flex; gap: 3px; vertical-align: middle; }
+.rbbar i { display: block; width: 14px; height: 6px; border-radius: 2px; border: 1px solid color-mix(in srgb, var(--ember) 55%, transparent); background: transparent; }
+.rbbar i.on { background: var(--ember); border-color: var(--ember); }
+.rbbar i.nx { background: color-mix(in srgb, var(--ember) 28%, transparent); animation: rbpulse 2.4s ease-in-out infinite; }
+.rbbar.big { gap: 6px; }
+.rbbar.big i { width: 52px; height: 10px; border-radius: 3px; }
+@keyframes rbpulse { 50% { background: color-mix(in srgb, var(--ember) 55%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .rbbar i.nx { animation: none; } }
+.rbwrap { margin: 0.8rem 0 0.6rem; }
+.rbwrap .rbcap { margin: 0.35rem 0 0; font-size: 0.86rem; color: var(--ash); }
+#perk-screen .rbwrap.pk-rb { margin: 4px 0 18px; }
+#perk-screen .rbwrap .rbcap { color: var(--dim); font-family: Spectral, Georgia, serif; font-size: 15px; }
+#perk-screen .rbbar i { border-color: #d7b27788; }
+#perk-screen .rbbar i.on { background: #f3d48a; border-color: #f3d48a; }
+#perk-screen .rbbar i.nx { background: #f3d48a55; }
+.scatter { display: inline-flex; align-items: center; gap: 0.5rem; }
+.scatter.quiet { color: var(--ash); border-color: var(--line); cursor: help; }
+.scatter.ready { box-shadow: 0 0 10px color-mix(in srgb, var(--ember) 55%, transparent); }
+.scatter.merch { color: #9fe3c5; border-color: #3f7a64; margin-left: 0.4rem; box-shadow: 0 0 8px #9fe3c544; }
+.rbgh { font-size: 0.86rem; color: var(--ash); margin-top: 0.9rem !important; }
+.rbgifts { margin: 0.35rem 0 0.9rem; padding-left: 1.1rem; font-size: 0.93rem; line-height: 1.45; }
+.rbgifts li { margin: 0.2rem 0; }
+.rbgifts li span { color: var(--ash); }
+#perk-screen .rbpack { display: flex; flex-direction: column; gap: 6px; padding: 8px 0 4px; border-top: 1px solid #2c4a40; }
+#perk-screen .rbpack .rbp-h { font-family: Cinzel, Georgia, serif; font-size: 12px; letter-spacing: 0.1em; color: #7fb8a6; text-transform: uppercase; }
+#perk-screen .rbpack.now .rbp-h { color: #f3d48a; }
+#perk-screen .rbpack.later { opacity: 0.62; }
+#perk-screen .chip.gift { cursor: default; color: #cfeee0; border: 1px solid #2c4a40; background: #13241f; font-size: 13px; }
+#perk-screen .chip.gift.held { border-color: #3f7a64; background: #173a30; }
+#perk-screen .chip.gift.now { border-color: #f3d48a; background: #2b2615; color: #fff1c9; }
+#perk-screen .chip.gift.later { color: #a9bdb4; }
+/* mastery on the land: a tint at each tier, and a star a tier along the bottom of the place */
+#m-grid .cell.done.m1 { box-shadow: inset 0 0 0 1px rgba(201, 138, 75, 0.55); }
+#m-grid .cell.done.m2 { box-shadow: inset 0 0 0 1.5px rgba(215, 221, 228, 0.6); }
+#m-grid .cell.done.m3 { box-shadow: inset 0 0 0 2px rgba(243, 212, 138, 0.75), inset 0 0 10px rgba(243, 212, 138, 0.25); }
+#m-grid .cell .mk i.mstars { position: absolute; left: 6%; bottom: 5%; display: flex; gap: 1px; width: 52%; height: 22%; pointer-events: none; }
+#m-grid .cell .mk i.mstars svg { display: inline-block; height: 100%; width: auto; filter: drop-shadow(0 0 1px #000); }
+.mmast { margin: 0.45rem 0 0.6rem; padding: 0.45rem 0.65rem; border-left: 3px solid #9c7440; background: color-mix(in srgb, #f3d48a 6%, transparent); border-radius: 0 6px 6px 0; }
+.mmast.t1 { border-left-color: #c98a4b; } .mmast.t2 { border-left-color: #d7dde4; } .mmast.t3 { border-left-color: #f3d48a; }
+.mmast .mm-h { margin: 0; font-size: 0.75rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ash); }
+.mmast .mm-h b { color: var(--ink); font-size: 0.95rem; letter-spacing: 0; }
+.mmast .mm-bar { height: 5px; border-radius: 3px; background: color-mix(in srgb, var(--ink) 12%, transparent); margin: 0.35rem 0 0.25rem; overflow: hidden; }
+.mmast .mm-bar i { display: block; height: 100%; background: linear-gradient(90deg, #c98a4b, #f3d48a); }
+.mmast .mm-l { margin: 0.15rem 0; font-size: 0.9rem; }
+.mmast .mm-l.sub { color: var(--ash); font-size: 0.82rem; }
