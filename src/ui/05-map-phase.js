@@ -204,7 +204,7 @@ const MT = {   // the map's text, in one place for the text editor
   combatH: 'Something has seen your light', combat1: 'Smoke rises past the ford. Not everything you called back is friendly, and not all of this land is yours.',
   combatTest: 'Playtest: in the game, combat opens here. This branch has no combat: keep playing to try mastery and the traveling merchant.',
   combatOk: 'Keep playing',
-  mastLog: '{name} is {word}: {pct}%.', mastRegion: 'All of {region} is mastered.',
+  mastLog: '{name} is {word}: {pct}%.', mastRegion: 'All you have called back of {region} is mastered.',
   merchLog: 'A traveler has come to the edge of your land. He trades in heartstones, and he will wait.',
   merchPill: 'A traveler waits', merchH: 'The traveler', merchKick: 'A traveling merchant · he comes every two days and waits',
   merchSub: 'He wants heartstones and knows the old gifts. What you buy works at once.', merchGo: 'Send him on his way',

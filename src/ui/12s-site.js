@@ -105,7 +105,7 @@ function panelSettings(body) {
   const z = el('fieldset', 'pset danger'); z.appendChild(el('legend', '', 'Start over'));
   z.appendChild(el('p', 'pmut', 'Erases this game: every run, heartstone and gift. The game downloads a copy first, so you can come back to it.'));
   const zr = el('div', 'prow'); z.appendChild(zr);
-  const step2 = armBtn('Erase this game', 'Click again to erase everything', () => { try { localStorage.setItem(SAVE_KEY + '.before-reset', serialize(S)); localStorage.removeItem(SAVE_KEY); } catch (e) {}
+  const step2 = armBtn('Erase this game', 'Click again to erase everything', () => { try { localStorage.setItem(SAVE_KEY + '.before-reset', serialize(S)); localStorage.removeItem(SAVE_KEY); localStorage.removeItem(SAVE_KEY + '.back'); } catch (e) {}
     const keep = { opt: S.opt }; S = Object.assign(fresh(), keep); save(true); location.reload(); }, 'bad');
   step2.disabled = true;
   zr.append(pbtn('Download a copy first', () => downloadSave().then(() => { step2.disabled = false; })), step2);

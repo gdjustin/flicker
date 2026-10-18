@@ -200,10 +200,10 @@ function renderMapDrawer(w) {
   // the rebirth branch: light into a place already back masters it; the strip counts clears to its next tier
   const mast = !!(t && w.m.tiles[t.key]), mc = mast ? MC.mClears(w, t.key) : 0, mtr = mast ? MC.mTier(w, t.key) : 0, mnd = mast ? MC.mNeed(w, t.key) : 0;
   const need = t ? (mast ? mnd * MC.mClearCost(t) : MC.tileCost(t, w)) : 0, got = t ? (mast ? mc * MC.mClearCost(t) : (w.m.got[t.key] || 0)) : 0, f = t ? Math.min(1, got / need) : 0;
-  if (closed) { const parts = [t ? 'Calling back ' + shortName(t) + ', ' + Math.floor(f * 100) + '%' : MT.stripNone + (w.m.pool >= 1 ? ', ' + fmtC(w.m.pool) + ' saved up' : '')]; if (w.m.proj) parts.push(pname(w, w.m.proj.id) + ', ' + Math.floor(mProjFrac(w) * 100) + '% built'); $('dr-sum').textContent = parts.join(' · '); return; }
+  if (closed) { const parts = [t ? (mast ? 'Mastering ' + shortName(t) + ', ' + mastPct(mtr) + '%' : 'Calling back ' + shortName(t) + ', ' + Math.floor(f * 100) + '%') : MT.stripNone + (w.m.pool >= 1 ? ', ' + fmtC(w.m.pool) + ' saved up' : '')]; if (w.m.proj) parts.push(pname(w, w.m.proj.id) + ', ' + Math.floor(mProjFrac(w) * 100) + '% built'); $('dr-sum').textContent = parts.join(' · '); return; }
   $('dr-sum').textContent = ''; vs.classList.remove('hidden');
   $('vl-lab').textContent = mast ? 'Mastering' + (w.m.mreg != null ? ' ' + MC.REGIONS[w.m.mreg].name : '') : t ? MT.stripTo : w.m.rbReady ? 'The land waits' : MT.stripNone; $('vl-name').textContent = t ? tileName(t) : w.m.rbReady ? MT.rbWait : MT.stripPick;
-  $('vl-rate').textContent = tx('w.lrate', { n: fmtW(L * amp, L < 100 ? 2 : 0) }) + (amp > 1 ? ' (amplified ×' + fmtW(amp, 0) + ')' : '');
+  { const am = t ? MC.ampMult(w, t.key) : 1, mm = amp / am; $('vl-rate').textContent = tx('w.lrate', { n: fmtW(L * amp, L < 100 ? 2 : 0) }) + (am > 1 ? ' (amplified ×' + fmtW(am, 0) + ')' : '') + (mm > 1.005 ? ' (mastery ×' + fmtW(mm, 2) + ')' : ''); }
   const pool = w.m.pool || 0, pcap = MC.poolCap(w);
   const pt = mast ? mastPct(mtr) + '%' : t ? fmtW(Math.floor(f * 1000) / 10, 1) + '%' : fmtC(pool), pe = $('vl-pct'), rest = mast ? ' ' + fmtW(Math.floor(mc)) + ' of ' + fmtW(mnd) + ' clears to ' + mastPct(mtr + 1) + '%' : t ? ' ' + fmtW(got) + ' of ' + fmtW(need) + ' light' : fill(MT.poolSaved, { cap: fmtC(pcap) });
   if (pe.dataset.s !== pt + rest) { pe.dataset.s = pt + rest; pe.textContent = ''; const bb = document.createElement('b'); bb.textContent = pt; pe.append(bb, rest); }

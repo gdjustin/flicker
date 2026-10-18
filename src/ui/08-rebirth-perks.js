@@ -65,8 +65,17 @@ function askScatter() {
   let no = $('moment-no'); if (!no) { no = document.createElement('button'); no.id = 'moment-no'; no.className = 'act'; no.type = 'button'; no.style.marginLeft = '0.6rem'; no.addEventListener('click', () => { $('moment').classList.add('hidden'); no.classList.add('hidden'); }); $('moment-ok').after(no); }
   no.textContent = MT.prestNo; no.classList.remove('hidden');
 }
+// a save made before the branch's rules (main, or an older branch build): give its run the milestone it should have
+function rbFixup(w) {
+  if (!MC.D.rb.on || !w || !w.m || w.m.rbAt !== undefined) return; const m = meta();
+  for (const id in m.perks) if (MC.D.perks[id] && MC.D.perks[id].kind === 'comfort') delete m.perks[id];   // comforts are gifts here, never bought
+  w.m.perks = MC.prPerks({ perks: m.perks, run: m.run });
+  if (m.run > RB_LAST() || m.whole) { MC.becomeWhole(w, m.hsLife, m.perks, Date.now() / 1000); m.whole = true; return; }
+  w.m.run = m.run; w.m.rbAt = MC.rbAt(m.run); w.m.rbReady = w.m.restored >= w.m.rbAt ? (w.t || 1) : 0; w.m.whole = false;
+}
 // the rebirth branch: the forced moment, on screen. One button, to the perk screen; the land waits until the rebirth
 function askRebirth(w, m) {
+  if (opt('confirmRebirth') === false) { openPerks(); return; }   // the setting: straight to choosing
   const last = m.run >= RB_LAST(), now = m.hsLife, before = now - (w.m.hsNew || 0);
   $('moment-h').textContent = last ? MT.rbLastH : MT.rbH; const body = $('moment-body'); body.innerHTML = '';
   const p1 = document.createElement('p'); p1.textContent = last ? MT.rb1Last : MT.rb1; body.appendChild(p1);
@@ -210,7 +219,7 @@ function renderPerks() {
     }
     h += '</div><div class="pk-bottom">';
     if (RBon) h += merch ? '' : giftsHTML(m.run);
-    const cids = RBon ? [] : Object.keys(MC.D.perks).filter(id => MC.D.perks[id].kind === 'comfort'), owned = cids.filter(id => lv[id]).length;
+    const cids = RBon ? [] : Object.keys(MC.D.perks).filter(id => MC.D.perks[id].kind === 'comfort' && !MC.D.perks[id].gift), owned = cids.filter(id => lv[id]).length;
     if (!RBon) {
     h += '<div class="pk-comforts"><div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><div class="cz" style="font-size:14px;letter-spacing:0.14em;color:#9fe3c5">COMFORTS</div><div style="font-size:13.5px;color:#a9bdb4">Catching up faster, never further. ' + owned + ' of ' + cids.length + ' kept.</div></div><div class="pk-chips">';
     for (const id of cids) { const p = MC.D.perks[id], u = PK_UI[id] || {}, n = lv[id] || 0, max = MC.perkMax(id), done = n >= max, price = done ? 0 : MC.perkCost(id, n), afford = !done && free >= price, picked = sel === id;
@@ -320,7 +329,8 @@ function beginRun() {
   S.log = []; say(skipP ? 'Run ' + m.run + '. You remember how to stand. The grey waits.' : 'Run ' + m.run + '. Nothing. Then, something. But you remember.');
   // the rebirth branch: The village stands. The run wakes at the edge of the land, the village as it stood when the map last opened
   if (gifts.villageSkip && m.villageSnap) { try { S.w = JSON.parse(JSON.stringify(m.villageSnap)); S.w.stats = { buys: [], made: {} }; S.w.playStart = S.playTime || 0; S.flags.stood = true;
-    say('You wake at the edge of your land. The village stands as you left it.'); startMap(); } catch (e) { S.w = null; } }
+    say('You wake at the edge of your land. The village stands as you left it.');
+    const w = S.w; MC.init(w, prestigeObj()); w.m.run = m.run; w.m.hsNew = 0; w.m.startPlay = S.playTime || 0; w.m.flags = {}; w.seen.copper = false; S.view = 'map'; } catch (e) { S.w = null; } }
   save(true); location.reload();
 }
 $('perk-screen').addEventListener('click', e => {
@@ -328,7 +338,7 @@ $('perk-screen').addEventListener('click', e => {
   if (t.dataset.close) { closePerks(); return; }
   if (t.id === 'pk-go') { commitScatter(); return; }
   if (t.dataset.toggle) { MV.prest.open = MV.prest.open === false; renderPerks(); return; }
-  if (t.dataset.undoall) { const P = MV.prest; P.lv = P.respec ? {} : Object.assign({}, P.base); renderPerks(); return; }
+  if (t.dataset.undoall) { const P = MV.prest; P.lv = P.respec ? {} : Object.assign({}, P.base); if (P.merchant) { merchantApply(); renderWorld(); } renderPerks(); return; }
   if (t.dataset.respec) { const P = MV.prest; if (P.respec) { P.respec = false; P.lv = Object.assign({}, P.base); } else { P.respec = true; P.lv = {}; } renderPerks(); return; }
   if (t.dataset.pick) { const id = t.dataset.pick; MV.perk = id; pkBuy(id); renderPerks(); perkTip($('perk-screen').querySelector('[data-pick="' + id + '"]')); }
 });

@@ -89,7 +89,7 @@ $('f-skipmap').addEventListener('click', e => { const b = e.currentTarget; if (!
   if (b === tipBtn) return; if (tipBtn) { hideTip(); tipBtn = null; } if (!b) return; const bd = b.querySelector('small.bd'); if (!bd || bd.scrollHeight <= bd.clientHeight + 1) return;
   const lines = [bd.textContent]; b.querySelectorAll('small.bc, small.bn').forEach(x => lines.push({ cls: 'tipx', t: x.textContent })); const bt = b.querySelector('.bt');
   showTextTip(b, bt ? bt.lastChild.textContent || bt.textContent : '', lines); tipBtn = b; }, { passive: true }); }
-if (S.inPerks) { MV.prest = null; renderPerks(); }
+if (S.inPerks) { MV.prest = null; if (S.w && S.w.m && S.w.m.whole && MC.merchantHere(S.w)) openMerchant(); else if (S.w && S.w.m && S.w.m.whole) { S.inPerks = false; } else renderPerks(); }
 buildParts(); renderLog(); render();
 
 })();
