@@ -92,15 +92,18 @@ function tabDot(id, why) {
 }
 function renderMapPhase(w) {
   $('w-tabs').classList.remove('hidden');
-  const view = S.view === 'village' ? 'village' : S.view === 'relics' ? 'relics' : 'map';
+  const view = S.view === 'village' ? 'village' : S.view === 'relics' ? 'relics' : S.view === 'defense' && cRun(w) ? 'defense' : 'map';
   $('tab-village').classList.toggle('on', view === 'village'); $('tab-map').classList.toggle('on', view === 'map'); $('tab-relics').classList.toggle('on', view === 'relics');
+  $('tab-defense').classList.toggle('hidden', !cRun(w)); $('tab-defense').classList.toggle('on', view === 'defense'); $('v-defense').classList.toggle('hidden', view !== 'defense');
   tabDot('tab-map', view === 'map' ? [] : mapNeedsYou(w)); tabDot('tab-village', view === 'village' ? [] : settlementNeedsYou(w)); tabDot('tab-relics', view === 'relics' ? [] : relicsNeedYou(w));
   $('v-village').classList.toggle('hidden', view !== 'village'); $('v-map').classList.toggle('hidden', view !== 'map'); $('m-panel').classList.toggle('hidden', view !== 'map'); $('v-relics').classList.toggle('hidden', view !== 'relics');
   $('m-regions').classList.toggle('hidden', view !== 'map' || !Object.keys(w.m.tiles).length);
   document.body.classList.toggle('view-map', view === 'map'); document.body.classList.toggle('view-relics', view === 'relics');   // v1r: no journal beside the relics
   if (view === 'village') { renderMapSettlement(w); renderMapSnails(w); }
   else if (view === 'relics') renderRelicsTab(w);
+  else if (view === 'defense') renderDefenseTab(w);
   else { const now = Date.now(); if (now - MV.lastMap > 250) { MV.lastMap = now; renderMap(w); } }
+  renderCombatRes(w);
   $('w-scatter').classList.toggle('hidden', !canScatter(w)); if (canScatter(w)) scatterPill(w);
   $('w-naming').classList.toggle('hidden', !(w.flags.askName && !w.name));
   renderMapDrawer(w);

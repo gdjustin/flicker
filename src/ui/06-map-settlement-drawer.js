@@ -173,6 +173,7 @@ function renderMapJobs(w) {
       if (d) d.title = idleH ? 'Nothing to carry: put them to other work' : 'A build is waiting for haulers'; }
     row.children[3].textContent = w.jobs[j.id] || 0; row.children[2].disabled = !(w.jobs[j.id] > 0); row.children[4].disabled = VC.jobsTotal(w) >= w.pop;
   });
+  renderCombatJobs(w, jb);
 }
 // v1r: once the map opens, firekeepers make light from a settler alone (keeperFuelMap 0), so their words change too
 function mapJobDesc(j) { return j.id === 'firekeeper' && !MC.D.keeperFuelMap ? MT.keeperDesc : j.desc; }

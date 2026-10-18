@@ -244,6 +244,7 @@ function showThirty() {
 function mapTick(dt, away) {
   const w = W(), regBefore = MC.regionsDone(w);
   const ev = MC.tick(w, dt, away);
+  combatTick(dt, away);   // combat test: the unlock, Resolve, iron (src/ui/07c-combat.js)
   for (const e of ev) {
     if (e[0] === 'restored') {
       const t = tileOf(e[1]), m = meta();
@@ -366,6 +367,7 @@ function mapLightTip(anchor) {
   const bl = MC.beaconLv(w); if (bl) mult.push('Beacon upgrades, ' + bl + ': ×' + x(1 + MC.beaconStepOf(w) * bl));
   const am = w.m.target ? MC.ampMult(w, w.m.target) : 1; if (am > 1) mult.push('An amplifier on the tile you call back: ×' + x(am));
   const ls = MC.mlv(w, 'longsong'); const kept = keptLightLines(w); if (ls || kept.length) mult.push({ t: 'On single lines:', cls: 'tipsep' }); if (ls) mult.push('Long songs, ' + ls + ': firekeepers ×' + x(1 + MC.D.longSong * ls)); kept.forEach(t => mult.push(t));
+  combatLightLines(w).forEach(t => mult.push(t));
   if (!w.m.target) mult.push({ cls: 'tipx', t: MT.poolTip + ' Saved now: ' + fmtC(w.m.pool || 0) + ' of ' + fmtC(MC.poolCap(w)) + '.' });
   showTextTip(anchor, 'Light', lines.concat(mult));
 }

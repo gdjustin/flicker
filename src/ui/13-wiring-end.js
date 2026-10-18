@@ -6,7 +6,7 @@ $('w-name-btn').addEventListener('click', wName);
 $('w-name-input').addEventListener('keydown', e => { if (e.key === 'Enter') wName(); });
 $('away-ok').addEventListener('click', closeAway);
 $('moment-ok').addEventListener('click', () => { const k = $('moment').dataset.kind; $('moment').classList.add('hidden'); $('moment').dataset.kind = ''; const no = $('moment-no'); if (no) no.classList.add('hidden');
-  if (k === 'map') startMap(); if (k === 'scatter') openPerks(); });
+  if (k === 'map') startMap(); if (k === 'scatter') openPerks(); if (k === 'combat') { S.view = 'defense'; renderWorld(); } });
 $('away').addEventListener('click', e => { if (e.target === $('away')) closeAway(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (!$('away').classList.contains('hidden')) closeAway(); if (!$('moment').classList.contains('hidden')) $('moment').classList.add('hidden'); } });
 document.addEventListener('animationend', e => { if (e.animationName === 'reveal' && e.target.classList) e.target.classList.remove('reveal'); });
@@ -61,7 +61,7 @@ if (/[?&]bot\b/.test(location.search)) {
   window.__T = { S: () => S, VC, VBOT, worldTick, look: wLook, gather: wGather, stoke: wStoke, card: wCard, level: wLevel, job: wJob, feast: wFeast, burn: wBurn, pause: wPause,
     stand: () => { S.flags.stood = true; enterWorld(); }, render: () => render(), serialize: () => serialize(S), botPlay: p => { botArm[p] = true; botPlay(p, $('f-bot' + p)); },
     advance: (sec) => { for (let t = 0; t < sec; t++) { worldTick(1); S.playTime = (S.playTime || 0) + 1; } },
-    MC, skipToMap: () => skipToMap(), botMap: n => botMap(n), mTarget: k => mTarget(k), mRelic: k => mRelic(k), mAnchor: k => mAnchor(k), mFinish: () => mFinish(), mCard: id => mCard(id), mLevel: id => mLevel(id), askScatter: () => askScatter(), openPerks: () => openPerks(), beginRun: () => beginRun(), MV, adv: (sec) => { for (let t = 0; t < sec; t += 5) worldTick(5); },
+    MC, CB, CMX, cLife: () => cLife(), cRun: () => cRun(), cAttack: k => cAttack(k), cBuy: id => cBuy(id), skipToCombat: () => skipToCombat(), skipToMap: () => skipToMap(), botMap: n => botMap(n), mTarget: k => mTarget(k), mRelic: k => mRelic(k), mAnchor: k => mAnchor(k), mFinish: () => mFinish(), mCard: id => mCard(id), mLevel: id => mLevel(id), askScatter: () => askScatter(), openPerks: () => openPerks(), beginRun: () => beginRun(), MV, adv: (sec) => { for (let t = 0; t < sec; t += 5) worldTick(5); },
     x: src => eval(src) };   // v1g: playtest probes run inside the page (only with ?bot)
 }
 
@@ -69,6 +69,7 @@ if (/[?&]bot\b/.test(location.search)) {
 $('tab-village').addEventListener('click', () => { S.view = 'village'; hideTip(); renderWorld(); });
 $('tab-map').addEventListener('click', () => { S.view = 'map'; MV.lastMap = 0; hideTip(); renderWorld(); });
 $('tab-relics').addEventListener('click', () => { S.view = 'relics'; hideTip(); renderWorld(); });
+$('tab-defense').addEventListener('click', () => { S.view = 'defense'; hideTip(); renderWorld(); });
 $('w-scatter').addEventListener('click', askScatter);
 $('m-grid').addEventListener('click', () => { MV.lastMap = 0; });
 /*@if-test*/

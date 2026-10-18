@@ -1,10 +1,10 @@
 /* ---------- the scatter (prestige) and the perk screen ---------- */
 // v1q (owner, 2026-10-16): the scatter preview and "between runs" from the Relics and Remembering mock-ups, on the V3 rules.
 // Gifts and comforts stay spent from run to run; only a respec (free, here, chosen on this screen) gives them back.
-function canScatter(w) { const m = meta(); return w && w.m && (m.run === 1 ? w.m.restored >= 30 : (w.m.hsNew || 0) > 0); }
+function canScatter(w) { const m = meta(); return w && w.m && (m.run === 1 ? w.m.restored >= 30 : (w.m.hsNew || 0) > 0 || cNewBs(w) > 0); }
 function scatterPill(w) {
   const b = $('w-scatter'), n = w && w.m ? (w.m.hsNew || 0) : 0, m = meta(), last = m.hist.length ? m.hist[m.hist.length - 1] : null;
-  const t = MT.prestBtn + ' · +' + fmtW(n); if (b.textContent !== t) b.textContent = t;
+  const bs = cNewBs(w), t = MT.prestBtn + ' · +' + fmtW(n) + (cOpened() ? ' · +' + fmtW(bs) + ' bloodstones' : ''); if (b.textContent !== t) b.textContent = t;
   const play = Math.max(1, (S.playTime || 0) - ((w && w.m && w.m.startPlay) || 0)), perDay = n / (play / 86400);
   b.title = (w && w.m ? (w.m.newPlaces || 0) + ' places called back for the first time this run. ' : '') + 'Heartstones a day: ' + fmtW(perDay, 1) + (last && last.play > 0 ? ' (last run: ' + fmtW(last.hsNew / (last.play / 86400), 1) + ')' : '') + '.';
 }
@@ -23,6 +23,7 @@ function askScatter() {
   row('Memory, all light', '×' + fmtW(memMultFor(before), 2) + ' → <b class="hl">×' + fmtW(memMultFor(now), 2) + '</b>');
   row('Heartstones a day', fmtW(perDay, 1) + (last && last.play > 0 ? ' <span class="sub">(last run: ' + fmtW(last.hsNew / (last.play / 86400), 1) + ')</span>' : ''));
   row('Free to spend on the other side', fmtW(now - perkSpent(m.perks)));
+  if (cOpened()) { const L = cLife(), nb = cNewBs(w); row('New bloodstones from this run', '<b class="hl">+' + fmtW(nb) + '</b>'); row('Combat power from bloodstones', '×' + fmtW(cFlatFor(L.bs), 2) + ' → <b class="hl">×' + fmtW(cFlatFor(L.bs + nb), 2) + '</b>'); }
   body.appendChild(led);
   const p3 = document.createElement('p'); p3.className = 'sub'; p3.textContent = MT.prest3; body.appendChild(p3);
   $('moment-ok').textContent = MT.prestGo; $('moment').dataset.kind = 'scatter'; $('moment').classList.remove('hidden');
@@ -148,7 +149,7 @@ function renderPerks() {
     h += '</div></div></div></div>';
   }
   h += '</section>';
-  h += '<section class="cur locked"><div class="cur-strip"><span class="cur-name"><span class="hex" style="width:30px;height:27px;background:#26233a">' + pkSvg('lock', '#8a8399', 15) + '</span><span><span class="cz cur-t" style="color:#8f8798">Something older</span><span class="cur-s">Chained in the dark</span></span></span>' +
+  const cps = combatPerkSection(m); if (cps) h += cps; else h += '<section class="cur locked"><div class="cur-strip"><span class="cur-name"><span class="hex" style="width:30px;height:27px;background:#26233a">' + pkSvg('lock', '#8a8399', 15) + '</span><span><span class="cz cur-t" style="color:#8f8798">Something older</span><span class="cur-s">Chained in the dark</span></span></span>' +
     '<span class="cur-mem" style="color:#8f8798;font-style:italic;font-size:15px">Its stones are not heartstones.</span><span></span><span></span></div></section>';
   const hist = m.hist.map(x => 'Run ' + x.run + ': ' + x.tiles + ' places, +' + fmtW(x.hsNew)).concat(w && w.m ? ['Run ' + m.run + ': ' + w.m.restored + ' places, +' + fmtW(newHs)] : []);
   h += '<div class="pk-foot"><div class="pk-last">' + hist.join(' · ') + ' · Close or press Esc to go back to run ' + m.run + '</div><button type="button" class="pk-return" id="pk-go">' + pkSvg('flame', '#ffb35c', 19, 1.8) + 'Scatter, and begin run ' + (m.run + 1) + '</button></div></div>';
@@ -193,6 +194,7 @@ function commitScatter() {
     m.relics = Array.from(new Set(m.relics.concat(Object.keys(w.m.relicT || {}))));
     m.levels = { lv: JSON.parse(JSON.stringify(w.m.lv || {})), tier: JSON.parse(JSON.stringify(w.m.tier || {})) };
     MC.REGIONS.forEach((rg, i) => { const c = rg.tiles.filter(k => w.m.tiles[k]).length; if (c > (m.regBest[i] || 0)) m.regBest[i] = c; if (c === rg.tiles.length && !m.regFin[i]) m.regFin[i] = m.run; }); }
+  combatCommit();   // combat test: bloodstones bank, and their perks
   m.perks = Object.assign({}, MV.prest.lv); MV.prest = null; hidePtip(); beginRun();
 }
 function beginRun() {
@@ -207,6 +209,7 @@ function beginRun() {
 }
 $('perk-screen').addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t || !MV.prest) return;
+  if (combatPerkClick(t)) return;
   if (t.dataset.close) { closePerks(); return; }
   if (t.id === 'pk-go') { commitScatter(); return; }
   if (t.dataset.toggle) { MV.prest.open = MV.prest.open === false; renderPerks(); return; }

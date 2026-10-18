@@ -46,6 +46,18 @@
    "text": "</script>\n"
   },
   {
+   "text": "<script>\n"
+  },
+  {
+   "file": "src/rules/combat-map.js"
+  },
+  {
+   "file": "src/rules/combat-core.js"
+  },
+  {
+   "text": "</script>\n"
+  },
+  {
    "text": "<script>\n",
    "test": true
   },
@@ -94,10 +106,17 @@
    "file": "src/ui/07-map-view.js"
   },
   {
+   "file": "src/ui/07c-combat.js"
+  },
+  {
    "file": "src/ui/08-rebirth-perks.js"
   },
   {
    "file": "src/ui/09-away-playtest.js"
+  },
+  {
+   "file": "src/ui/09c-combat-test.js",
+   "test": true
   },
   {
    "file": "src/ui/10-text-registry.js",
