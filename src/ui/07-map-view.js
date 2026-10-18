@@ -8,8 +8,8 @@ function mapRadius(w) { return Math.max(6, Math.min((MC.MAP.size - 1) / 2, (w.m.
    MV.cell is a place's size in pixels; the first time, 13 places fit across (the starting land). */
 function mapView() { return $('m-view'); }
 function mapZoom(w, f) {
-  const v = mapView(), st = $('m-stage'); if (!v || !st || !v.clientWidth) return; const vw = v.clientWidth, n = 2 * (MV.V || 6) + 1, fit = vw / n;
-  if (!MV.cell) MV.cell = Math.max(fit, vw / 13);
+  const v = mapView(), st = $('m-stage'); if (!v || !st || !v.clientWidth) return; const vw = v.clientWidth, n = 2 * (MV.V || 6) + 1, fit = Math.max(vw, v.clientHeight) / n;   // the map fills its box (no longer square): at the widest zoom it still covers it
+  if (!MV.cell) MV.cell = Math.max(fit, Math.min(vw, v.clientHeight) / 13);
   if (f) { const W0 = st.offsetWidth, cx = (v.scrollLeft + vw / 2) / W0, cy = (v.scrollTop + v.clientHeight / 2) / W0;
     MV.cell = Math.max(fit, Math.min(120, MV.cell * f)); st.style.setProperty('--cell', MV.cell + 'px'); const W1 = st.offsetWidth;
     v.scrollLeft = cx * W1 - vw / 2; v.scrollTop = cy * W1 - v.clientHeight / 2; }
