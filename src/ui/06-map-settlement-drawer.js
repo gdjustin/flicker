@@ -141,7 +141,10 @@ function renderRelicsTab(w) {
     box.querySelectorAll('[data-tip]').forEach(e => { ['mouseenter', 'focus'].forEach(ev => e.addEventListener(ev, () => showTextTip(e, e.textContent.replace(/:.*$/, ''), [e.dataset.tip]))); ['mouseleave', 'blur'].forEach(ev => e.addEventListener(ev, hideTip)); }); }
   const acts = $('rel-acts'), shown = open.slice(0, 6).map(x => x.k);
   Array.from(acts.children).forEach(b => { if (b.dataset.k && !shown.includes(b.dataset.k)) b.remove(); if (b.id === 'w-rel-all' && !(rr >= 2)) b.remove(); });
-  if (rr >= 2 && open.length > 1) { const tot = open.reduce((a, x) => a + x.c, 0), b = ensureBtn(acts, 'w-rel-all', () => mRelicAll(), 'relic'); setBtn(b, 'Claim every relic you can', open.length + ' waiting; ' + fmtC(tot) + ' copper for all of them. Cheapest first.', w.res.copper >= open[0].c, { cost: { copper: open[0].c } }); }
+  // r1c fix (owner's playtest): the button's price is what this click spends (as many as you can afford, cheapest first), not the cheapest one alone
+  if (rr >= 2 && open.length > 1) { const tot = open.reduce((a, x) => a + x.c, 0), b = ensureBtn(acts, 'w-rel-all', () => mRelicAll(), 'relic');
+    let k = 0, spend = 0; for (const x of open) { if (spend + x.c > w.res.copper) break; spend += x.c; k++; }
+    setBtn(b, 'Claim every relic you can', open.length + ' waiting; ' + fmtC(tot) + ' copper for all of them. ' + (k === open.length ? 'You can claim them all.' : k ? 'You can claim the ' + k + ' cheapest now.' : 'Cheapest first.'), k > 0, { cost: { copper: k ? spend : open[0].c } }); }
   for (const x of open.slice(0, 6)) { const t = tileOf(x.k), b = ensureBtn(acts, 'w-rel-' + x.k.replace(/[^\w]/g, '_'), () => mRelic(x.k), 'relic'); b.dataset.k = x.k;
     setBtn(b, relicName(x.k), capFirst(relicGain(w, x.k)) + '. ' + LANDN[t.land] + '.' + (rr && w.m.relicKnown && w.m.relicKnown[x.k] ? ' Remembered: half price.' : ''), VC.canPay(w, { copper: x.c }), { cost: { copper: x.c } }); relicIconOn(b, t.land); }
   if (!open.length && !acts.children.length) acts.innerHTML = '<p class="note" style="color:var(--ash);font-style:italic;margin:0">No relics waiting. Each place you call back brings one.</p>';

@@ -21,7 +21,7 @@ var MBOT = function (MC, VBOT) {
     // the rebirth branch: with The village stands, the run wakes at the map with the village as it stood when the map last opened
     var vskip = !!(pr && pr.villageSnap && MC.prPerks(pr).villageSkip);
     var vr = vskip ? { s: JSON.parse(JSON.stringify(pr.villageSnap)) } : VBOT.run(VC, Object.assign({}, VILLAGE, { pv: pv, instantProj: vkept, startRes: pr ? D0.villageStart : null }));   // v1r: the opening stores come from run 2 on
-    if (vskip) { vr.s.pv = pv; vr.s.t = 60; vr.s.stats = { buys: [], made: {} }; }
+    if (vskip) { vr.s.pv = pv; vr.s.t = 60; vr.s.stats = { buys: [], made: {} }; if (MC.villageStand) MC.villageStand(vr.s); }   // r1c: at least the floor of the village built
     var villageSnap = JSON.parse(JSON.stringify(vr.s));   // what the next run's village would be
     var s = MC.init(vr.s, opt.prestige), T0 = s.t, D = MC.D;
     var snap = {}; TAIL.forEach(function (id) { snap[id] = s.lv[id] || 0; });

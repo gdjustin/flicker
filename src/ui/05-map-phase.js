@@ -194,11 +194,11 @@ const MT = {   // the map's text, in one place for the text editor
   rbLog: 'You have called back enough of the land to remember more of yourself. The dark beyond will not answer until you are reborn ({n} of 5).',
   rbLastLog: 'The last of you comes back. You are nearly whole.',
   rbH: 'You remember more of yourself', rbLastH: 'You remember all of yourself',
-  rb1: 'The land you called back has given you back a piece of who you were. Hold on to it: let this body go, and wake again remembering more.',
+  rb1: 'The land you called back dissolves, but it has given you back a piece of who you were before. You sense that you will soon wake again, remembering more.',   // owner, 2026-10-18
   rb1Last: 'This time you do not come apart. Everything you called back stays called back, and you stay with it.',
-  rbGo: 'Choose what you remember', rbLastGo: 'Choose what you remember',
+  rbGo: 'Choose what you remember', rbLastGo: 'Choose what you remember', rbLater: 'Not yet',
   rbWait: 'The land beyond waits until you are reborn.', rbBtn: 'Be reborn',
-  rbPill: 'Remembered {pct}% · {n} of {at} places', rbPillReady: 'Ready to be reborn',
+  rbPill: 'Next milestone: {n} of {at} lands restored', rbPillReady: 'Ready to be reborn',   // owner, 2026-10-18
   wholeH: 'Whole', whole1: 'You remember all of yourself. From now on nothing you call back fades: the land stays, and every new place adds to what you remember at once.',
   whole2: 'You can go back over land you know and master it, and a traveler has started walking toward your light.',
   combatH: 'Something has seen your light', combat1: 'Smoke rises past the ford. Not everything you called back is friendly, and not all of this land is yours.',
@@ -225,7 +225,7 @@ function prestigeObj() { const m = meta(); return m.run > 1 ? { run: m.run, hs: 
 function tileOf(key) { const i = MC.MAP.idx[key]; return i == null ? null : MC.MAP.tiles[i]; }
 function tileName(t) { if (!t) return ''; const r = MC.REGIONS[t.region]; return (t.name || LANDN[t.land]) + (r ? ', in ' + r.name : ''); }
 function shortName(t) { return t ? (t.name || LANDN[t.land]) : ''; }
-// the rebirth branch: mastery's words. A place's percent: 100% called back, 101% bronze (10 clears), 102% silver (100), 103% gold (1,000)
+// the rebirth branch: mastery's words. A place's percent: 100% called back, 101% bronze (100 clears in R1), 102% silver (1,000), 103% gold (10,000)
 const MASTER_WORD = ['', 'bronze', 'silver', 'gold', 'radiant', 'radiant'];
 const mastPct = tier => 100 + tier;
 function regionOf(t) { return MC.REGIONS[t.region]; }

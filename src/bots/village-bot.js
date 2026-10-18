@@ -14,7 +14,8 @@ var VBOT = (function () {
     if (opt.pv) s.pv = opt.pv;   // Light Lab v1: memory and family perks in the village
     if (opt.startRes) for (var r0 in opt.startRes) s.res[r0] = Math.max(s.res[r0] || 0, opt.startRes[r0]);   // Light Lab v2: 40 stone and wood
     if (s.pv && s.pv.startPop) { var p0 = s.pv.startPop; s.pop = Math.min(D.maxSettlers, p0); s.doorPop = s.pop; s.pvExtra = Math.max(0, p0 - s.pop); s.lastArrive = 0;   // Light Lab v3: Open doors
-      (s.pv.doorCards || []).forEach(function (c) { s.cards[c] = true; }); s.res.food = Math.max(s.res.food, 10 * s.pop); }
+      (s.pv.doorCards || []).forEach(function (c) { s.cards[c] = true; }); s.res.food = Math.max(s.res.food, 10 * s.pop);
+      if (s.pv.doorShelters) s.lv.shelter = Math.max(s.lv.shelter || 0, s.pv.doorShelters); }   // r1c: the shelters to house them
     var marks = {}, lightAt = {}, gaps = [], samples = [], nextSample = 0, arrive = [], projT = {}, cardT = {}, idleRuns = [], lastBuy = 0, longestIdle = 0, idleSince = 0;
     function note(kind, a, b) { log.push([s.t, kind, a, b]); if (onEvent) onEvent(s, kind, a, b); }
     // income a second for each raw resource right now (jobs, minus burning and eating)

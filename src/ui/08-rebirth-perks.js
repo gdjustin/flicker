@@ -19,7 +19,7 @@ const GIFT_TEXT = {
   openDoors: n => 'The village starts with ' + MC.D.perks.openDoors.pop[n - 1] + ' settlers.',
   practisedHaulers: () => 'Projects built in an earlier run haul ' + fmtW(MC.D.perks.practisedHaulers.x, 1) + '× as fast.',
   relicsRemembered: n => n >= 2 ? 'Relics claimed in an earlier run cost half, and can all be claimed at once.' : 'Relics claimed in an earlier run cost half.',
-  oldFlames: n => 'Last run’s upgrade lines come back already bought: ' + ['copper tools, books and timber houses', 'fire-tending and long songs', 'copper lamps and braziers', 'burner rebuilds and copper burners'].slice(0, n).join('; ') + '.',
+  oldFlames: n => 'Last run’s upgrade lines come back already bought: ' + ['copper tools and timber houses', 'fire-tending and long songs', 'copper lamps and braziers', 'burner rebuilds and copper burners'].slice(0, n).join('; ') + '.',
   villageSkip: () => 'You wake at the edge of your land: the village stands as it was when you last looked out.',
   headStart: () => 'The map opens with the wood, stone, fiber, food and copper stores full.',
   keptLights: () => 'Light projects built in an earlier run stay built (not the beacon or the towers).'
@@ -32,9 +32,10 @@ function rbBar(run, after, big) {   // five segments: filled for every rebirth t
 }
 function rbPill(w) {
   const b = $('w-scatter'); b.classList.toggle('ready', !!w.m.rbReady); b.classList.toggle('quiet', !w.m.rbReady);
-  const txt = w.m.rbReady ? MT.rbPillReady : fill(MT.rbPill, { pct: rbPct(w.m.run, false), n: w.m.restored, at: w.m.rbAt });
+  // r1c (owner, 2026-10-18): vaguer. Just the next milestone; no hover spelling out what it does
+  const txt = w.m.rbReady ? MT.rbPillReady : fill(MT.rbPill, { n: w.m.restored, at: w.m.rbAt });
   const sig = txt + '|' + w.m.run; if (b.dataset.s !== sig) { b.dataset.s = sig; b.innerHTML = rbBar(w.m.run, false) + '<span>' + txt + '</span>'; }
-  b.title = w.m.rbReady ? MT.rbWait : 'Rebirth ' + w.m.run + ' of ' + RB_LAST() + ' comes when ' + w.m.rbAt + ' places are back in one run. It brings: ' + giftLines(MC.D.rb.packets[w.m.run - 1]).map(g => g.name).join(', ') + (w.m.run >= RB_LAST() ? 'nothing lost: you become whole' : '') + '.';
+  b.removeAttribute('title');
 }
 function scatterPill(w) {
   if (MC.D.rb.on) { rbPill(w); return; }
@@ -62,8 +63,12 @@ function askScatter() {
   body.appendChild(led);
   const p3 = document.createElement('p'); p3.className = 'sub'; p3.textContent = MT.prest3; body.appendChild(p3);
   $('moment-ok').textContent = MT.prestGo; $('moment').dataset.kind = 'scatter'; $('moment').classList.remove('hidden');
-  let no = $('moment-no'); if (!no) { no = document.createElement('button'); no.id = 'moment-no'; no.className = 'act'; no.type = 'button'; no.style.marginLeft = '0.6rem'; no.addEventListener('click', () => { $('moment').classList.add('hidden'); no.classList.add('hidden'); }); $('moment-ok').after(no); }
-  no.textContent = MT.prestNo; no.classList.remove('hidden');
+  momentNo(MT.prestNo);
+}
+// a second button on the moment that only closes it
+function momentNo(text) {
+  let no = $('moment-no'); if (!no) { no = document.createElement('button'); no.id = 'moment-no'; no.className = 'act'; no.type = 'button'; no.style.marginLeft = '0.6rem'; no.addEventListener('click', () => { $('moment').classList.add('hidden'); $('moment').dataset.kind = ''; no.classList.add('hidden'); }); $('moment-ok').after(no); }
+  no.textContent = text; no.classList.remove('hidden');
 }
 // a save made before the branch's rules (main, or an older branch build): give its run the milestone it should have
 function rbFixup(w) {
@@ -91,7 +96,7 @@ function askRebirth(w, m) {
     const ul = document.createElement('ul'); ul.className = 'rbgifts'; gl.forEach(g => { const li = document.createElement('li'); li.innerHTML = '<b>' + g.name + '</b> <span>' + g.desc + '</span>'; ul.appendChild(li); }); body.appendChild(ul); }
   else if (last) { const p2 = document.createElement('p'); p2.className = 'sub'; p2.textContent = 'Nothing resets. The land you called back stays, and from now on memory grows as new land comes back.'; body.appendChild(p2); }
   $('moment-ok').textContent = last ? MT.rbLastGo : MT.rbGo; $('moment').dataset.kind = 'scatter'; $('moment').classList.remove('hidden');
-  const no = $('moment-no'); if (no) no.classList.add('hidden');
+  momentNo(MT.rbLater);   // r1c (owner): forced, but it can be put aside; "Ready to be reborn" brings it back
 }
 // the last rebirth and what follows: whole, then the moment combat would open
 function showWhole() {
@@ -245,11 +250,14 @@ function giftsHTML(run) {
   let h = '<div class="pk-comforts"><div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><div class="cz" style="font-size:14px;letter-spacing:0.14em;color:#9fe3c5">GIFTS</div><div style="font-size:13.5px;color:#a9bdb4">Each rebirth brings gifts of its own, free, for every run after it. They catch you up; heartstones buy power.</div></div>';
   for (let i = 0; i < packs.length; i++) {
     const n = i + 1, state = n < run ? 'held' : n === run ? 'now' : 'later', gl = giftLines(packs[i]);
-    h += '<div class="rbpack ' + state + '"><span class="rbp-h">' + (state === 'now' ? 'This rebirth brings' : state === 'held' ? 'Rebirth ' + n + ' brought' : 'Rebirth ' + n + ' will bring') + '</span><span class="pk-chips">';
-    gl.forEach(g => { h += '<span class="chip gift ' + state + '" title="' + g.desc.replace(/"/g, '&quot;') + '">' + (state === 'later' ? pkSvg('lock', '#7d8a86', 15, 1.8) : '<svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l5 5L20 6" fill="none" stroke="#9fe3c5" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>') + '<span>' + g.name + '</span></span>'; });
+    h += '<div class="rbpack ' + state + '"><span class="rbp-h">' + (state === 'now' ? 'This rebirth brings' : state === 'held' ? 'Rebirth ' + n + ' brought' : 'Rebirth ' + n) + '</span><span class="pk-chips' + (state === 'later' ? ' locks' : '') + '">';
+    // r1c (owner, 2026-10-18): rebirths still to come show locked icons only, no names or descriptions
+    if (state === 'later') gl.forEach(() => { h += '<span class="chip gift later lockonly" aria-label="Not yet remembered">' + pkSvg('lock', '#7d8a86', 15, 1.8) + '</span>'; });
+    else gl.forEach(g => { h += '<span class="chip gift ' + state + '" tabindex="0" data-gift="' + g.id + ':' + g.lv + ':' + n + '"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l5 5L20 6" fill="none" stroke="#9fe3c5" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg><span>' + g.name + '</span></span>'; });
     h += '</span></div>';
   }
-  h += '<div class="rbpack ' + (run >= RB_LAST() ? 'now' : 'later') + '"><span class="rbp-h">Rebirth ' + RB_LAST() + ' (the last)</span><span class="pk-chips"><span class="chip gift ' + (run >= RB_LAST() ? 'now' : 'later') + '"><span>Nothing resets: you become whole, and the land stays</span></span></span></div>';
+  const lastNow = run >= RB_LAST();
+  h += '<div class="rbpack ' + (lastNow ? 'now' : 'later') + '"><span class="rbp-h">Rebirth ' + RB_LAST() + '</span><span class="pk-chips' + (lastNow ? '' : ' locks') + '">' + (lastNow ? '<span class="chip gift now"><span>Nothing resets: you become whole, and the land stays</span></span>' : '<span class="chip gift later lockonly" aria-label="Not yet remembered">' + pkSvg('lock', '#7d8a86', 15, 1.8) + '</span>') + '</span></div>';
   return h + '</div>';
 }
 // the traveling merchant: the same screen, his stock the heartstone perks, what you buy working at once
@@ -283,11 +291,15 @@ function perkTipHTML(id) {
   return '<strong>' + p.name + ' <span>' + (p.role === 'unlock' ? (n ? 'chosen' : 'one-time') : 'rank ' + n + ' of ' + max) + '</span></strong><div class="pt-k">' + kind + '</div>' + (u.story ? '<div class="pt-s">' + u.story + '</div>' : '') +
     '<div class="pt-r"><span>Now</span><span>' + (u.fx ? u.fx(n) : MC.perkDesc(id)) + '</span>' + (done || !u.fx ? '' : '<span>Next</span><span class="pt-n">' + u.fx(n + 1) + '</span>') + '</div><div class="pt-a">' + act + '</div>';
 }
+function giftTipHTML(code) {
+  const [id, lv, n] = code.split(':'), g = giftLines({ [id]: +lv })[0];
+  return '<strong>' + g.name + ' <span>gift</span></strong><div class="pt-k">From rebirth ' + n + ', free, for every run after it</div><div class="pt-r"><span>Does</span><span>' + g.desc + '</span></div>';
+}
 function hidePtip() { const t = $('ptip'); if (t) t.hidden = true; }
 function perkTip(el) {
   let t = $('ptip'); if (!t) { t = document.createElement('div'); t.id = 'ptip'; t.className = 'ptip'; t.hidden = true; document.body.appendChild(t); }
   if (!el || !MV.prest) { t.hidden = true; return; }
-  t.innerHTML = perkTipHTML(el.dataset.pick); t.hidden = false;
+  t.innerHTML = el.dataset.gift ? giftTipHTML(el.dataset.gift) : perkTipHTML(el.dataset.pick); t.hidden = false;
   const r = el.getBoundingClientRect(), wd = t.offsetWidth, hg = t.offsetHeight; let x = r.left + r.width / 2 - wd / 2, y = r.bottom + 6;
   x = Math.max(8, Math.min(window.innerWidth - wd - 8, x)); if (y + hg > window.innerHeight - 8) y = Math.max(8, r.top - hg - 6); t.style.left = x + 'px'; t.style.top = y + 'px';
 }
@@ -330,7 +342,7 @@ function beginRun() {
   // the rebirth branch: The village stands. The run wakes at the edge of the land, the village as it stood when the map last opened
   if (gifts.villageSkip && m.villageSnap) { try { S.w = JSON.parse(JSON.stringify(m.villageSnap)); S.w.stats = { buys: [], made: {} }; S.w.playStart = S.playTime || 0; S.flags.stood = true;
     say('You wake at the edge of your land. The village stands as you left it.');
-    const w = S.w; MC.init(w, prestigeObj()); w.m.run = m.run; w.m.hsNew = 0; w.m.startPlay = S.playTime || 0; w.m.flags = {}; w.seen.copper = false; S.view = 'map'; } catch (e) { S.w = null; } }
+    const w = S.w; MC.villageStand(w); /* r1c: at least the floor of the village built */ MC.init(w, prestigeObj()); w.m.run = m.run; w.m.hsNew = 0; w.m.startPlay = S.playTime || 0; w.m.flags = {}; w.seen.copper = false; S.view = 'map'; } catch (e) { S.w = null; } }
   save(true); location.reload();
 }
 $('perk-screen').addEventListener('click', e => {
@@ -343,9 +355,9 @@ $('perk-screen').addEventListener('click', e => {
   if (t.dataset.pick) { const id = t.dataset.pick; MV.perk = id; pkBuy(id); renderPerks(); perkTip($('perk-screen').querySelector('[data-pick="' + id + '"]')); }
 });
 $('perk-screen').addEventListener('contextmenu', e => { const t = e.target.closest('[data-pick]'); if (!t || !MV.prest) return; e.preventDefault(); const id = t.dataset.pick; pkUndo(id); renderPerks(); perkTip($('perk-screen').querySelector('[data-pick="' + id + '"]')); });
-$('perk-screen').addEventListener('mouseover', e => perkTip(e.target.closest('[data-pick]')));
+$('perk-screen').addEventListener('mouseover', e => perkTip(e.target.closest('[data-pick],[data-gift]')));
 $('perk-screen').addEventListener('mouseleave', () => perkTip(null));
-$('perk-screen').addEventListener('focusin', e => perkTip(e.target.closest('[data-pick]')));
+$('perk-screen').addEventListener('focusin', e => perkTip(e.target.closest('[data-pick],[data-gift]')));
 $('perk-screen').addEventListener('focusout', () => perkTip(null));
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && S.inPerks && S.w) closePerks(); });
 

@@ -203,6 +203,8 @@ function renderWorld() {
     setBtn(ensureBtn(ab, 'w-g-' + g.res, () => (W().m ? mGather(g.res) : wGather(g.res))), g.res === 'wood' && w.cards.woodcutting ? g.labelAxe : g.label, full && learns ? 'The ' + resName(g.res).toLowerCase() + ' store is full, but your hands still turn up ideas: +' + fmtW(hi, 2) + ' a click.' : tx('w.gather.sub', { n: fmtW(amt, amt % 1 ? 1 : 0), res: resName(g.res).toLowerCase() }), !full || learns,
       { keys: itemKeys('world.gather', g, ['label', 'labelAxe']).concat(['w.gather.sub']) });
   }
+  // r1c (owner, 2026-10-18): the gathering buttons keep their own order (wood beside stone), whatever order they opened in
+  { let prev = null; for (const g of WORLD.gathers) { const b = $('w-g-' + g.res); if (!b) continue; if (prev && b.previousElementSibling !== prev) prev.after(b); prev = b; } }
   renderFeast(w);
   if (w.m) { renderMapPhase(w); return; }
   // Buildings: every open ladder, grouped (light, homes, storage, tools)

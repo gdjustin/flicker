@@ -188,7 +188,8 @@ function villageStart(w) {
   const st = pr ? (MC.D.villageStart || {}) : {}; for (const k in st)   // v1r (owner): the opening stores are a gift from run 2 on, not run 1
     if (st[k] > 0) { w.res[k] = Math.max(w.res[k] || 0, st[k]); w.seen[k] = true; }
   if (pv && pv.startPop) { w.pop = Math.min(VC.D.maxSettlers, pv.startPop); w.doorPop = w.pop; w.pvExtra = Math.max(0, pv.startPop - w.pop); w.lastArrive = 0;
-    (pv.doorCards || []).forEach(c => { w.cards[c] = true; w.learnedAt[c] = 0; }); w.res.food = Math.max(w.res.food, 10 * w.pop); w.seen.food = true; }
+    (pv.doorCards || []).forEach(c => { w.cards[c] = true; w.learnedAt[c] = 0; }); w.res.food = Math.max(w.res.food, 10 * w.pop); w.seen.food = true;
+    if (pv.doorShelters) w.lv.shelter = Math.max(w.lv.shelter || 0, pv.doorShelters); }   // r1c: the shelters to house them
   return w;
 }
 function enterWorld() {

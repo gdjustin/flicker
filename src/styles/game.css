@@ -793,6 +793,9 @@ body.calm *, body.calm *::before, body.calm *::after { animation: none !importan
 #perk-screen .chip.gift.held { border-color: #3f7a64; background: #173a30; }
 #perk-screen .chip.gift.now { border-color: #f3d48a; background: #2b2615; color: #fff1c9; }
 #perk-screen .chip.gift.later { color: #a9bdb4; }
+#perk-screen .pk-chips.locks { display: flex; flex-wrap: wrap; gap: 8px; }
+#perk-screen .chip.gift.lockonly { padding: 8px 10px; min-width: 0; width: auto; flex: 0 0 auto; opacity: 0.8; }
+#perk-screen .chip.gift[data-gift] { cursor: help; }
 /* mastery on the land: a tint at each tier, and a star a tier along the bottom of the place */
 #m-grid .cell.done.m1 { box-shadow: inset 0 0 0 1px rgba(201, 138, 75, 0.55); }
 #m-grid .cell.done.m2 { box-shadow: inset 0 0 0 1.5px rgba(215, 221, 228, 0.6); }
