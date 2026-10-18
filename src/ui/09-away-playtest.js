@@ -77,7 +77,7 @@ function mapNeedsYou(w) {
   return why;
 }
 function settlementNeedsYou(w) {
-  const why = [], free = w.pop - VC.jobsTotal(w);
+  const why = combatSettlersNeedYou(w), free = w.pop - VC.jobsTotal(w);
   if (free > 0) why.push(free + ' settler' + (free === 1 ? '' : 's') + ' with no job');
   if ((w.jobs.hauler || 0) > 0 && !w.m.proj) why.push('haulers with nothing to carry');
   if (w.m.proj && !w.m.awaitClick && !(w.jobs.hauler > 0)) why.push('no one is hauling to ' + pname(w, w.m.proj.id));
@@ -95,10 +95,10 @@ function renderMapPhase(w) {
   const view = S.view === 'village' ? 'village' : S.view === 'relics' ? 'relics' : S.view === 'defense' && cRun(w) ? 'defense' : 'map';
   $('tab-village').classList.toggle('on', view === 'village'); $('tab-map').classList.toggle('on', view === 'map'); $('tab-relics').classList.toggle('on', view === 'relics');
   $('tab-defense').classList.toggle('hidden', !cRun(w)); $('tab-defense').classList.toggle('on', view === 'defense'); $('v-defense').classList.toggle('hidden', view !== 'defense');
-  tabDot('tab-map', view === 'map' ? [] : mapNeedsYou(w)); tabDot('tab-village', view === 'village' ? [] : settlementNeedsYou(w)); tabDot('tab-relics', view === 'relics' ? [] : relicsNeedYou(w));
+  tabDot('tab-map', view === 'map' ? [] : mapNeedsYou(w)); tabDot('tab-village', view === 'village' ? [] : settlementNeedsYou(w)); tabDot('tab-relics', view === 'relics' ? [] : relicsNeedYou(w)); if (cRun(w)) tabDot('tab-defense', view === 'defense' ? [] : defenseNeedsYou(w));
   $('v-village').classList.toggle('hidden', view !== 'village'); $('v-map').classList.toggle('hidden', view !== 'map'); $('m-panel').classList.toggle('hidden', view !== 'map'); $('v-relics').classList.toggle('hidden', view !== 'relics');
   $('m-regions').classList.toggle('hidden', view !== 'map' || !Object.keys(w.m.tiles).length);
-  document.body.classList.toggle('view-map', view === 'map'); document.body.classList.toggle('view-relics', view === 'relics');   // v1r: no journal beside the relics
+  document.body.classList.toggle('view-map', view === 'map'); document.body.classList.toggle('view-relics', view === 'relics'); document.body.classList.toggle('view-defense', view === 'defense');   // v1r: no journal beside the relics
   if (view === 'village') { renderMapSettlement(w); renderMapSnails(w); }
   else if (view === 'relics') renderRelicsTab(w);
   else if (view === 'defense') renderDefenseTab(w);

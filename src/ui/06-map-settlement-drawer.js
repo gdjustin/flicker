@@ -126,6 +126,7 @@ function renderRelicsTab(w) {
   }
   h += '</div><div class="rtot"><span>All light from relics: <b>×' + fmtW(MC.relicMult(w), 2) + '</b></span>' + (lore > 1 ? '<span>Relic lore: <b>×' + fmtW(lore, 2) + '</b> on every relic’s light</span>' : '') +
     '<span class="tipme" tabindex="0" data-tip="' + ringTip + '">Ringing relics: <b>' + Object.values(ring).reduce((a, b) => a + b, 0) + '</b></span></div></div>';
+  h += combatRelicsHtml(w);   // combat test: relics of battle
   // regions: the ones you have touched, this run or before
   const m = meta(), regs = MC.REGIONS.map((rg, i) => ({ rg, i, on: regionCount(w, rg), N: rg.tiles.length, best: m.regBest[i] || 0, fin: m.regFin[i] || 0 })).filter(r => r.on || r.best);
   regs.sort((a, b) => (b.on === b.N) - (a.on === a.N) || b.on / b.N - a.on / a.N);
