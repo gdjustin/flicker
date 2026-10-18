@@ -810,3 +810,15 @@ body.calm *, body.calm *::before, body.calm *::after { animation: none !importan
 .mmast .mm-bar i { display: block; height: 100%; background: linear-gradient(90deg, #c98a4b, #f3d48a); }
 .mmast .mm-l { margin: 0.15rem 0; font-size: 0.9rem; }
 .mmast .mm-l.sub { color: var(--ash); font-size: 0.82rem; }
+
+/* the map: a fixed zoom you scroll or drag, with + and − (owner, 2026-10-18) */
+.mwrap { position: relative; margin: 0.25rem 0 0; }
+body.view-map #v-map:not(.hidden) { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+body.view-map #v-map .mwrap { flex: 1 1 auto; min-height: 16rem; }
+.mview { position: absolute; inset: 0; overflow: auto; cursor: grab; scrollbar-width: thin; scrollbar-color: #3a322b transparent; background: #0a0908; border: 1px solid #2e2a26; }
+.mview.drag { cursor: grabbing; user-select: none; }
+.mview .mstage { width: calc(var(--n, 13) * var(--cell, 40px)); min-width: 0; margin: 0; }
+@media (max-width: 900px) { body.view-map #v-map:not(.hidden) { height: auto; } body.view-map #v-map .mwrap { flex: none; height: min(90vw, 70dvh); } }
+.mzoom { position: absolute; right: 0.5rem; top: 0.5rem; z-index: 6; display: flex; flex-direction: column; gap: 0.25rem; }
+.mzoom button { width: 1.9rem; height: 1.9rem; border-radius: 4px; border: 1px solid #4a3f35; background: rgba(26, 21, 17, 0.88); color: var(--ink); font: inherit; font-size: 1.1rem; line-height: 1; cursor: pointer; }
+.mzoom button:hover:not(:disabled) { border-color: var(--ember); } .mzoom button:disabled { opacity: 0.4; cursor: default; }

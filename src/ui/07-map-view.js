@@ -4,8 +4,34 @@
 function etaShort(sec) { if (!isFinite(sec) || sec > 999 * 86400) return '\u2014'; if (sec < 5400) return Math.max(1, Math.round(sec / 60)) + 'm'; if (sec < 172800) return Math.round(sec / 3600) + 'h'; return Math.round(sec / 86400) + 'd'; }
 // the map shows the known world: a window a few steps past the farthest place called back (the world's size stays hidden)
 function mapRadius(w) { return Math.max(6, Math.min((MC.MAP.size - 1) / 2, (w.m.maxStep || 0) + 3)); }
+/* the map's zoom (owner, 2026-10-18): the map keeps its zoom as the land grows; scroll or drag it, + and − in the corner.
+   MV.cell is a place's size in pixels; the first time, 13 places fit across (the starting land). */
+function mapView() { return $('m-view'); }
+function mapZoom(w, f) {
+  const v = mapView(), st = $('m-stage'); if (!v || !st || !v.clientWidth) return; const vw = v.clientWidth, n = 2 * (MV.V || 6) + 1, fit = Math.max(vw, v.clientHeight) / n;   // the map fills its box (no longer square): at the widest zoom it still covers it
+  if (!MV.cell) MV.cell = Math.max(fit, Math.min(vw, v.clientHeight) / 13);
+  if (f) { const W0 = st.offsetWidth, cx = (v.scrollLeft + vw / 2) / W0, cy = (v.scrollTop + v.clientHeight / 2) / W0;
+    MV.cell = Math.max(fit, Math.min(120, MV.cell * f)); st.style.setProperty('--cell', MV.cell + 'px'); const W1 = st.offsetWidth;
+    v.scrollLeft = cx * W1 - vw / 2; v.scrollTop = cy * W1 - v.clientHeight / 2; }
+  else if (MV.cell < fit) MV.cell = fit;
+  if (st.style.getPropertyValue('--cell') !== MV.cell + 'px') st.style.setProperty('--cell', MV.cell + 'px');
+  $('m-zin').disabled = MV.cell >= 120; $('m-zout').disabled = MV.cell <= fit + 0.5;
+  if (!MV.centred && st.offsetWidth) { MV.centred = true; v.scrollLeft = (st.offsetWidth - vw) / 2; v.scrollTop = (st.offsetWidth - v.clientHeight) / 2; }
+}
+(function mapPan() {
+  const v = mapView(); if (!v) return; let d = null;
+  v.addEventListener('pointerdown', e => { if (e.button !== 0 || e.pointerType !== 'mouse') return; /* touch scrolls natively */ d = { x: e.clientX, y: e.clientY, l: v.scrollLeft, t: v.scrollTop, moved: false, id: e.pointerId }; });
+  v.addEventListener('pointermove', e => { if (!d) return; const dx = e.clientX - d.x, dy = e.clientY - d.y;
+    if (!d.moved && Math.abs(dx) + Math.abs(dy) > 5) { d.moved = true; v.classList.add('drag'); try { v.setPointerCapture(d.id); } catch (er) {} }
+    if (d.moved) { v.scrollLeft = d.l - dx; v.scrollTop = d.t - dy; } });
+  const end = () => { if (!d) return; if (d.moved) { MV.dragEnd = Date.now(); v.classList.remove('drag'); } d = null; };
+  v.addEventListener('pointerup', end); v.addEventListener('pointercancel', end);
+  v.addEventListener('click', e => { if (MV.dragEnd && Date.now() - MV.dragEnd < 250) { e.stopPropagation(); e.preventDefault(); } }, true);
+  $('m-zin').addEventListener('click', () => mapZoom(W(), 1.25)); $('m-zout').addEventListener('click', () => mapZoom(W(), 0.8));
+})();
 function buildMapGrid(V) {
-  const g = $('m-grid'); if (MV.cells && MV.V === V) return; g.innerHTML = ''; MV.cells = {}; MV.V = V;
+  const g = $('m-grid'); if (MV.cells && MV.V === V) return; const V0 = MV.V; g.innerHTML = ''; MV.cells = {}; MV.V = V;
+  { const v = mapView(); if (v && V0 && V > V0 && MV.cell) { const d = (V - V0) * MV.cell; requestAnimationFrame(() => { v.scrollLeft += d; v.scrollTop += d; }); } }   // the land grows on every side: keep the view where it was
   g.style.gridTemplateColumns = 'repeat(' + (2 * V + 1) + ', 1fr)'; $('m-stage').style.setProperty('--n', 2 * V + 1);
   { const h = $('m-home'), n = 2 * V + 1; if (h) { h.style.left = h.style.top = ((V - 0.5) / n * 100) + '%'; h.style.width = h.style.height = (2 / n * 100) + '%'; } }
   for (let y = -V; y <= V; y++) for (let x = -V; x <= V; x++) {
@@ -65,7 +91,7 @@ function cellMarks(k, cls, qn, rel, anchors, towers) {
 const MSTAR_COL = ['', '#c98a4b', '#d7dde4', '#f3d48a'];
 function mastStars(n) { let s = '<i class="mstars t' + n + '">'; for (let i = 0; i < n; i++) s += '<svg viewBox="0 0 12 12"><path d="M6 0l1.6 4.4L12 6 7.6 7.6 6 12 4.4 7.6 0 6l4.4-1.6z" fill="' + MSTAR_COL[n] + '" stroke="#1f1813" stroke-width="0.9"/></svg>'; return s + '</i>'; }
 function renderMap(w) {
-  buildMapGrid(mapRadius(w)); renderBeam(w, mapRadius(w));
+  buildMapGrid(mapRadius(w)); renderBeam(w, mapRadius(w)); mapZoom(w);
   const water = {}; MC.MAP.water.forEach(x => { water[x.key] = x; });
   const cones = {}, towers = {}; w.m.amps.forEach(a => { towers[a.x + ',' + a.y] = a; if (a.lit || (MV.ampArm && false)) MC.coneTiles(a, w).forEach(k => { cones[k] = true; }); });
   if (MV.ampDir != null && MV.sel) { const t = tileOf(MV.sel), d = DIRS[MV.ampDir]; if (t) MC.coneTiles({ x: t.x, y: t.y, dir: [d[0], d[1]] }, w).forEach(k => { cones[k] = 'p'; }); }
