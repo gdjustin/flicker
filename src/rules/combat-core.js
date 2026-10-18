@@ -284,7 +284,10 @@ var CPHASE = function (MC, CM, dialsIn) {
 
   // ---------------------------------------------------------------- buying
   var SS = null;   // the store combat buys from this moment (the village's; set by act and by the player's actions; never saved)
-  function have(C, k) { if (k === 'iron') return Math.max(0, C.iron - C.ironKeep); var s = SS; return s ? Math.max(0, (s.res[k] || 0) * (1 - (P.keep[k] != null ? P.keep[k] : 0.5))) : 0; }
+  // keep: the share of each store the lab's bot leaves for Light. The player spends the whole store (owner, 2026-10-18), so the game's calls run asPlayer.
+  var FULL = false;
+  function asPlayer(f) { return function () { FULL = true; try { return f.apply(null, arguments); } finally { FULL = false; } }; }
+  function have(C, k) { if (k === 'iron') return Math.max(0, C.iron - C.ironKeep); var s = SS; return s ? Math.max(0, (s.res[k] || 0) * (FULL ? 1 : 1 - (P.keep[k] != null ? P.keep[k] : 0.5))) : 0; }
   function canPay(C, cost) { for (var k in cost) if (cost[k] > have(C, k)) return false; return true; }
   function pay(C, cost, line) { for (var k in cost) { if (k === 'iron') { C.iron -= cost[k]; C.ironOn[line] = (C.ironOn[line] || 0) + cost[k]; } else { SS.res[k] -= cost[k]; C.rawOn[line] = (C.rawOn[line] || 0) + cost[k]; } C.spent[k] = (C.spent[k] || 0) + cost[k]; } }
   function priceOf(spec, n, growth) { var o = {}, m = Math.pow(growth || spec.g, n); for (var k in spec.cost) o[k] = Math.ceil(spec.cost[k] * m); return o; }
@@ -422,8 +425,8 @@ var CPHASE = function (MC, CM, dialsIn) {
   return { P: P, defaults: defaults, cp0: cp0, recruitAt: recruitAt, T: T, byKey: function (k) { return byKey[k]; }, famCount: famCount, tierOf: tierOf, newLife: newLife, newRun: newRun, openRun: openRun,
     pre: pre, tick: tick, act: act, rebirth: rebirth, allocPerks: allocPerks, perkCost: perkCost, cap: cap, capParts: capParts, resolveH: resolveH, resCap: resCap, fillH: fillH, drillNeed: drillNeed,
     ironH: ironH, landIronH: landIronH, mineSlots: mineSlots, drillSlots: drillSlots, beastStages: beastStages, beastTotal: beastTotal, flatBS: flatBS, lightFlat: lightFlat, lightSrc: lightSrc, lightStd: lightStd, frontier: frontier,
-    nextBattle: nextBattle, avatarCd: avatarCd, armPrice: armPrice, have: function (C, k, s) { if (s) SS = s; return have(C, k); }, options: function (s, C, life) { SS = s; return options(s, C, life); }, incomeH: incomeH, snapshot: snapshot, armL: armL, recruitF: recruitF, armF: armF,
-    preview: preview, attack: attack, fightable: fightable, avatarReady: avatarReady, raidAt: raidAt, raidCost: raidCost, rallyNow: rallyNow, rallyFood: rallyFood, rallyX: rallyX, canBuy: canBuy, buyLine: buyLine, oneOffsOpen: oneOffsOpen, buyOneOff: buyOneOff,
-    stdOpen: stdOpen, stdCost: stdCost, raiseStd: raiseStd, canStd: canStd, syncJobs: syncJobs, bank: bank, perkSpent: perkSpent, perk: perk, perkLv: perkLv, lightGifts: lightGifts, edgeOf: edgeOf, beastEdge: beastEdge, defOpen: defOpen, ironPerMinerH: ironPerMinerH, healF: healF, scoutF: scoutF, councilF: councilF, hardF: hardF, relicCP: relicCP, cpOf0: function () { return cp0; } };
+    nextBattle: nextBattle, avatarCd: avatarCd, armPrice: armPrice, have: asPlayer(function (C, k, s) { if (s) SS = s; return have(C, k); }), options: function (s, C, life) { SS = s; return options(s, C, life); }, incomeH: incomeH, snapshot: snapshot, armL: armL, recruitF: recruitF, armF: armF,
+    preview: preview, attack: attack, fightable: fightable, avatarReady: avatarReady, raidAt: raidAt, raidCost: raidCost, rallyNow: asPlayer(rallyNow), rallyFood: rallyFood, rallyX: rallyX, canBuy: asPlayer(canBuy), buyLine: asPlayer(buyLine), oneOffsOpen: oneOffsOpen, buyOneOff: buyOneOff,
+    stdOpen: stdOpen, stdCost: stdCost, raiseStd: asPlayer(raiseStd), canStd: asPlayer(canStd), syncJobs: syncJobs, bank: bank, perkSpent: perkSpent, perk: perk, perkLv: perkLv, lightGifts: lightGifts, edgeOf: edgeOf, beastEdge: beastEdge, defOpen: defOpen, ironPerMinerH: ironPerMinerH, healF: healF, scoutF: scoutF, councilF: councilF, hardF: hardF, relicCP: relicCP, cpOf0: function () { return cp0; } };
 };
 if (typeof module !== 'undefined') module.exports = CPHASE;
