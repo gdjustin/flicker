@@ -4,7 +4,7 @@
 //   node tools/build.js   makes two builds from the same source (v1s):
 //     the test build   (playtest tools, bot hooks, the text editor; the owner's save key)
 //       dist/game.html        bare page for the owner's playtest link (the Claude artifact adds its own <html> shell)
-//       dist/test.html        the same, titled "Flicker test build", for a separate check link
+//       dist/test.html        the same, titled "A Glimmer in the Dark: test build", for a separate check link
 //       dist/test/index.html  standalone, for GitHub Pages at /test/
 //     the public build (none of those; its own save key)
 //       dist/public.html      bare page, for a public preview link
@@ -56,7 +56,7 @@ if (require.main === module) {
   const test = assemble(true), pub = assemble(false), out = p => path.join(ROOT, 'dist', p);
   fs.mkdirSync(out('test'), { recursive: true });
   fs.writeFileSync(out('game.html'), test);
-  fs.writeFileSync(out('test.html'), test.replace(/<title>[^<]*<\/title>/, '<title>Flicker test build</title>'));
+  fs.writeFileSync(out('test.html'), test.replace(/<title>[^<]*<\/title>/, '<title>A Glimmer in the Dark: test build</title>'));
   fs.writeFileSync(out('test/index.html'), standalone(test));
   fs.writeFileSync(out('public.html'), pub);
   fs.writeFileSync(out('index.html'), standalone(pub));

@@ -2,7 +2,7 @@
    tools/build.js makes two pages from the same source: the public build (GAME.test false: no playtest tools,
    bot hooks or text editor) and the test build (GAME.test true: all of them, and its own save). */
 const GAME = {
-  title: 'Flicker',              // working title, until the owner picks the new name
+  title: 'A Glimmer in the Dark',   // the game's name (owner, 2026-10-18; was the working title A Flicker in the Dark)
   version: '0.1.0',              // the public number players see
   internal: 'v1s',               // the internal build name: in the changelog and the test footer
   test: /*@test*/true,
