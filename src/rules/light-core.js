@@ -160,7 +160,8 @@ var MCORE = function (VC) {
     // at the milestone the land beyond stops answering until the player is reborn. Rebirths 1 to last-1 reset the run and hand everyone a
     // packet of gifts (the comforts, now free and automatic, cumulative); the last one resets nothing: the self is whole, the land stays,
     // memory grows as you go, and combat would open. Heartstones then buy power only (the comforts leave the heartstone screen).
-    rb: { on: 0, at: [35, 55, 80, 100, 115], last: 5,
+    rb: { on: 0, at: [35, 60, 85, 110, 130], last: 5,   // owner 2026-10-18 (Considering): a 15-day floor for phase 1, 15 to 20 ideal; combat about 130. Lab: 35, 60, 85, 110, 130 puts the check-in bot whole on day 15.5
+     
       packets: [
         { skipPrologue: 1, waymarks: 1, oldLessons: 1, sureHands: 1, lightRemembers: 1, stewardsKept: 1 },
         { openDoors: 2, oldLessons: 2, sureHands: 2, practisedHaulers: 1, relicsRemembered: 1, oldFlames: 1, lightRemembers: 2 },
