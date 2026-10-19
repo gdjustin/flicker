@@ -96,7 +96,7 @@ function renderMap(w) {
   const cones = {}, towers = {}; w.m.amps.forEach(a => { towers[a.x + ',' + a.y] = a; if (a.lit || (MV.ampArm && false)) MC.coneTiles(a, w).forEach(k => { cones[k] = true; }); });
   if (MV.ampDir != null && MV.sel) { const t = tileOf(MV.sel), d = DIRS[MV.ampDir]; if (t) MC.coneTiles({ x: t.x, y: t.y, dir: [d[0], d[1]] }, w).forEach(k => { cones[k] = 'p'; }); }
   const anchors = {}; (w.m.anchors || []).forEach(a => { anchors[a.key] = a.lit ? 'lit' : 'plan'; });
-  const known = w.m.known || {}, rel = w.m.relicT || {}, L0 = MC.lightRate(w), lu = w.m.lineup || [], seen = MC.seenTiles(w), rev = w.m.revealed || {}, ruinK = MC.ruinKey();
+  const known = w.m.known || {}, rel = w.m.relicT || {}, L0 = MC.lightRate(w) * MC.masteryMult(w), lu = w.m.lineup || [], seen = MC.seenTiles(w), rev = w.m.revealed || {}, ruinK = MC.ruinKey();
   const now = Date.now(), reachNow = new Set(); MV.flashU = MV.flashU || {}; MV.wakeU = MV.wakeU || {};
   const landSt = {};   // v1p: what you know of each place, for the land canvas
   const sideOf = k => { const [x, y] = k.split(',').map(Number); let best = null, bs = Infinity; [[0, -1, 'top'], [0, 1, 'bottom'], [-1, 0, 'left'], [1, 0, 'right']].forEach(([dx, dy, nm]) => { const n = (x + dx) + ',' + (y + dy); if (!MC.restored(w, n)) return; const st = Math.abs(x + dx) + Math.abs(y + dy); if (st < bs) { bs = st; best = nm; } }); return best || 'bottom'; };
@@ -190,9 +190,10 @@ function renderPanel(w) {
   const line = s => { const p = document.createElement('p'); p.textContent = s; lines.appendChild(p); };
   if (lit || reach || far) line(LANDN[t.land] + ' · ' + r.name + ': ' + rc + ' of ' + r.tiles.length + ' back');
   if (!lit && (reach || far)) {
-    const need = MC.tileCost(t, w), got = w.m.got[k] || 0, amp = MC.ampMult(w, k), L = MC.lightRate(w) * amp;
+    const need = MC.tileCost(t, w), got = w.m.got[k] || 0, amp = MC.ampMult(w, k), mm = MC.masteryMult(w), L = MC.lightRate(w) * amp * mm;   /* r1c fix: mastery counts in the estimate */
     line('Needs ' + fmtW(need) + ' light' + (got > 0 ? ' (' + Math.floor(got / need * 100) + '% there)' : '') + '. At your light: about ' + fmtTime((need - got) / Math.max(1e-9, L)) + '.');
     if (amp > 1) line('An amplifier strengthens light sent here ×' + fmtW(amp, 0) + '.');
+    if (mm > 1.005) line('Mastery strengthens light reaching new land ×' + fmtW(mm, 2) + '.');
     if (w.m.known && w.m.known[k]) line('Remembered ground: it needs ' + fmtW(1 / MC.D.pave * 100) + '% of its darkness (the paved path).');
     // v1q (owner's playtest): the clearer "You will gain" block, one line each, the big ones in bold
     const m = meta(), mem = !!m.ever[k], gv = document.createElement('div'); gv.className = 'mgives';
