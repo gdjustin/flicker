@@ -147,10 +147,12 @@ function renderMap(w) {
   { const pl = (n, one, many) => fmtW(n) + ' ' + (n === 1 ? one : many), rd = MC.regionsDone(w), hn = w.m.hsNew || 0;   // v1r (owner): run 1 shows only what run 1 has
     $('m-world').textContent = w.m.whole
       ? 'Whole · ' + pl(w.m.restored, 'place', 'places') + ' called back · ' + pl(rd, 'region', 'regions') + ' finished · memory ×' + fmtW(MC.memMult(w), 2) + ' (' + fmtW(hsNow) + ' heartstones)' + (MC.masteryOn(w) ? ' · mastery: new land ×' + fmtW(MC.masteryMult(w), 2) : '')
+      : MC.D.rb.on && w.m.rbAt && m.run === 1 ? ''   // r1d (owner): run 1 shows no run line; it comes back from run 2
       : MC.D.rb.on && w.m.rbAt ? 'Run ' + m.run + ' of ' + MC.D.rb.last + ' · ' + pl(w.m.restored, 'place', 'places') + ' called back · rebirth at ' + w.m.rbAt + ' · ' + pl(rd, 'region', 'regions') + ' finished · memory ×' + fmtW(MC.memMult(w), 2) + (m.run > 1 ? ' · ' + pl(hn, 'new heartstone', 'new heartstones') + ' this run' : ' · ' + pl(hn, 'heartstone', 'heartstones'))
       : m.run > 1
       ? 'Run ' + m.run + ' · ' + pl(w.m.restored, 'place', 'places') + ' called back (best ' + Math.max(m.best || 0, w.m.restored) + ') · ' + pl(rd, 'region', 'regions') + ' finished · memory ×' + fmtW(MC.memMult(w), 2) + ' · ' + pl(hn, 'new heartstone', 'new heartstones') + ' this run (' + fmtW(hsNow) + ' remembered)'
       : pl(w.m.restored, 'place', 'places') + ' called back · ' + pl(rd, 'region', 'regions') + ' finished · ' + pl(hn, 'heartstone', 'heartstones'); }
+  $('m-world').classList.toggle('hidden', !$('m-world').textContent);
   renderPanel(w); renderRegions(w);
 }
 // v1h: every region you've set foot in, as v24e: a pip per place in map order (filled once back, dashed when picked or lined up), "N of M", a tick when finished
@@ -158,19 +160,20 @@ function renderRegions(w) {
   const seenR = {}; Object.keys(w.m.tiles).forEach(k => { const t = tileOf(k); if (t) seenR[t.region] = true; });
   const regs = Object.keys(seenR).map(Number).sort((a, b) => a - b).map(i => MC.REGIONS[i]).map(r => ({ r, n: regionCount(w, r), N: r.tiles.length }));
   const mOn = MC.masteryOn(w), lu = w.m.lineup || [], sig = regs.map(x => x.r.i + ':' + x.n + (mOn ? ':' + Math.round(MC.regionMastery(w, x.r.i) * 100) : '')).join('|') + '#' + w.m.target + lu.join(';') + (w.m.mreg != null ? '@' + w.m.mreg : '');
-  const box = $('m-reglist'); if (box.dataset.s === sig) return; box.dataset.s = sig; box.innerHTML = '';
-  const xy = k => k.split(',').map(Number);
-  regs.forEach(({ r, n, N }) => {
-    const fin = n === N, row = document.createElement('div'); row.className = 'mreg' + (fin ? ' fin' : '');
-    const nm = document.createElement('span'); nm.textContent = r.name.charAt(0).toUpperCase() + r.name.slice(1);
-    const tl = document.createElement('span'); tl.className = 'tally'; tl.setAttribute('aria-label', n + ' of ' + N + ' back');
-    r.tiles.slice().sort((a, b) => { const p = xy(a), q = xy(b); return p[1] - q[1] || p[0] - q[0]; }).forEach(k => {
-      const v = w.m.tiles[k] ? ' on' : (w.m.target === k || lu.includes(k)) ? ' nx' : '';
-      const d = document.createElement('i'); d.className = 'pip' + v; tl.appendChild(d); });
-    const ct = document.createElement('span'); ct.className = 'tct'; ct.textContent = fin ? '\u2713' : n + ' of ' + N;
-    if (mOn) { const mp = Math.round(MC.regionMastery(w, r.i) * 100); if (mp > 0 || w.m.mreg === r.i) { ct.textContent += ' \u00b7 \u2605' + mp + '%'; ct.title = mp + '% mastered' + (w.m.mreg === r.i ? ' (mastering now)' : ''); } }
-    tl.appendChild(ct); row.append(nm, tl); box.appendChild(row);
-  });
+  const box = $('m-reglist'); if (box.dataset.s === sig) return; box.dataset.s = sig;
+  box.innerHTML = regs.map(({ r }) => regionRowHtml(w, r)).join('');
+}
+// r1d (owner): one look for a region's row, on the map and on the Relics tab: its name, a pip per place in map order
+// (filled once back, dashed when picked or lined up), "N of M", a tick when finished. `note`: a muted line under it
+function regionRowHtml(w, r, note) {
+  const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  const n = regionCount(w, r), N = r.tiles.length, fin = n === N, lu = w.m.lineup || [], xy = k => k.split(',').map(Number);
+  let pips = ''; r.tiles.slice().sort((a, b) => { const p = xy(a), q = xy(b); return p[1] - q[1] || p[0] - q[0]; }).forEach(k => {
+    pips += '<i class="pip' + (w.m.tiles[k] ? ' on' : (w.m.target === k || lu.includes(k)) ? ' nx' : '') + '"></i>'; });
+  let ct = fin ? '\u2713' : n + ' of ' + N, tt = '';
+  if (MC.masteryOn(w)) { const mp = Math.round(MC.regionMastery(w, r.i) * 100); if (mp > 0 || w.m.mreg === r.i) { ct += ' \u00b7 \u2605' + mp + '%'; tt = mp + '% mastered' + (w.m.mreg === r.i ? ' (mastering now)' : ''); } }
+  return '<div class="mreg' + (fin ? ' fin' : '') + (note ? ' noted' : '') + '"><span>' + esc(capFirst(r.name)) + '</span><span class="tally" aria-label="' + n + ' of ' + N + ' back">' + pips +
+    '<span class="tct"' + (tt ? ' title="' + esc(tt) + '"' : '') + '>' + ct + '</span></span>' + (note ? '<span class="mreg-x">' + esc(note) + '</span>' : '') + '</div>';
 }
 function renderPanel(w) {
   const box = $('m-panel'); const k = MV.sel;
@@ -181,7 +184,7 @@ function renderPanel(w) {
   if (k === '0,0') { add('p', 'mptitle', w.name || 'Home'); add('p', 'mmut', 'Home. Everything starts here.'); return; }
   const t = tileOf(k); if (!t) { add('p', 'mptitle', 'Water'); add('p', 'mmut', 'The light slides off it. Its region finishes without it.'); return; }
   const lit = !!w.m.tiles[k], reach = MC.reachable(w, t), r = regionOf(t), rc = regionCount(w, r), far = !lit && !reach && !!(MC.seenTiles(w)[k] || (w.m.revealed || {})[k]);
-  add('p', 'msec', lit ? 'Called back' : reach ? 'Beside your land' : far ? MT.seenH : 'In the dark');
+  if (lit || !(reach || far)) add('p', 'msec', lit ? 'Called back' : 'In the dark');   // r1d (owner): places beside your land or seen from afar need no heading
   // v1r (owner): a place called back shows its relic at the top of the card
   if (lit) { const has = !!(w.m.relicT && w.m.relicT[k]), rh = add('p', 'mprelic'); rh.innerHTML = relicIconHtml(t.land) + ' '; rh.appendChild(document.createTextNode(relicName(k) + (has ? ' · claimed' : ' · waits: ' + fmtW(MC.relicCost(w, k).copper) + ' copper'))); }
   add('p', 'mptitle', lit || reach || far ? tileName(t) : 'Darkness');

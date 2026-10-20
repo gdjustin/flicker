@@ -34,7 +34,7 @@ function rbPill(w) {
   const b = $('w-scatter'); b.classList.toggle('ready', !!w.m.rbReady); b.classList.toggle('quiet', !w.m.rbReady);
   // r1c (owner, 2026-10-18): vaguer. Just the next milestone; no hover spelling out what it does
   const txt = w.m.rbReady ? MT.rbPillReady : fill(MT.rbPill, { n: w.m.restored, at: w.m.rbAt });
-  const sig = txt + '|' + w.m.run; if (b.dataset.s !== sig) { b.dataset.s = sig; b.innerHTML = rbBar(w.m.run, false) + '<span>' + txt + '</span>'; }
+  const sig = txt + '|' + w.m.run; if (b.dataset.s !== sig) { b.dataset.s = sig; b.innerHTML = '<span>' + txt + '</span>'; }   // r1d (owner): no segments on the pill
   b.removeAttribute('title');
 }
 function scatterPill(w) {

@@ -129,12 +129,10 @@ function renderRelicsTab(w) {
   // regions: the ones you have touched, this run or before
   const m = meta(), regs = MC.REGIONS.map((rg, i) => ({ rg, i, on: regionCount(w, rg), N: rg.tiles.length, best: m.regBest[i] || 0, fin: m.regFin[i] || 0 })).filter(r => r.on || r.best);
   regs.sort((a, b) => (b.on === b.N) - (a.on === a.N) || b.on / b.N - a.on / a.N);
-  h += '<div><p class="sech"><span class="tipme" tabindex="0" data-tip="' + ringTip + '">Regions</span></p><div class="regs">';
-  for (const r of regs) { const fin = r.on === r.N, name = capFirst(r.rg.name);
-    const nx = (w.m.target && r.rg.tiles.includes(w.m.target)) ? 1 : 0; let pips = ''; if (r.N <= 24) for (let i = 0; i < r.N; i++) pips += '<i class="' + (i < r.on ? 'on' : i < r.on + nx ? 'nx' : '') + '"></i>';
-    const past = r.fin && r.fin < m.run ? 'finished in run ' + r.fin + (fin ? ' too' : '') : r.best && !fin ? 'best: ' + r.best + ' of ' + r.N + ', in an earlier run' : fin ? 'first finished this run' : '';
-    h += '<div class="reg' + (fin ? ' fin' : '') + (past ? ' past' : '') + '"><span class="rgn"><span class="md sm" style="--c:var(--l-' + LANDC[r.rg.land] + ')"></span><span>' + name + '</span></span><span class="tally" aria-label="' + r.on + ' of ' + r.N + ' back">' + pips + '<span class="tct">' + (fin ? '✓ rings' : r.on + ' of ' + r.N) + '</span></span>' +
-      (fin ? '<span class="rgx">Its relics count ' + (1 + D.resonance.R) + ' times' + (past ? '. ' + capFirst(past) + '.' : '.') + '</span>' : past ? '<span class="rgx">' + capFirst(past) + '</span>' : '') + '</div>'; }
+  h += '<div class="relregs"><p class="sech"><span class="tipme" tabindex="0" data-tip="' + ringTip + '">Regions</span></p><div class="mregions">';
+  for (const r of regs) { const fin = r.on === r.N;   // r1d (owner): the same row as the map's region list
+    const past = r.fin && r.fin < m.run ? 'finished in run ' + r.fin + (fin ? ' too' : '') : r.best && !fin ? 'best: ' + r.best + ' of ' + r.N + ', in an earlier run' : '';
+    h += regionRowHtml(w, r.rg, fin ? 'Its relics ring: each counts ' + (1 + D.resonance.R) + ' times' + (past ? '. ' + capFirst(past) : '') + '.' : past ? capFirst(past) + '.' : ''); }
   if (!regs.length) h += '<p class="note" style="color:var(--ash);font-style:italic">Call back a place and its region appears here.</p>';
   h += '</div></div></div>';
   if (box.dataset.sig !== h) { box.dataset.sig = h; box.innerHTML = h;
@@ -170,15 +168,15 @@ function renderMapJobs(w) {
       row.children[2].addEventListener('click', e => wJob(j.id, -1, e)); row.children[4].addEventListener('click', e => wJob(j.id, 1, e));
       ['mouseenter', 'focus'].forEach(ev => row.addEventListener(ev, () => showTextTip(row, j.name, [mapJobDesc(j)]))); ['mouseleave', 'blur'].forEach(ev => row.addEventListener(ev, hideTip));
       jb.appendChild(row); }
-    if (!row.children[0].firstChild || row.children[0].firstChild.nodeValue !== j.name) row.children[0].textContent = j.name; { const tg = j.id === 'storyteller' && MC.academyOn(w) ? 'light, at the Academy' : j.id === 'firekeeper' && !MC.D.keeperFuelMap ? MT.keeperTag : j.tag; if (row.children[1].textContent !== tg) row.children[1].textContent = tg; }
+    if (!row.children[0].firstChild || row.children[0].firstChild.nodeValue !== j.name) row.children[0].textContent = j.name; { const tg = j.id === 'storyteller' && MC.academyOn(w) ? 'light, at the Academy' : j.tag; if (row.children[1].textContent !== tg) row.children[1].textContent = tg; }
     { const idleH = j.id === 'hauler' && steady('haulIdleM', (w.jobs.hauler || 0) > 0 && !w.m.proj), needH = j.id === 'hauler' && steady('haulNeedM', !!w.m.proj && !w.m.awaitClick && !(w.jobs.hauler > 0)); let d = row.children[0].querySelector('.rdot');   // v1g: haulers idle, or a build with no one carrying
       if ((idleH || needH) && !d) { d = document.createElement('i'); d.className = 'rdot'; row.children[0].appendChild(d); } else if (!(idleH || needH) && d) d.remove();
       if (d) d.title = idleH ? 'Nothing to carry: put them to other work' : 'A build is waiting for haulers'; }
     row.children[3].textContent = w.jobs[j.id] || 0; row.children[2].disabled = !(w.jobs[j.id] > 0); row.children[4].disabled = VC.jobsTotal(w) >= w.pop;
   });
 }
-// v1r: once the map opens, firekeepers make light from a settler alone (keeperFuelMap 0), so their words change too
-function mapJobDesc(j) { return j.id === 'firekeeper' && !MC.D.keeperFuelMap ? MT.keeperDesc : j.desc; }
+// r1d: firekeepers need no wood in the village or the map (one rule), so their words are the same everywhere
+function mapJobDesc(j) { return j.desc; }
 function renderMapCards(w) {
   const box = $('w-research'); let any = false;
   const vc = VC.CARDS.filter(c => w.cards[c.id] == null && VC.gateOk(w, c.at));
@@ -252,7 +250,8 @@ function mapProjTip(anchor, withGives) {
   const w = W(); if (!w || !w.m) return; const id = w.m.awaitClick || (w.m.proj && w.m.proj.id); if (!id) return;
   const pd = MC.projDef(w, id), cur = w.m.awaitClick ? pd.stages.length : w.m.proj.stage, nd = w.m.awaitClick ? {} : MC.projNeeds(w), isA = id.indexOf('anchor:') === 0;
   const lines = pd.stages.map((st, i) => tx('vp.step', { k: i + 1, n: pd.stages.length, name: stageName(pd, i) }) + ': ' + (i < cur ? tx('vp.tip.done') : i === cur ? 'carrying ' + Object.keys(st.cost).map(k => resName(k).toLowerCase() + ' ' + fmtW(st.cost[k] - (nd[k] || 0)) + ' of ' + fmtW(st.cost[k])).join(', ') + '.' : tx('vp.tip.needs', { list: costList(st.cost) })));
-  lines.push((w.m.awaitClick ? 'Now: ' : 'Then: ') + (isA ? 'set its relic in it to finish.' : 'light it to finish.'));
+  const click = isA || /^amp\d/.test(id) || id === 'repair';   // r1d (owner): the beacon, the smithy and the rest finish by themselves
+  if (click) lines.push((w.m.awaitClick ? 'Now: ' : 'Then: ') + (isA ? 'set its relic in it to finish.' : 'light it to finish.'));
   showTextTip(anchor, pname(w, id), withGives ? [pd.gives].concat(lines) : lines.concat([{ cls: 'tipx', t: pd.gives }, { cls: 'tipx', t: tx('vw.tip.store') }]));
 }
 function mProjFrac(w) { if (!w.m.proj) return 0; const pd = MC.projDef(w, w.m.proj.id), st = pd.stages[w.m.proj.stage], tot = Object.keys(st.cost).reduce((a, k) => a + st.cost[k], 0), nd = MC.projNeeds(w), left = Object.keys(nd).reduce((a, k) => a + nd[k], 0); return (w.m.proj.stage + (tot - left) / tot) / pd.stages.length; }

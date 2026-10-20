@@ -20,8 +20,8 @@ function pbtn(label, fn, cls) { const b = el('button', 'act' + (cls ? ' ' + cls 
 function armBtn(label, armed, fn, cls) { const b = pbtn(label, () => { if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = armed; setTimeout(() => { delete b.dataset.arm; b.textContent = label; }, 5000); return; } fn(b); }, cls); return b; }
 function openPanel(kind) {
   panelKind = kind; panelBack = document.activeElement; const body = $('panel-body'); body.textContent = '';
-  const h = { save: 'Save', settings: 'Settings', changes: 'Changelog', about: 'About' }[kind]; $('panel-h').textContent = h;
-  ({ save: panelSave, settings: panelSettings, changes: panelChanges, about: panelAbout })[kind](body);
+  const h = { save: 'Save', settings: 'Settings', changes: 'Changelog', about: 'About', guide: tx('g.title') }[kind]; $('panel-h').textContent = h;
+  ({ save: panelSave, settings: panelSettings, changes: panelChanges, about: panelAbout, guide: panelGuide })[kind](body);
   $('panel').classList.remove('hidden'); $('panel-x').focus();
 }
 function closePanel() { $('panel').classList.add('hidden'); panelKind = ''; if (panelBack && panelBack.focus) try { panelBack.focus(); } catch (e) {} }
@@ -112,6 +112,18 @@ function panelSettings(body) {
   body.appendChild(z);
 }
 
+/* ---- What do I do? (r1d, owner): light guidance, a section for each part of the game reached, the newest on top ---- */
+const GUIDE = [['g.h.reb', 'g.reb', 3], ['g.h.map', 'g.map', 5], ['g.h.vil', 'g.vil', 5], ['g.h.pro', 'g.pro', 1]];
+function guideReached() {   // 0 prologue, 1 the village, 2 the map (run 1), 3 runs 2 and on
+  const m = S.meta || {}; if ((m.run || 1) > 1) return 3; if (S.w && S.w.m) return 2; return S.flags && S.flags.stood ? 1 : 0;
+}
+function panelGuide(body) {
+  body.appendChild(el('p', 'pmut', tx('g.lead')));
+  const got = guideReached();
+  GUIDE.slice(GUIDE.length - 1 - got).forEach(([h, pre, n]) => { body.appendChild(el('h3', '', tx(h))); const ul = el('ul', 'pguide');
+    for (let i = 1; i <= n; i++) ul.appendChild(el('li', '', tx(pre + '.' + i))); body.appendChild(ul); });
+}
+
 /* ---- changelog and About ---- */
 function panelChanges(body) {
   for (const c of CHANGELOG) { const s = el('section', 'pchg'); s.appendChild(el('h3', '', [c.version, c.title, c.date].filter(Boolean).join(' · ')));
@@ -145,6 +157,7 @@ $('f-save').addEventListener('click', () => openPanel('save'));
 $('f-settings').addEventListener('click', () => openPanel('settings'));
 $('f-changes').addEventListener('click', () => openPanel('changes'));
 $('f-about').addEventListener('click', () => openPanel('about'));
+$('f-guide').addEventListener('click', () => openPanel('guide'));
 $('panel-x').addEventListener('click', closePanel);
 $('panel').addEventListener('click', e => { if (e.target === $('panel')) closePanel(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && panelKind) closePanel(); });

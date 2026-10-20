@@ -1,6 +1,5 @@
 {
   "ui:WORLD.text.stood": "When you stand up at the end of the prologue and the village begins.",
-  "ui:WORLD.text.motes": "20 seconds after you light the fire (the Fire card).",
   "ui:WORLD.text.arrive": "When the first settler arrives.",
   "ui:WORLD.text.berries": "When the first settler arrives (right after the line above).",
   "ui:WORLD.text.another": "When the 2nd, 3rd and 4th settlers arrive.",
@@ -15,7 +14,6 @@
   "ui:WORLD.text.queued": "When you buy a card that starts a project while another project is still being built.",
   "ui:WORLD.text.fullWait": "Once, when your home is fully lit but the home beacon isn't built yet.",
   "ui:WORLD.text.full": "Once, when your home is fully lit.",
-  "ui:MT.keeperLog": "When the map opens, if you have firekeepers (or know firekeeping).",
   "ui:MT.scholars": "When the map opens, if you have storytellers (or know storytelling).",
   "ui:MT.restored": "Each time a place is called back.",
   "ui:MT.region": "When the last place of a region is called back (when relics don't ring; not used now).",

@@ -1067,6 +1067,17 @@ var MCORE = function (VC) {
     var n = built; s.m.amps.push({ x: x, y: y, dir: dir, lit: false, n: n });
     startProject(s, 'amp' + n); return true;
   }
+  // r1d (owner: the village and the map keep one rule): gathering by hand works as in the village. Sharp stone, the axe,
+  // Steady hands (what your settlers make of it in 2 seconds, at this phase's rates), Sure hands, and the hand's ideas
+  function gatherAmount(s, r) {
+    var a = (s.cards.sharp ? VC.D.sharpClick : VC.D.click) + (r === 'wood' && s.cards.woodcutting ? VC.D.chopBonus : 0);
+    if (s.cards.steady) a += VC.D.steadySecs * jobMake(s, r);
+    var sh = perk(s, 'sureHands'); return a * (sh ? D.perks.sureHands.hand[Math.min(sh, D.perks.sureHands.hand.length) - 1] : 1);
+  }
+  function gather(s, r) {
+    if (r === 'stones' && !s.cards.lookcloser) return false; if (r === 'fiber' && !s.cards.grasswork) return false; if (r === 'food' && !s.cards.foraging) return false;
+    addRes(s, r, gatherAmount(s, r)); addRes(s, 'ideas', VC.handIdeas(s)); s.hand = (s.hand || 0) + 1; return true;
+  }
   function jobOpen(s, id) { if (id === 'smelter') return !!s.m.smelting; if (id === 'glowcrafter') return hasC(s, 'glowcraft'); return VC.jobOpen(s, id); }
   function setJob(s, id, n) {
     if (!jobOpen(s, id)) return false; n = Math.max(0, Math.floor(n));
@@ -1101,6 +1112,9 @@ var MCORE = function (VC) {
   DIAL_SETS.R1 = Object.assign({}, DIAL_SETS.V3, { 'rb.on': 1, 'mastery.on': 1, 'merchant.on': 1, 'perks.lightRemembers.costs': [20, 40, 70, 110], 'perks.lightRemembers.name': 'The light remembers I\u2013IV',
   // r1c (owner's Leaning, 2026-10-18): mastery tiers at 100, 1,000 and 10,000 clears (was 10, 100, 1,000). Lab: 150 places in 20 days after whole against 154; the sensible player beats mastering everything by x1.09
   'mastery.need': [100, 1000, 10000],
+  // r1d (owner: the village and the map keep one rule; the value is Claude's, Considering): settlers eat 0.06 food a second everywhere (was 4.5x once the map opened).
+  // Lab (results/2026-10-19-r1d): check-in whole on day 15.68 either way; food still pays for light bursts and feasts
+  eatMap: 1,
   // r1c (owner's playtest): books are storage, and come back with the run like the other stores (brought back, research room was 150,000, 85 hours to fill)
   'perks.oldFlames.lines': [['ct_axes', 'ct_mattocks', 'ct_spindles', 'ct_baskets', 'house'], ['ctend', 'longsong'], ['clamp', 'cbrazier'], ['eff_firepit', 'eff_limekiln', 'eff_rushlight', 'cuburner', 'eff_cuburner']] });
   function applySet(name) { var o = DIAL_SETS[name] || name; for (var p in o) { var ks = p.split('.'), last = ks.pop(); var host = ks.reduce(function (a, k) { return a && a[k]; }, D); if (host) host[last] = o[p]; } if (VC.LAD && VC.LAD.hearth) { VC.LAD.hearth.max = D.vHearthMax; VC.LAD.hearth.desc = 'All light {pct}% stronger. ' + D.vHearthMax + ' levels in all.'; } refreshCards(); applyDeal(); }
@@ -1117,7 +1131,7 @@ var MCORE = function (VC) {
     cap: cap, room: room, jobMake: jobMake, copperMake: copperMake, smeltMult: smeltMult, burnDemand: burnDemand, burnShare: burnShare, lightParts: lightParts, lightRate: lightRate, sentRate: sentRate,
     phaseMult: phaseMult, nearTiles: nearTiles, sysOpen: sysOpen, sysHeld: sysHeld, unlockPerkOf: unlockPerkOf, relicMult: relicMult, tendMult: tendMult, effMult: effMult, tileMult: tileMult, toolMult: toolMult,
     projNeeds: projNeeds, projDef: projDef, startProject: startProject, prioritize: prioritize, clickFinish: clickFinish, setTarget: setTarget, cheapestTarget: cheapestTarget, poolCap: poolCap, scoutDepth: scoutDepth, seenTiles: seenTiles, burst: burst, burstLight: burstLight, burstCost: burstCost, burstTrip: burstTrip, burstReady: burstReady, lineupMax: lineupMax, lineupOk: lineupOk, lineupAdd: lineupAdd, lineupRemove: lineupRemove, nextTarget: nextTarget, lineupAuto: lineupAuto,
-    repairAmps: repairAmps, stewardsOn: stewardsOn, landScale: landScale, resonantN: function (s) { return resonant(s).n; }, rebuildNo: rebuildNo, rebuildTo: rebuildTo, litBurners: litBurners, surgeOf: surgeOf, surgeLeft: surgeLeft, eatRate: eatRate, ruinKey: ruinKey, repairOpen: repairOpen, repairStarted: repairStarted, repairAmp: repairAmp, boostOf: boostOf, landRelicBoost: landRelicBoost, smeltFuel: smeltFuel, haulRate: haulRate, buyRelic: buyRelic, relicCost: relicCost, relicsOpen: relicsOpen, planAmp: planAmp, jobOpen: jobOpen, setJob: setJob, landCount: landCount, hungry: hungry, autoStore: autoStore,
+    repairAmps: repairAmps, stewardsOn: stewardsOn, gather: gather, gatherAmount: gatherAmount, landScale: landScale, resonantN: function (s) { return resonant(s).n; }, rebuildNo: rebuildNo, rebuildTo: rebuildTo, litBurners: litBurners, surgeOf: surgeOf, surgeLeft: surgeLeft, eatRate: eatRate, ruinKey: ruinKey, repairOpen: repairOpen, repairStarted: repairStarted, repairAmp: repairAmp, boostOf: boostOf, landRelicBoost: landRelicBoost, smeltFuel: smeltFuel, haulRate: haulRate, buyRelic: buyRelic, relicCost: relicCost, relicsOpen: relicsOpen, planAmp: planAmp, jobOpen: jobOpen, setJob: setJob, landCount: landCount, hungry: hungry, autoStore: autoStore,
     beaconLv: beaconLv, sinkOf: sinkOf, beaconStepOf: beaconStepOf, beaconEveryOf: beaconEveryOf, coneOf: coneOf, glowMult: glowMult, anchorLight: anchorLight, academyOn: academyOn, planAnchor: planAnchor, relicFree: relicFree, relicFreeKey: relicFreeKey, relicRaw: relicRaw, anchorFocus: anchorFocus, focusMode: focusMode, RELIC_RAW: RELIC_RAW, rawPerk: rawPerk, REGIONS: REGIONS, regionsDone: regionsDone, regionMult: regionMult, directMult: directMult, perk: perk, perkCost: perkCost, cardCost: cardCost, beaconMaxOf: beaconMaxOf, ampMaxOf: ampMaxOf, heartstones: heartstones, hsFor: hsFor, memMult: memMult, refreshCards: refreshCards
   };
 };

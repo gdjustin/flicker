@@ -148,6 +148,7 @@ function renderMapPhase(w) {
   if (view === 'village') { renderMapSettlement(w); renderMapSnails(w); }
   else if (view === 'relics') renderRelicsTab(w);
   else { const now = Date.now(); if (now - MV.lastMap > 250) { MV.lastMap = now; renderMap(w); } }
+  relicMomentCheck(w);   // r1d: the first relic's moment
   // the rebirth branch: a rebirth reached while away (or before a reload) asks once the player is back and nothing else is open
   if (MC.D.rb.on && w.m.rbReady && !MV.rbAsked && !S.inPerks && $('away').classList.contains('hidden') && $('moment').classList.contains('hidden')) { MV.rbAsked = true; setTimeout(askScatter, 300); }
   { const showP = MC.D.rb.on ? !!(w.m.rbAt || w.m.rbReady) : canScatter(w); $('w-scatter').classList.toggle('hidden', !showP); if (showP) scatterPill(w); }

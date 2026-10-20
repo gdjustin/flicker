@@ -6,7 +6,7 @@ $('w-name-btn').addEventListener('click', wName);
 $('w-name-input').addEventListener('keydown', e => { if (e.key === 'Enter') wName(); });
 $('away-ok').addEventListener('click', closeAway);
 $('moment-ok').addEventListener('click', () => { const k = $('moment').dataset.kind; $('moment').classList.add('hidden'); $('moment').dataset.kind = ''; const no = $('moment-no'); if (no) no.classList.add('hidden');
-  if (k === 'map') startMap(); if (k === 'scatter') openPerks(); if (k === 'whole') showCombatMoment(); });
+  if (k === 'map') startMap(); if (k === 'scatter') openPerks(); if (k === 'whole') showCombatMoment(); if (k === 'relics') { S.view = 'relics'; hideTip(); renderWorld(); } });
 $('away').addEventListener('click', e => { if (e.target === $('away')) closeAway(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (!$('away').classList.contains('hidden')) closeAway(); if (!$('moment').classList.contains('hidden')) $('moment').classList.add('hidden'); } });
 document.addEventListener('animationend', e => { if (e.animationName === 'reveal' && e.target.classList) e.target.classList.remove('reveal'); });

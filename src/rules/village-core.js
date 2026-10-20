@@ -19,13 +19,14 @@ var VC = (function () {
     // hand actions
     click: 1, sharpClick: 2, steadySecs: 2, chopBonus: 3,
     clickIdeas: 0.25,         // ideas per hand action while alone, falling to none at 4 settlers
+    clickIdeasFloor: 0.1,     // r1d (owner, 2026-10-19): until Storytelling is learned the hand's ideas never fall below this, so the ideas for it can still be clicked
     stokeWood: 10, bellowsWood: 25,
     // light (per second unless noted)
     glow: 0.25,               // the small fire
     perWood: 0.3,             // light per wood burned (stoking, firekeepers)
-    keeperWood: 0.4,          // wood a firekeeper burns a second
+    keeperWood: 0,            // wood a firekeeper burns a second. r1d (owner, 2026-10-19): 0, as in the map phase: the village and the map keep one rule (was 0.4)
     tendLight: 0.35, tendWood: 0.15,   // each tending level: +35% of a keeper's base light, +15% of its base wood
-    keeperLight: 0.45,         // a firekeeper's light a second at base (0.4 wood x 0.3 x 5 for tending well)
+    keeperLight: 0.45,         // a firekeeper's light a second at base (sized when a keeper burned 0.4 wood: 0.4 x 0.3 x 5 for tending well)
     greatFire: 2.5,             // replaces the glow
     brazier: 0.1, lamp: 0.02, lampPerBrazier: 0.003,
     firepit: 0.25, firepitWood: 0.4,
@@ -76,10 +77,10 @@ var VC = (function () {
     { id: 'shelters', kind: 'building', name: 'Shelters', cost: { ideas: 8 }, at: { pop: 2 }, opens: 'shelter', desc: 'Opens shelters: room for more settlers to stay.' },
     { id: 'grasswork', kind: 'idea', name: 'Grasswork', cost: { ideas: 10, wood: 30, stones: 20 }, at: { pop: 3 }, desc: 'Twist grass into cord. Unlocks fiber, Pull grass and the twiner.' },
     { id: 'caches', kind: 'building', name: 'Food caches', cost: { ideas: 10 }, at: { card: 'foraging', pop: 3 }, opens: 'cache', desc: 'Opens food caches: room for more food.' },
-    { id: 'firekeeping', kind: 'idea', name: 'Firekeeping', cost: { ideas: 14 }, at: { card: 'stoking', pop: 5 }, desc: 'A settler can tend the fire all day, burning wood for light.' },
+    { id: 'firekeeping', kind: 'idea', name: 'Firekeeping', cost: { ideas: 14 }, at: { card: 'stoking', pop: 5 }, desc: 'A settler can tend the light all day. It needs no wood: the light feeds itself.' },
     { id: 'woodcutting', kind: 'idea', name: 'Woodcutting', cost: { ideas: 16, wood: 40, stones: 40, fiber: 20 }, at: { card: 'grasswork', pop: 6 }, desc: 'A stone axe, bound with cord. Settlers can cut wood, and Chop wood brings 3 more wood a click.' },
     { id: 'hearth', kind: 'building', name: 'Hearthstones', cost: { ideas: 16 }, at: { pct: 6 }, opens: 'hearth', desc: 'Opens the hearth: every level makes all light stronger. It has an end.' },
-    { id: 'storytelling', kind: 'idea', name: 'Storytelling', cost: { ideas: 10, food: 20 }, at: { pop: 4 }, desc: 'Settlers who tell stories by the fire bring ideas.' },
+    { id: 'storytelling', kind: 'idea', name: 'Storytelling', cost: { ideas: 10, food: 20 }, at: { pop: 4 }, desc: 'Settlers who tell stories by the fire bring ideas. From then on, your own hands bring fewer.' },
     { id: 'feasting', kind: 'idea', name: 'Feasting', cost: { ideas: 24 }, at: { pop: 7 }, desc: 'Spend food on a feast: all light half again as strong for 3 minutes.' },
     // the village grows
     { id: 'axes', kind: 'tool', name: 'Better axes', cost: { ideas: 20, stones: 60, fiber: 40 }, at: { card: 'woodcutting', pct: 10 }, opens: 'axes', desc: 'Opens axe work: woodcutters bring more wood.' },
@@ -126,7 +127,7 @@ var VC = (function () {
     { id: 'mattocks', group: 'tools', name: 'Mattocks', cost: { wood: 60, fiber: 40 }, growth: 1.45, max: 8, desc: 'Gatherers bring {pct}% more wood and stones.' },
     { id: 'baskets', group: 'tools', name: 'Baskets', cost: { wood: 40, fiber: 30 }, growth: 1.45, max: 6, desc: 'Foragers bring {pct}% more food.' },
     { id: 'spindles', group: 'tools', name: 'Spindles', cost: { wood: 60, stones: 40 }, growth: 1.45, max: 8, desc: 'Twiners bring {pct}% more fiber.' },
-    { id: 'keepcraft', group: 'tools', name: 'Tending', cost: { stones: 80, fiber: 60 }, growth: 1.5, max: 6, desc: 'Each firekeeper\u2019s fire burns {pct}% brighter, and takes {wpct}% more wood.' },
+    { id: 'keepcraft', group: 'tools', name: 'Tending', cost: { stones: 80, fiber: 60 }, growth: 1.5, max: 6, desc: 'Each firekeeper\u2019s fire burns {pct}% brighter.' },
     { id: 'frames', group: 'tools', name: 'Carrying frames', cost: { wood: 200, fiber: 150 }, growth: 1.6, max: 12, desc: 'Haulers carry {pct}% more.' },
     { id: 'songs', group: 'light', name: 'Fire song', cost: { ideas: 60 }, growth: 1.55, max: 10, desc: 'All light {pct}% stronger. Each song costs more ideas than the last.' },
     { id: 'lettuce', group: 'snails', name: 'Lettuce bed', cost: { snails: 2 }, growth: 1.45, desc: 'Snails come a little faster.' },
@@ -161,7 +162,7 @@ var VC = (function () {
     { id: 'woodcutter', card: 'woodcutting', name: 'Woodcutter', tag: '+wood', desc: 'Cuts wood.' },
     { id: 'twiner', card: 'grasswork', name: 'Twiner', tag: '+fiber', desc: 'Twists grass into fiber.' },
     { id: 'storyteller', card: 'storytelling', name: 'Storyteller', tag: '+ideas', desc: 'Tells stories by the fire. Ideas come of it.' },
-    { id: 'firekeeper', card: 'firekeeping', name: 'Firekeeper', tag: 'wood \u2192 light', desc: 'Tends a fire all day, burning wood for light. The best light there is, for a settler and their wood.' },
+    { id: 'firekeeper', card: 'firekeeping', name: 'Firekeeper', tag: 'tends the light', desc: 'Tends the light all day. A firekeeper needs no wood: the light feeds itself. The best light there is, for a settler.' },
     { id: 'hauler', card: 'hauling', name: 'Hauler', tag: 'carries to projects', desc: 'Carries materials from the stores to the project being built.' }
   ];
 
@@ -364,7 +365,10 @@ var VC = (function () {
     if (has(s, 'steady') && !plain) a += D.steadySecs * jobMake(s, r);
     return a * (s.pv && s.pv.hand ? s.pv.hand : 1);   // Light Lab v2: Sure hands
   }
-  function handIdeas(s) { return D.clickIdeas * Math.max(0, 1 - Math.max(0, s.pop - (s.doorPop || 0)) / 4); }   // Light Lab v3: Open doors' settlers bring the ideas their arrival would cost
+  function handIdeas(s) {   // Light Lab v3: Open doors' settlers bring the ideas their arrival would cost
+    var v = D.clickIdeas * Math.max(0, 1 - Math.max(0, s.pop - (s.doorPop || 0)) / 4);
+    return has(s, 'storytelling') ? v : Math.max(v, D.clickIdeasFloor || 0);   // r1d: until settlers tell stories, your hands still bring a little
+  }
   function gather(s, r, plain) {
     if (r === 'stones' && !has(s, 'lookcloser')) return false;
     if (r === 'fiber' && !has(s, 'grasswork')) return false;

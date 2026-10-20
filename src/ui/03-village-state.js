@@ -24,7 +24,6 @@ const WORLD = {
   milestones: [10, 25, 50, 75, 100],
   text: {
     stood: 'You stand. The motes you held scatter into the grey.',
-    motes: 'Motes rise from the fire and drift toward you. Only you seem to notice them.',
     arrive: 'A figure steps out of the nothing and into your light. They don’t know where they came from either.',
     berries: 'They are hungry. They show you berries along the stream that you never noticed.',
     hint: 'Next milestone: {pct}%',
@@ -153,7 +152,7 @@ function wFeast() { const w = W(); if (!VC.feast(w)) return; wsay(tx('w.msg.feas
 function wCard(id) {
   const w = W(), c = VC.CARD[id], had = w.proj ? w.proj.id : null; if (!VC.buyCard(w, id)) return; w.stats.buys.length = 0;
   w.learnedAt[id] = S.playTime || 0; sys(tx('w.msg.learned', { name: c.name }));
-  if (id === 'fire') { w.seen.ideas = true; setTimeout(() => { if (S.w === w) wsay(WORLD.text.motes); }, 20000 / (S.speed || 1)); }
+  if (id === 'fire') w.seen.ideas = true;   // r1d (owner): the motes line is gone from the journal
   if (id === 'lookcloser') w.seen.stones = true;
   if (id === 'grasswork') w.seen.fiber = true;
   if (id === 'snails') w.seen.snails = true;

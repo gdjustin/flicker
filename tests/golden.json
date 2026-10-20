@@ -1,13 +1,13 @@
 {
   "village": {
-    "minutes": 110,
-    "lightPerSec": 32.48,
+    "minutes": 96.7,
+    "lightPerSec": 31.9,
     "settlers": 25
   },
   "mapRun1": {
-    "villageMinutes": 95.8,
-    "hoursTo10": 5.22,
-    "hoursTo20": 44.45,
-    "hoursTo40": 106.6
+    "villageMinutes": 98.3,
+    "hoursTo10": 5.07,
+    "hoursTo20": 43.3,
+    "hoursTo40": 93.92
   }
 }

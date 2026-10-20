@@ -166,12 +166,10 @@ const MT = {   // the map's text, in one place for the text editor
   revealH: 'The world beyond', reveal1: 'Your light reaches the edge of your homeland and finds nothing beyond. Not darkness, but a yawning void.',
   reveal2: 'But your light has changed. It’s no longer mere firelight. You sense this light can be used to call the world back, and you dare to hope.',
   reveal3: 'You are beginning to remember. Copper to the north. Something big to the east. Choose land beyond your home and call it back.', revealOk: 'Choose a land to call back',
-  keeperTag: 'tends the light', keeperDesc: 'Tends the light all day. Out here a firekeeper needs no wood: the light feeds itself. The best light there is, for a settler.',
-  keeperLog: 'Your firekeepers no longer need wood. The light feeds itself now.',
   ampH: 'An Amplifier Restored', amp1: 'You have discovered and repaired an ancient amplifier. Who built it? How long has it been here?',
   amp2: 'You recall these massive structures help focus and boost light energy. Light you send to the east (in the highlighted land marked on the map) will now arrive in that land three times as strong.',
   amp3: 'Soon you’ll be able to build your own amplifiers, choose where they stand, and which direction they face.', ampOk: 'Back to the map',
-  stripTo: 'Invoking the light to call back', stripNone: 'Your light is waiting', stripPick: 'Pick a tile on the map, then send light there.',
+  stripTo: 'Invoking the light to call back', stripNone: 'Your light is waiting', stripPick: 'Pick a place on the map, then send light there.',
   poolSaved: ' of {cap} light saved up', poolLeft: 'Send it somewhere and it all pours in at once.', poolFull: 'The store is full: an hour’s worth. Light beyond it is lost until you send it somewhere.',
   poolTip: 'The light waits, up to an hour’s worth.', thenOn: ' · then on to the cheapest place beside your land', thenLine: ' · then {list}',
   lineNext: 'Send light here next', lineOut: 'Take out of line', lineFull: 'Your plans hold {n} place{s}. Learn more planning to line up more.',
@@ -242,7 +240,6 @@ function startMap() {
   w.seen.copper = false; S.view = 'map';
   resetWorldDom(); sys('The map is open. Pick a dark place beside your home and send your light there.'); if (w.jobs.storyteller || w.cards.storytelling) sys(MT.scholars);
   if (MC.D.eatMap > 1) sys(fill(MT.eatMore, { x: fmtW(MC.D.eatMap, 1) }));
-  if (!MC.D.keeperFuelMap && (w.jobs.firekeeper || w.cards.firekeeping)) sys(MT.keeperLog);   // v1r
   renderWorld(); save(true);
 }
 function showReveal() {
@@ -255,6 +252,18 @@ function showAmpRestored() {
   $('moment-h').textContent = MT.ampH; const body = $('moment-body'); body.innerHTML = '';
   [MT.amp1, MT.amp2, MT.amp3].forEach(t => { const p = document.createElement('p'); p.textContent = t; body.appendChild(p); });
   $('moment-ok').textContent = MT.ampOk; $('moment').dataset.kind = ''; $('moment').classList.remove('hidden'); $('moment-ok').focus();
+}
+// r1d (owner): the first place called back brings the first relic; say what relics are and where they wait (once ever)
+function showRelicMoment() {
+  $('moment-h').textContent = tx('rl.h'); const body = $('moment-body'); body.innerHTML = '';
+  ['rl.p1', 'rl.p2', MC.D.resonance.on ? 'rl.p3' : null, MC.D.rb.on ? 'rl.p4' : null].filter(Boolean).forEach(k => { const p = document.createElement('p'); p.textContent = tx(k, { k: 1 + MC.D.resonance.R }); body.appendChild(p); });
+  $('moment-ok').textContent = tx('rl.ok'); $('moment').dataset.kind = 'relics'; $('moment').classList.remove('hidden'); $('moment-ok').focus();
+}
+function relicMomentCheck(w) {
+  const m = meta(); if (m.relicSeen || !w.m.restored) return;
+  if (m.run > 1 || w.m.restored > 3) { m.relicSeen = true; return; }   // saves from before r1d, already past it
+  if (S.inPerks || !$('away').classList.contains('hidden') || !$('moment').classList.contains('hidden') || !$('panel').classList.contains('hidden')) return;
+  m.relicSeen = true; showRelicMoment(); save(true);
 }
 function showThirty() {
   $('moment-h').textContent = MT.thirtyH; const body = $('moment-body'); body.innerHTML = '';
@@ -300,9 +309,8 @@ function mapTick(dt, away) {
 }
 
 /* ---------- actions ---------- */
-function mGather(res) {   // gathering by hand still works; stores in the map phase use the map's room (books raise ideas)
-  const w = W(); if (res === 'stones' && !w.cards.lookcloser) return; if (res === 'fiber' && !w.cards.grasswork) return; if (res === 'food' && !w.cards.foraging) return;
-  w.res[res] = Math.min(MC.cap(w, res), (w.res[res] || 0) + VC.gatherAmount(w, res)); renderWorld();
+function mGather(res) {   // gathering by hand works as in the village (r1d); stores in the map phase use the map's room (books raise ideas)
+  if (MC.gather(W(), res)) renderWorld();
 }
 function mBurst() {   // the light burst (was Stoke the fire): 30 s of your light at once, to the place you call back or into the store
   const w = W(); const L = MC.burst(w); if (!L) return;
@@ -394,7 +402,7 @@ function mapLightTip(anchor) {
   if (MC.D.resonance.on && MC.regionsDone(w)) mult.push('Relics in finished regions ring (each counts ' + (1 + MC.D.resonance.R) + '×): ' + MC.resonantN(w) + ' of them, in the relics\u2019 ×' + x(MC.relicMult(w)));
   const rl = MC.relicMult(w); if (rl > 1.001) mult.push('Relics, ' + (w.m.relicsN || 0) + ': ×' + x(rl));
   const bl = MC.beaconLv(w); if (bl) mult.push('Beacon upgrades, ' + bl + ': ×' + x(1 + MC.beaconStepOf(w) * bl));
-  const am = w.m.target ? MC.ampMult(w, w.m.target) : 1; if (am > 1) mult.push('An amplifier on the tile you call back: ×' + x(am));
+  const am = w.m.target ? MC.ampMult(w, w.m.target) : 1; if (am > 1) mult.push('An amplifier on the place you call back: ×' + x(am));
   if (MC.masteryOn(w)) mult.push({ t: 'Mastery (' + fmtW(MC.masteryPoints(w)) + (MC.D.mastery.weight === 'hs' ? ' mastered heartstones' : ' stars') + '): light reaching new land ×' + x(MC.masteryMult(w)) + '. Light into land you master is not.', cls: 'tipx' });
   const ls = MC.mlv(w, 'longsong'); const kept = keptLightLines(w); if (ls || kept.length) mult.push({ t: 'On single lines:', cls: 'tipsep' }); if (ls) mult.push('Long songs, ' + ls + ': firekeepers ×' + x(1 + MC.D.longSong * ls)); kept.forEach(t => mult.push(t));
   if (!w.m.target) mult.push({ cls: 'tipx', t: MT.poolTip + ' Saved now: ' + fmtC(w.m.pool || 0) + ' of ' + fmtC(MC.poolCap(w)) + '.' });

@@ -50,9 +50,11 @@ function keptBuffLines(w, r) {
   if (craft && lv[craft]) out.push(P[craft].name + ' ' + lv[craft] + ': +' + Math.round(P[craft].x * lv[craft] * 100) + '%' + (craft === 'coppercraft' ? ' (smelters burn +' + Math.round(P.coppercraft.use * lv.coppercraft * 100) + '%)' : w.m ? '' : ', in the village too'));
   if (r === 'food' && lv.openDoors && !w.m) out.push('Open doors: the first settlers came knowing how to forage');
   if (!w.m && lv.sureHands && ['wood', 'stones', 'fiber', 'food'].includes(r)) out.push('Sure hands: gathering by hand ×' + P.sureHands.hand[lv.sureHands - 1]);
-  if (w.m && MC.stewardsOn && MC.stewardsOn(w) && ['wood', 'stones', 'fiber', 'copper'].includes(r) && (r !== 'copper' || w.m.cards.cubins)) out.push('Stewards: when this store is full, they buy the next stockpile if you can afford it');
+  if (w.m && MC.perk(w, 'stewardsKept') && !w.m.cards.autostore && MC.stewardsOn(w) && stewardRes(w, r)) out.push('Stewards: when this store is full, they buy the next stockpile if you can afford it');
   return out;
 }
+// r1d (owner's playtest): Stewards learned this run are this run's, not kept from an earlier one
+function stewardRes(w, r) { return ['wood', 'stones', 'fiber', 'copper'].includes(r) && (r !== 'copper' || w.m.cards.cubins); }
 function keptLightLines(w) {
   const m = S.meta, out = []; if (!m || !m.perks) return out; const lv = m.perks, x = v => fmtW(v, 2);
   if (!w.m && w.pv && w.pv.all > 1.001) out.push('Memory (every heartstone remembered): ×' + x(w.pv.all));
@@ -71,6 +73,7 @@ function showResTip(r, anchor) {
   if (isFinite(cap(r))) { const v = w.res[r] || 0, c = cap(r), net = netRate(r), e = document.createElement('div'); e.className = 'tipsep';
     e.textContent = v >= c - 0.001 ? tx('w.tip.isfull') : net > 0.0005 ? tx('w.tip.full', { t: fmtTime((c - v) / net) }) : net < -0.0005 ? tx('w.tip.empty', { t: fmtTime(v / -net) }) : tx('w.tip.steady'); tip.appendChild(e); }
   let extra = tx('w.use.' + r); if (extra !== 'w.use.' + r) { const e = document.createElement('div'); e.className = 'tipx'; e.textContent = extra; tip.appendChild(e); }
+  if (w.m && w.m.cards.autostore && stewardRes(w, r)) { const e = document.createElement('div'); e.className = 'tipx'; e.textContent = 'Stewards: when this store is full, they buy the next stockpile if you can afford it.'; tip.appendChild(e); }
   const kept = keptBuffLines(w, r); if (kept.length) { const e = document.createElement('div'); e.className = 'tipsep'; e.textContent = 'Kept from earlier runs:'; tip.appendChild(e); kept.forEach(t => { const d = document.createElement('div'); d.textContent = t; tip.appendChild(d); }); }
   const rect = anchor.getBoundingClientRect();
   tip.style.left = Math.min(window.innerWidth - 300, rect.right + 12) + 'px'; tip.style.top = Math.max(8, rect.top) + 'px'; tip.classList.remove('hidden');
@@ -122,7 +125,7 @@ function settlerHint(w) {
 function jobTip(j, row) {
   const w = W(), n = w.jobs[j.id] || 0, lines = [j.desc], o = VC.D.job[j.id];
   if (n && o) lines.push(tx('w.jtip.live', { n, jobs: jobName(j, n), list: Object.keys(o).map(k => '+' + fmtW(n * o[k] * VC.jobMult(w, j.id), 2) + ' ' + resName(k).toLowerCase() + '/s').join(', ') }));
-  else if (n && j.id === 'firekeeper') lines.push(tx('vw.jtip.keepers', { n, light: fmtW(n * VC.keeperLight(w) * VC.lightMult(w), 2), wood: fmtW(n * VC.keeperWood(w), 2) }));
+  else if (n && j.id === 'firekeeper') lines.push(tx('vw.jtip.keepers', { n, light: fmtW(n * VC.keeperLight(w) * VC.lightMult(w), 2) }));
   else if (n && j.id === 'hauler') lines.push(tx('vw.jtip.haul', { n, w: fmtW(VC.haulRate(w), 2) }));
   else if (!n) lines.push(tx('w.jtip.none'));
   if (j.id === 'hauler') lines.push({ cls: 'tipx', t: tx('vw.jtip.back') });
@@ -197,10 +200,10 @@ function renderWorld() {
     setBtn(ensureBtn(ab, 'w-stoke', wStoke, 'primary'), tx('w.stoke'), tx('w.stoke.sub', { wood: sw, light: fmtW(sw * D.perWood * VC.lightMult(w), 2) }), w.res.wood >= sw, { keys: ['w.stoke', 'w.stoke.sub'] }); }
   for (const g of WORLD.gathers) {
     const ok = g.res === 'wood' ? w.seen.wood : g.res === 'stones' ? w.cards.lookcloser : g.res === 'fiber' ? w.cards.grasswork : w.cards.foraging;
-    if (!ok) continue; const amt = VC.gatherAmount(w, g.res);
+    if (!ok) continue; const amt = w.m ? MC.gatherAmount(w, g.res) : VC.gatherAmount(w, g.res);
     // v1q fix (owner's playtest): a full store never blocks learning. While hands still turn up ideas, gathering stays open
-    const full = w.res[g.res] >= cap(g.res) - 0.001, hi = !w.m ? VC.handIdeas(w) : 0, learns = hi > 0 && (w.res.ideas || 0) < cap('ideas') - 0.001;
-    setBtn(ensureBtn(ab, 'w-g-' + g.res, () => (W().m ? mGather(g.res) : wGather(g.res))), g.res === 'wood' && w.cards.woodcutting ? g.labelAxe : g.label, full && learns ? 'The ' + resName(g.res).toLowerCase() + ' store is full, but your hands still turn up ideas: +' + fmtW(hi, 2) + ' a click.' : tx('w.gather.sub', { n: fmtW(amt, amt % 1 ? 1 : 0), res: resName(g.res).toLowerCase() }), !full || learns,
+    const full = w.res[g.res] >= cap(g.res) - 0.001, hi = VC.handIdeas(w), learns = hi > 0 && (w.res.ideas || 0) < cap('ideas') - 0.001;
+    setBtn(ensureBtn(ab, 'w-g-' + g.res, () => (W().m ? mGather(g.res) : wGather(g.res))), g.res === 'wood' && w.cards.woodcutting ? g.labelAxe : g.label, full && learns ? 'The ' + resName(g.res).toLowerCase() + ' store is full, but your hands still turn up ideas: +' + fmtW(hi, 2) + ' a click.' : tx('w.gather.sub', { n: fmtW(amt, amt % 1 ? 1 : 0), res: resName(g.res).toLowerCase() }) + (hi >= 0.005 ? ' ' + tx('w.gather.ideas', { n: fmtW(hi, 2) }) : ''), !full || learns,
       { keys: itemKeys('world.gather', g, ['label', 'labelAxe']).concat(['w.gather.sub']) });
   }
   // r1c (owner, 2026-10-18): the gathering buttons keep their own order (wood beside stone), whatever order they opened in
