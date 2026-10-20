@@ -113,12 +113,11 @@ function panelSettings(body) {
 }
 
 /* ---- What do I do? (r1d, owner): light guidance, a section for each part of the game reached, the newest on top ---- */
-const GUIDE = [['g.h.reb', 'g.reb', 3], ['g.h.map', 'g.map', 5], ['g.h.vil', 'g.vil', 5], ['g.h.pro', 'g.pro', 1]];
+const GUIDE = [['g.h.reb', 'g.reb', 3], ['g.h.map', 'g.map', 5], ['g.h.vil', 'g.vil', 4], ['g.h.pro', 'g.pro', 1]];
 function guideReached() {   // 0 prologue, 1 the village, 2 the map (run 1), 3 runs 2 and on
   const m = S.meta || {}; if ((m.run || 1) > 1) return 3; if (S.w && S.w.m) return 2; return S.flags && S.flags.stood ? 1 : 0;
 }
 function panelGuide(body) {
-  body.appendChild(el('p', 'pmut', tx('g.lead')));
   const got = guideReached();
   GUIDE.slice(GUIDE.length - 1 - got).forEach(([h, pre, n]) => { body.appendChild(el('h3', '', tx(h))); const ul = el('ul', 'pguide');
     for (let i = 1; i <= n; i++) ul.appendChild(el('li', '', tx(pre + '.' + i))); body.appendChild(ul); });

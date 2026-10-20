@@ -173,7 +173,7 @@ const MT = {   // the map's text, in one place for the text editor
   poolSaved: ' of {cap} light saved up', poolLeft: 'Send it somewhere and it all pours in at once.', poolFull: 'The store is full: an hour’s worth. Light beyond it is lost until you send it somewhere.',
   poolTip: 'The light waits, up to an hour’s worth.', thenOn: ' · then on to the cheapest place beside your land', thenLine: ' · then {list}',
   lineNext: 'Send light here next', lineOut: 'Take out of line', lineFull: 'Your plans hold {n} place{s}. Learn more planning to line up more.',
-  burst: 'Light burst', burstSub: 'Send {n} light here at once: {s} seconds of your light. Then a trip of {t} before the next.', burstStore: 'Save {n} light at once: {s} seconds of your light. Then a trip of {t} before the next.', burstAway: 'Next burst in {t}', burstShort: 'Burn {c}: +{n} light {where}',
+  burst: 'Light burst', burstSub: 'Send {n} light here at once: {s} seconds of your light. Then the light takes {t} to gather again.', burstStore: 'Save {n} light at once: {s} seconds of your light. Then the light takes {t} to gather again.', burstAway: 'Gathering again: {t}', burstShort: 'Burn {c}: +{n} light {where}',
   seenH: 'Seen from afar', lightAway: '{n} light was made.', keepLearn: 'Learn {name} to keep it working for {h} hours.', keepLater: 'Later research will keep it working longer.',
   scholars: 'Your storytellers have turned to study: in the world beyond they are scholars now.',
   restored: '{name} is back. People step out of it and into your light.', region: 'All of {region} is back: all light +{pct}%.', resonate: 'All of {region} is back, and its relics ring together: each one there counts {k} times, now and when claimed later.',

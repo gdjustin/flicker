@@ -96,18 +96,20 @@ const { VC, VBOT, MCORE, MBOT } = loadRules();
   check('rebirth branch: the traveler comes, waits and goes', here && !MC.merchantHere(s) && s.m.merch.visits === 1);
 }
 
-// 4c. r1d (owner, 2026-10-19): the village and the map keep one rule. Firekeepers burn no wood, settlers eat the same,
-// and gathering by hand works the same (Sure hands, the hand's ideas). Hands bring ideas until Storytelling is learned.
+// 4c. r1d/r1e (owner, 2026-10-19): the village and the map keep one rule, and a rule that changes is announced. Firekeepers burn no wood,
+// gathering by hand works the same (Sure hands; no ideas on the map), hands bring ideas until Storytelling. Settlers eat 4.5x on the map (owner: foragers a real choice), said at the reveal and on the food hover.
 {
   const MC = MCORE(VC); MC.applySet('R1');
   const v = VC.fresh(); v.pop = 6; v.cards.fire = true; v.cards.firekeeping = true; v.jobs.firekeeper = 3;
   check('one rule: firekeepers burn no wood in the village', VC.burnDemand(v).wood === 0 && VC.lightParts(v).some(p => p[0] === 'keepers' && p[1] > 0));
-  check('one rule: settlers eat the same in the village and on the map', MC.eatRate(v) === VC.D.eat, MC.eatRate(v) + ' and ' + VC.D.eat + ' a second');
+  check('eating: settlers eat more on the map, and the game says so', MC.eatRate(v) > VC.D.eat && MC.D.eatMap > 1, MC.eatRate(v).toFixed(2) + ' on the map, ' + VC.D.eat + ' in the village');
   const before = VC.handIdeas(v); v.cards.storytelling = true; const after = VC.handIdeas(v);
   check('ideas: hands still bring ideas until Storytelling is learned', before >= VC.D.clickIdeasFloor && after === 0, before + ' a click before, ' + after + ' after (6 settlers)');
   const m = VBOT.run(VC, { maxT: 3 * 3600 }).s; MC.init(m, { run: 2, hs: 10, perks: {}, known: [] });
   const vh = VC.gatherAmount(Object.assign({}, m, { m: null, pv: { hand: MC.D.perks.sureHands.hand[0] } }), 'stones'), mh = MC.gatherAmount(m, 'stones');
   check('one rule: Sure hands works on the map as in the village', m.m.perks.sureHands >= 1 && mh >= MC.D.perks.sureHands.hand[0] * 2, 'map click ' + mh.toFixed(1) + ' stones, village click ' + vh.toFixed(1));
+  const i0 = m.res.ideas; MC.gather(m, 'stones');
+  check('ideas: gathering on the map brings no ideas', m.res.ideas === i0);
 }
 
 // 5. Same rules, same numbers: compare with the recorded results.

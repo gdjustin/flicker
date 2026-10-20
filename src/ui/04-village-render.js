@@ -72,6 +72,7 @@ function showResTip(r, anchor) {
   lines.forEach(t => { const d = document.createElement('div'); d.textContent = t; tip.appendChild(d); });
   if (isFinite(cap(r))) { const v = w.res[r] || 0, c = cap(r), net = netRate(r), e = document.createElement('div'); e.className = 'tipsep';
     e.textContent = v >= c - 0.001 ? tx('w.tip.isfull') : net > 0.0005 ? tx('w.tip.full', { t: fmtTime((c - v) / net) }) : net < -0.0005 ? tx('w.tip.empty', { t: fmtTime(v / -net) }) : tx('w.tip.steady'); tip.appendChild(e); }
+  if (w.m && r === 'food' && MC.D.eatMap > 1) { const e = document.createElement('div'); e.className = 'tipx'; e.textContent = fill(MT.eatMore, { x: fmtW(MC.D.eatMap, 1) }); tip.appendChild(e); }   // r1e
   let extra = tx('w.use.' + r); if (extra !== 'w.use.' + r) { const e = document.createElement('div'); e.className = 'tipx'; e.textContent = extra; tip.appendChild(e); }
   if (w.m && w.m.cards.autostore && stewardRes(w, r)) { const e = document.createElement('div'); e.className = 'tipx'; e.textContent = 'Stewards: when this store is full, they buy the next stockpile if you can afford it.'; tip.appendChild(e); }
   const kept = keptBuffLines(w, r); if (kept.length) { const e = document.createElement('div'); e.className = 'tipsep'; e.textContent = 'Kept from earlier runs:'; tip.appendChild(e); kept.forEach(t => { const d = document.createElement('div'); d.textContent = t; tip.appendChild(d); }); }
@@ -202,7 +203,7 @@ function renderWorld() {
     const ok = g.res === 'wood' ? w.seen.wood : g.res === 'stones' ? w.cards.lookcloser : g.res === 'fiber' ? w.cards.grasswork : w.cards.foraging;
     if (!ok) continue; const amt = w.m ? MC.gatherAmount(w, g.res) : VC.gatherAmount(w, g.res);
     // v1q fix (owner's playtest): a full store never blocks learning. While hands still turn up ideas, gathering stays open
-    const full = w.res[g.res] >= cap(g.res) - 0.001, hi = VC.handIdeas(w), learns = hi > 0 && (w.res.ideas || 0) < cap('ideas') - 0.001;
+    const full = w.res[g.res] >= cap(g.res) - 0.001, hi = w.m ? 0 : VC.handIdeas(w), learns = hi > 0 && (w.res.ideas || 0) < cap('ideas') - 0.001;
     setBtn(ensureBtn(ab, 'w-g-' + g.res, () => (W().m ? mGather(g.res) : wGather(g.res))), g.res === 'wood' && w.cards.woodcutting ? g.labelAxe : g.label, full && learns ? 'The ' + resName(g.res).toLowerCase() + ' store is full, but your hands still turn up ideas: +' + fmtW(hi, 2) + ' a click.' : tx('w.gather.sub', { n: fmtW(amt, amt % 1 ? 1 : 0), res: resName(g.res).toLowerCase() }) + (hi >= 0.005 ? ' ' + tx('w.gather.ideas', { n: fmtW(hi, 2) }) : ''), !full || learns,
       { keys: itemKeys('world.gather', g, ['label', 'labelAxe']).concat(['w.gather.sub']) });
   }

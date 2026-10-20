@@ -261,8 +261,8 @@ var MCORE = function (VC) {
     { id: 'beff', name: 'Hotter burning', cost: { ideas: 500 }, at: { copper: true, tiles: 9 }, desc: 'Opens burner work: each burner burns harder and gives more light per load.' },
     // the line-up ladder (owner, 2026-10-12): first tier at 2 places back, ending at 8. Waymarks moved to a QOL perk
     { id: 'harvest', name: 'Harvest feast', cost: { ideas: 300 }, at: { tiles: 5, fn: function (s) { return !!s.cards.feasting; } }, desc: 'Feasts become harvest feasts: twice the food, twice as long, and all light 55% stronger instead of 50%.' },
-    { id: 'packs', name: 'Pack frames', cost: { ideas: 800 }, at: { fn: function (s) { return (s.m.bursts || 0) >= 5; } }, desc: 'Each light burst holds twice as much: a minute of your light instead of 30 seconds.' },
-    { id: 'waystations', name: 'Waystations', cost: { ideas: 2400 }, at: { fn: function (s) { return !!s.m.cards.packs && (s.m.bursts || 0) >= 25; } }, desc: 'Shelters along the roads. Light bursts gather again in half the time.' },
+    { id: 'packs', name: 'Held breath', cost: { ideas: 800 }, at: { fn: function (s) { return (s.m.bursts || 0) >= 5; } }, desc: 'You hold the light longer before you let it go: each light burst carries a minute of your light instead of 30 seconds.' },   // r1e (owner): re-themed, was Pack frames
+    { id: 'waystations', name: 'Quickened light', cost: { ideas: 2400 }, at: { fn: function (s) { return !!s.m.cards.packs && (s.m.bursts || 0) >= 25; } }, desc: 'The light answers you sooner: after a light burst it gathers again in half the time.' },   // r1e (owner): re-themed, was Waystations
     { id: 'darkread', name: 'Reading the dark', cost: { ideas: 1600 }, at: { tiles: 19 }, scout: 1, desc: 'See one ring further into the dark: the land of places two steps from yours, and how long each would take.' },
     { id: 'farsight', name: 'Far sight', cost: { ideas: 4000 }, at: { tiles: 21, fn: function (s) { return !!s.m.cards.darkread; } }, scout: 2, desc: 'See two rings into the dark.' },
     { id: 'plan1', name: 'Planning', cost: { ideas: 250 }, at: { tiles: 2 }, lineup: 1, desc: 'Line up the next place to call back: when one comes back, your light moves on to it by itself.' },
@@ -1068,7 +1068,8 @@ var MCORE = function (VC) {
     startProject(s, 'amp' + n); return true;
   }
   // r1d (owner: the village and the map keep one rule): gathering by hand works as in the village. Sharp stone, the axe,
-  // Steady hands (what your settlers make of it in 2 seconds, at this phase's rates), Sure hands, and the hand's ideas
+  // Steady hands (what your settlers make of it in 2 seconds, at this phase's rates) and Sure hands. r1e (owner): no ideas:
+  // the hand's ideas fade out early in the village and never come back on the map
   function gatherAmount(s, r) {
     var a = (s.cards.sharp ? VC.D.sharpClick : VC.D.click) + (r === 'wood' && s.cards.woodcutting ? VC.D.chopBonus : 0);
     if (s.cards.steady) a += VC.D.steadySecs * jobMake(s, r);
@@ -1076,7 +1077,7 @@ var MCORE = function (VC) {
   }
   function gather(s, r) {
     if (r === 'stones' && !s.cards.lookcloser) return false; if (r === 'fiber' && !s.cards.grasswork) return false; if (r === 'food' && !s.cards.foraging) return false;
-    addRes(s, r, gatherAmount(s, r)); addRes(s, 'ideas', VC.handIdeas(s)); s.hand = (s.hand || 0) + 1; return true;
+    addRes(s, r, gatherAmount(s, r)); s.hand = (s.hand || 0) + 1; return true;
   }
   function jobOpen(s, id) { if (id === 'smelter') return !!s.m.smelting; if (id === 'glowcrafter') return hasC(s, 'glowcraft'); return VC.jobOpen(s, id); }
   function setJob(s, id, n) {
@@ -1112,9 +1113,6 @@ var MCORE = function (VC) {
   DIAL_SETS.R1 = Object.assign({}, DIAL_SETS.V3, { 'rb.on': 1, 'mastery.on': 1, 'merchant.on': 1, 'perks.lightRemembers.costs': [20, 40, 70, 110], 'perks.lightRemembers.name': 'The light remembers I\u2013IV',
   // r1c (owner's Leaning, 2026-10-18): mastery tiers at 100, 1,000 and 10,000 clears (was 10, 100, 1,000). Lab: 150 places in 20 days after whole against 154; the sensible player beats mastering everything by x1.09
   'mastery.need': [100, 1000, 10000],
-  // r1d (owner: the village and the map keep one rule; the value is Claude's, Considering): settlers eat 0.06 food a second everywhere (was 4.5x once the map opened).
-  // Lab (results/2026-10-19-r1d): check-in whole on day 15.68 either way; food still pays for light bursts and feasts
-  eatMap: 1,
   // r1c (owner's playtest): books are storage, and come back with the run like the other stores (brought back, research room was 150,000, 85 hours to fill)
   'perks.oldFlames.lines': [['ct_axes', 'ct_mattocks', 'ct_spindles', 'ct_baskets', 'house'], ['ctend', 'longsong'], ['clamp', 'cbrazier'], ['eff_firepit', 'eff_limekiln', 'eff_rushlight', 'cuburner', 'eff_cuburner']] });
   function applySet(name) { var o = DIAL_SETS[name] || name; for (var p in o) { var ks = p.split('.'), last = ks.pop(); var host = ks.reduce(function (a, k) { return a && a[k]; }, D); if (host) host[last] = o[p]; } if (VC.LAD && VC.LAD.hearth) { VC.LAD.hearth.max = D.vHearthMax; VC.LAD.hearth.desc = 'All light {pct}% stronger. ' + D.vHearthMax + ' levels in all.'; } refreshCards(); applyDeal(); }
