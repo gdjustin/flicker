@@ -2,7 +2,7 @@
 // what you can buy now that you couldn't before (for the away report's "Now within reach")
 function mapAffordable() {
   const w = W(), out = {};
-  for (const c of VC.CARDS) if (w.cards[c.id] == null && VC.gateOk(w, c.at) && VC.canPay(w, c.cost)) out['c:' + c.id] = c.name;
+  for (const c of VC.CARDS) if (w.cards[c.id] == null && VC.gateOk(w, c.at) && VC.canPay(w, VC.cardCost(w, c))) out['c:' + c.id] = c.name;
   for (const c of MC.CARDS) if (MC.cardAvail(w, c) && VC.canPay(w, MC.cardCost(w, c))) out['m:' + c.id] = c.name;
   for (const l of MC.ML) if (MC.levelOpen(w, l.id) && !MC.levelMaxed(w, l.id) && VC.canPay(w, MC.levelCost(w, l.id))) out['l:' + l.id] = l.name;
   const rt = relicTiles(w).filter(x => w.res.copper >= x.c); if (rt.length) out.relic = rt.length === 1 ? 'a relic' : rt.length + ' relics';
@@ -101,6 +101,7 @@ function botToWhole(btn) {
       }
       m.hist.push({ run, tiles: s.m.restored, regions: MC.regionsDone(s), hsNew: gain, play: s.t, at: Date.now(), bot: true });
       m.cards = Array.from(new Set((m.cards || []).concat(Object.keys(s.m.cards))));
+      m.vcards = Array.from(new Set((m.vcards || []).concat(Object.keys(s.cards || {}))));
       m.built = Array.from(new Set(m.built.concat(Object.keys(s.done || {}), Object.keys(s.m.done || {}))));
       m.relics = Array.from(new Set(m.relics.concat(Object.keys(s.m.relicT || {}))));
       m.levels = { lv: JSON.parse(JSON.stringify(s.m.lv || {})), tier: JSON.parse(JSON.stringify(s.m.tier || {})) };

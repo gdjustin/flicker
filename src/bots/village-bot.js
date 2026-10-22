@@ -11,7 +11,7 @@ var VBOT = (function () {
   function run(VC, opt, onEvent) {
     opt = make(VC, opt);
     var s = VC.fresh(), D = VC.D, log = [], reassign = 0, lastJobs = '', dt = 1;
-    if (opt.pv) s.pv = opt.pv;   // Light Lab v1: memory and family perks in the village
+    if (opt.pv) s.pv = opt.pv; if (opt.pv && opt.pv.oldL) s.oldL = opt.pv.oldL;   // r1f: Old lessons in the village   // Light Lab v1: memory and family perks in the village
     if (opt.startRes) for (var r0 in opt.startRes) s.res[r0] = Math.max(s.res[r0] || 0, opt.startRes[r0]);   // Light Lab v2: 40 stone and wood
     if (s.pv && s.pv.startPop) { var p0 = s.pv.startPop; s.pop = Math.min(D.maxSettlers, p0); s.doorPop = s.pop; s.pvExtra = Math.max(0, p0 - s.pop); s.lastArrive = 0;   // Light Lab v3: Open doors
       (s.pv.doorCards || []).forEach(function (c) { s.cards[c] = true; }); s.res.food = Math.max(s.res.food, 10 * s.pop);
@@ -25,7 +25,7 @@ var VBOT = (function () {
     // the next things the player is saving for, as a resource mix
     function shopping() {
       var want = { wood: 0, stones: 0, fiber: 0, food: 0 };
-      VC.CARDS.forEach(function (c) { if (VC.cardAvail(s, c)) for (var k in c.cost) if (want[k] != null) want[k] += c.cost[k] * 2; });
+      VC.CARDS.forEach(function (c) { if (VC.cardAvail(s, c)) { var cc = VC.cardCost(s, c); for (var k in cc) if (want[k] != null) want[k] += cc[k] * 2; } });
       VC.LADDERS.forEach(function (l) {
         if (!VC.ladderOpen(s, l) || VC.ladderMaxed(s, l) || l.group === 'snails') return;
         var c = VC.ladderCost(s, l); for (var k in c) if (want[k] != null) want[k] += c[k];
@@ -84,10 +84,10 @@ var VBOT = (function () {
     function cardMatsReserve() {
       // hold back materials for the cheapest card we can't buy yet
       var r = {}; var best = null, bc = Infinity;
-      VC.CARDS.forEach(function (c) { if (!VC.cardAvail(s, c) || VC.canPay(s, c.cost)) return; var t = sumCost(c.cost); if (t < bc) { bc = t; best = c; } });
-      if (best) for (var k in best.cost) r[k] = best.cost[k];
+      VC.CARDS.forEach(function (c) { if (!VC.cardAvail(s, c) || VC.canPay(s, VC.cardCost(s, c))) return; var t = sumCost(VC.cardCost(s, c)); if (t < bc) { bc = t; best = c; } });
+      if (best) { var bcc = VC.cardCost(s, best); for (var k in bcc) r[k] = bcc[k]; }
       // ideas: keep enough for the cheapest visible card
-      var ic = Infinity; VC.CARDS.forEach(function (c) { if (VC.cardAvail(s, c) && c.cost.ideas && c.cost.ideas < ic) ic = c.cost.ideas; });
+      var ic = Infinity; VC.CARDS.forEach(function (c) { var ci = VC.cardCost(s, c).ideas; if (VC.cardAvail(s, c) && ci && ci < ic) ic = ci; });
       if (ic < Infinity) r.ideas = Math.max(r.ideas || 0, ic * 2);
       return r;
     }
@@ -96,8 +96,8 @@ var VBOT = (function () {
     function decide() {
       var bought = 0;
       // 1. cards, cheapest first
-      VC.CARDS.filter(function (c) { return VC.cardAvail(s, c) && VC.canPay(s, c.cost); })
-        .sort(function (a, b) { return sumCost(a.cost) - sumCost(b.cost); })
+      VC.CARDS.filter(function (c) { return VC.cardAvail(s, c) && VC.canPay(s, VC.cardCost(s, c)); })
+        .sort(function (a, b) { return sumCost(VC.cardCost(s, a)) - sumCost(VC.cardCost(s, b)); })
         .forEach(function (c) { if (VC.buyCard(s, c.id)) { bought++; note('card', c.id); } });
       // 2. ladders by cost in seconds of income
       var reserve = cardMatsReserve(), roomFull = s.pop >= VC.room(s) - 1;

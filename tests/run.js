@@ -112,6 +112,21 @@ const { VC, VBOT, MCORE, MBOT } = loadRules();
   check('ideas: gathering on the map brings no ideas', m.res.ideas === i0);
 }
 
+// 4d. r1f (owner's playtest, 2026-10-21): Old lessons reaches the village; research chains show one step at a time;
+// from run 2 the old tower need not be mended before your own towers; a copper burner is lit when built.
+{
+  const MC = MCORE(VC); MC.applySet('R1');
+  const pv = MC.villagePrestige({ run: 2, hs: 10, perks: {}, vcards: ['fire', 'storytelling'], built: [] });
+  const t = VC.fresh(); t.oldL = pv.oldL;
+  check('Old lessons: village research learned before costs half', VC.cardCost(t, VC.CARD.fire).ideas === Math.ceil(VC.CARD.fire.cost.ideas / 2) && VC.cardCost(t, VC.CARD.hearth) === VC.CARD.hearth.cost, JSON.stringify(VC.cardCost(t, VC.CARD.fire)));
+  const v = VBOT.run(VC, { maxT: 3 * 3600 }).s; MC.init(v, { run: 2, hs: 10, perks: {}, known: [], built: ['repair'] }); v.m.restored = 12; v.m.cards.away2 = false;
+  delete v.m.cards.away2; const a4before = MC.cardAvail(v, MC.CARD.away4); v.m.cards.away2 = true;
+  check('chains: Night watch shows only after Long watches is learned', !a4before && MC.cardAvail(v, MC.CARD.away4) && !MC.cardAvail(v, MC.CARD.away6));
+  check('towers: from run 2 your own towers need no mended tower first', MC.cardAvail(v, MC.CARD.amps) && !v.m.done.repair);
+  v.m.cards.cuburners = true; v.res.stones = 1e6; v.res.wood = 1e6; MC.buyLevel(v, 'cuburner');
+  check('copper burners: a new one is lit', MC.mlv(v, 'cuburner') === 1 && v.m.cuOn === 1);
+}
+
 // 5. Same rules, same numbers: compare with the recorded results.
 if (update || !fs.existsSync(GOLDEN)) {
   fs.writeFileSync(GOLDEN, JSON.stringify(results, null, 2) + '\n');

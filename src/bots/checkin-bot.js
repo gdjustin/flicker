@@ -204,6 +204,9 @@ var MBOT = function (MC, VBOT) {
     }
 
     // ------------------------------------------------ amplifier placement: the restored frontier tile whose cone covers the most cheap dark
+    // r1f: from run 2 your own towers open before the old one is mended (owner). A sensible player builds them to push past the old
+    // frontier, not while catching up over remembered land (lab: towers planned at place 10 slowed run 2's catch-up from 0.42 to 0.79 days)
+    function towersNow() { var run = s.m.run || 1; if (run <= 1 || s.m.done.repair || !MC.D.rb.on) return true; var prev = MC.rbAt(run - 1); return !prev || s.m.restored >= prev; }
     function planAmp() {
       var best = null, bs = -1;
       Object.keys(s.m.tiles).map(function (k) { return MC.MAP.tiles[MC.MAP.idx[k]]; }).forEach(function (t) {
@@ -311,7 +314,7 @@ var MBOT = function (MC, VBOT) {
         if (MC.buyCard(s, c.id)) { n++; cardT[c.id] = hr(); var pd = c.project && MC.projDef(s, c.project); if (pd && pd.kind === 'small') MC.prioritize(s, c.project); }
       });
       if (MC.repairAmp && MC.repairAmp(s)) { n++; MC.prioritize(s, 'repair'); }
-      if (MC.CARD.amps && s.m.cards.amps) while (s.m.amps.filter(function (a) { return !a.story; }).length < MC.ampMaxOf(s) && s.m.restored >= 10) { var k0 = s.m.amps.length; planAmp(); if (s.m.amps.length === k0) break; n++; }
+      if (MC.CARD.amps && s.m.cards.amps && towersNow()) while (s.m.amps.filter(function (a) { return !a.story; }).length < MC.ampMaxOf(s) && s.m.restored >= 10) { var k0 = s.m.amps.length; planAmp(); if (s.m.amps.length === k0) break; n++; }
       // relics
       if (D.relicMode !== 'tile') MC.relicsOpen(s).forEach(function (land) { if (MC.buyRelic(s, land)) n++; });
       // research storage: when the next research item won't fit

@@ -38,6 +38,8 @@ function showTextTip(anchor, title, lines) {
   tip.style.left = Math.max(8, Math.min(window.innerWidth - 300, rect.left)) + 'px'; tip.style.top = (rect.bottom + 8) + 'px';
   tip.classList.remove('hidden');
 }
+// r1f: a research price cut by Old lessons says so (no unexplained rule changes)
+function oldLessonsNote(w) { const f = w.oldL ? w.oldL.f : w.m ? MC.D.perks.oldLessons.f[Math.max(1, MC.perk(w, 'oldLessons')) - 1] : 0.5; return 'Learned in an earlier run: ' + (f <= 0.25 ? 'a quarter' : 'half') + ' price (Old lessons).'; }
 const hideTip = () => $('w-tip').classList.add('hidden');
 function hoverTip(el, fn) {
   if (el.dataset.tip) return; el.dataset.tip = '1';
@@ -283,7 +285,7 @@ function renderWorld() {
       if (!VC.gateOk(w, c.at)) { if ($(id)) $(id).remove(); continue; }
       any = true; const b = ensureBtn(box, id, () => wCard(c.id)); b.classList.remove('done');
       impactTip(b, x => { x.cards[c.id] = true; });
-      setBtn(b, c.name, c.desc, VC.canPay(w, c.cost), { kind: c.kind, cost: c.cost, keys: ['world.card.' + c.id + '.name', 'world.card.' + c.id + '.desc', 'vw.kind.' + c.kind, 'w.cost', 'w.over'] });
+      const cc = VC.cardCost(w, c); setBtn(b, c.name, c.desc, VC.canPay(w, cc), { kind: c.kind, cost: cc, note: cc !== c.cost ? oldLessonsNote(w) : '', keys: ['world.card.' + c.id + '.name', 'world.card.' + c.id + '.desc', 'vw.kind.' + c.kind, 'w.cost', 'w.over'] });
     }
     $('w-showdone-ideas').textContent = tx(showDoneIdeas ? 'w.hidedone' : 'w.showdone') + ' (' + doneC + ')'; $('w-showdone-ideas').classList.toggle('hidden', !doneC);
     $('h-ideas').classList.toggle('hidden', !any && !doneC);

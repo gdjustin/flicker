@@ -166,6 +166,10 @@ const MT = {   // the map's text, in one place for the text editor
   revealH: 'The world beyond', reveal1: 'Your light reaches the edge of your homeland and finds nothing beyond. Not darkness, but a yawning void.',
   reveal2: 'But your light has changed. It’s no longer mere firelight. You sense this light can be used to call the world back, and you dare to hope.',
   reveal3: 'You are beginning to remember. Copper to the north. Something big to the east. Choose land beyond your home and call it back.', revealOk: 'Choose a land to call back',
+  // r1f (owner: the reveal on runs 2 and 3 knows this has happened before). Claude's draft
+  revealAgain1: 'Your light reaches the edge of your homeland, and again finds the void beyond. This time you know it.',
+  revealAgain2: 'You have stood here before. You remember more of yourself now, and your light is stronger than it was.',
+  revealAgain3: 'Copper to the north. The old tower to the east. You know the way, and you are sure your light can call back more of the world than before.', revealAgainOk: 'Call the land back',
   ampH: 'An Amplifier Restored', amp1: 'You have discovered and repaired an ancient amplifier. Who built it? How long has it been here?',
   amp2: 'You recall these massive structures help focus and boost light energy. Light you send to the east (in the highlighted land marked on the map) will now arrive in that land three times as strong.',
   amp3: 'Soon you’ll be able to build your own amplifiers, choose where they stand, and which direction they face.', ampOk: 'Back to the map',
@@ -186,7 +190,7 @@ const MT = {   // the map's text, in one place for the text editor
   prestBtn: 'Scatter the light', prestH: 'Scatter the light and begin again?',
   prest1: 'Everything here goes dark again: the village, its stores and the places you called back. You keep what you remember.',
   prest2: 'You remember {hs} heartstones ({new} new this run). Memory makes all light ×{m1} now; next run ×{m2}.',
-  prest3: 'You choose your gifts before the run ends. Gifts you chose before stay yours; change your mind and you come back here with nothing lost. Places you have called back before come back faster (paved path).',
+  prest3: 'You choose your gifts before the run ends. Gifts you chose before stay yours; change your mind and you come back here with nothing lost. Places you have called back before come back faster.',
   prestGo: 'See what you would remember', prestNo: 'Not yet',
   // the rebirth branch (2026-10-18): Claude's drafts, for the owner's text pass
   rbLog: 'You have called back enough of the land to remember more of yourself. The dark beyond will not answer until you are reborn ({n} of 5).',
@@ -219,7 +223,7 @@ function pname(w, id) { if (String(id).indexOf('anchor:') === 0) return 'Light A
 /* ---------- meta: what lasts between runs ---------- */
 function meta() { if (!S.meta) S.meta = { run: 1, ever: {}, hsLife: 0, perks: {}, cards: [], hist: [], best: 0 }; const m = S.meta; m.built = m.built || []; m.relics = m.relics || []; m.regBest = m.regBest || {}; m.regFin = m.regFin || {}; return m; }
 function memMultFor(hs) { return 1 + MC.D.memPct * Math.pow(hs || 0, MC.D.memExp); }
-function prestigeObj() { const m = meta(); return m.run > 1 ? { run: m.run, hs: m.hsLife, known: Object.keys(m.ever), perks: m.perks, cards: m.cards, built: m.built, relics: m.relics, levels: m.levels || null, villageSnap: m.villageSnap || null } : null; }
+function prestigeObj() { const m = meta(); return m.run > 1 ? { run: m.run, hs: m.hsLife, known: Object.keys(m.ever), perks: m.perks, cards: m.cards, vcards: m.vcards || [], built: m.built, relics: m.relics, levels: m.levels || null, villageSnap: m.villageSnap || null } : null; }
 function tileOf(key) { const i = MC.MAP.idx[key]; return i == null ? null : MC.MAP.tiles[i]; }
 function tileName(t) { if (!t) return ''; const r = MC.REGIONS[t.region]; return (t.name || LANDN[t.land]) + (r ? ', in ' + r.name : ''); }
 function shortName(t) { return t ? (t.name || LANDN[t.land]) : ''; }
@@ -242,22 +246,25 @@ function startMap() {
   if (MC.D.eatMap > 1) sys(fill(MT.eatMore, { x: fmtW(MC.D.eatMap, 1) }));
   renderWorld(); save(true);
 }
+// r1f: a moment with one button hides the rebirth moment's "Not yet"
+function momentPlain() { const no = $('moment-no'); if (no) no.classList.add('hidden'); }
 function showReveal() {
   $('moment-h').textContent = MT.revealH; const body = $('moment-body'); body.innerHTML = '';
-  [MT.reveal1, MT.reveal2, MT.reveal3].forEach(t => { const p = document.createElement('p'); p.textContent = t; body.appendChild(p); });
-  $('moment-ok').textContent = MT.revealOk; $('moment').dataset.kind = 'map'; $('moment').classList.remove('hidden'); $('moment-ok').focus();
+  const again = meta().run > 1;   // r1f: runs 2 and on remember this moment
+  (again ? [MT.revealAgain1, MT.revealAgain2, MT.revealAgain3] : [MT.reveal1, MT.reveal2, MT.reveal3]).forEach(t => { const p = document.createElement('p'); p.textContent = t; body.appendChild(p); });
+  $('moment-ok').textContent = again ? MT.revealAgainOk : MT.revealOk; $('moment').dataset.kind = 'map'; momentPlain(); $('moment').classList.remove('hidden'); $('moment-ok').focus();
 }
 // v1r: the first time the broken tower is mended (once ever)
 function showAmpRestored() {
   $('moment-h').textContent = MT.ampH; const body = $('moment-body'); body.innerHTML = '';
   [MT.amp1, MT.amp2, MT.amp3].forEach(t => { const p = document.createElement('p'); p.textContent = t; body.appendChild(p); });
-  $('moment-ok').textContent = MT.ampOk; $('moment').dataset.kind = ''; $('moment').classList.remove('hidden'); $('moment-ok').focus();
+  $('moment-ok').textContent = MT.ampOk; $('moment').dataset.kind = ''; momentPlain(); $('moment').classList.remove('hidden'); $('moment-ok').focus();
 }
 // r1d (owner): the first place called back brings the first relic; say what relics are and where they wait (once ever)
 function showRelicMoment() {
   $('moment-h').textContent = tx('rl.h'); const body = $('moment-body'); body.innerHTML = '';
   ['rl.p1', 'rl.p2', MC.D.resonance.on ? 'rl.p3' : null, MC.D.rb.on ? 'rl.p4' : null].filter(Boolean).forEach(k => { const p = document.createElement('p'); p.textContent = tx(k, { k: 1 + MC.D.resonance.R }); body.appendChild(p); });
-  $('moment-ok').textContent = tx('rl.ok'); $('moment').dataset.kind = 'relics'; $('moment').classList.remove('hidden'); $('moment-ok').focus();
+  $('moment-ok').textContent = tx('rl.ok'); $('moment').dataset.kind = 'relics'; momentPlain(); $('moment').classList.remove('hidden'); $('moment-ok').focus();
 }
 function relicMomentCheck(w) {
   const m = meta(); if (m.relicSeen || !w.m.restored) return;
@@ -268,7 +275,7 @@ function relicMomentCheck(w) {
 function showThirty() {
   $('moment-h').textContent = MT.thirtyH; const body = $('moment-body'); body.innerHTML = '';
   [MT.thirty1, MT.thirty2].forEach(t => { const p = document.createElement('p'); p.textContent = t; body.appendChild(p); });
-  $('moment-ok').textContent = MT.thirtyOk; $('moment').dataset.kind = ''; $('moment').classList.remove('hidden');
+  $('moment-ok').textContent = MT.thirtyOk; $('moment').dataset.kind = ''; momentPlain(); $('moment').classList.remove('hidden');
 }
 
 /* ---------- the tick, in the map phase ---------- */

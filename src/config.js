@@ -4,7 +4,7 @@
 const GAME = {
   title: 'A Glimmer in the Dark',   // the game's name (owner, 2026-10-18; was the working title A Flicker in the Dark)
   version: '0.1.0',              // the public number players see
-  internal: 'v1s-r1e',            // the internal build name: in the changelog and the test footer (the rebirth branch, 2026-10-19)
+  internal: 'v1s-r1f',            // the internal build name: in the changelog and the test footer (the rebirth branch, 2026-10-19)
   branch: 'rebirth',             // the rebirth branch: its own save, so it never touches the main line's
   test: /*@test*/true,
   links: {

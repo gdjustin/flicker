@@ -197,7 +197,7 @@ function renderPanel(w) {
     line('Needs ' + fmtW(need) + ' light' + (got > 0 ? ' (' + Math.floor(got / need * 100) + '% there)' : '') + '. At your light: about ' + fmtTime((need - got) / Math.max(1e-9, L)) + '.');
     if (amp > 1) line('An amplifier strengthens light sent here ×' + fmtW(amp, 0) + '.');
     if (mm > 1.005) line('Mastery strengthens light reaching new land ×' + fmtW(mm, 2) + '.');
-    if (w.m.known && w.m.known[k]) line('Remembered ground: it needs ' + fmtW(1 / MC.D.pave * 100) + '% of its darkness (the paved path).');
+    if (w.m.known && w.m.known[k]) line('Remembered ground: you have called it back before, so it needs only ' + fmtW(MC.tileCost(t, w) / MC.mClearCost(t) * 100, MC.tileCost(t, w) / MC.mClearCost(t) < 0.1 ? 1 : 0) + '% of its light.');   // r1f: no dev words
     // v1q (owner's playtest): the clearer "You will gain" block, one line each, the big ones in bold
     const m = meta(), mem = !!m.ever[k], gv = document.createElement('div'); gv.className = 'mgives';
     const gi = (txt, cls) => { const p = document.createElement('p'); p.className = 'mg-i' + (cls ? ' ' + cls : ''); p.textContent = txt; gv.appendChild(p); };

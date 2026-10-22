@@ -183,7 +183,7 @@ function wName() { const v = $('w-name-input').value.trim().slice(0, 40); if (!v
 // v1q: what the village keeps from earlier runs (owner, 2026-10-16): memory and the raw crafts reach the village, it opens
 // with 40 stone and wood, and the comforts that act here (Sure hands, Open doors, Practised haulers, The village complete)
 function villageStart(w) {
-  const pr = prestigeObj(), pv = MC.villagePrestige(pr); if (pv) w.pv = pv;
+  const pr = prestigeObj(), pv = MC.villagePrestige(pr); if (pv) { w.pv = pv; if (pv.oldL) w.oldL = pv.oldL; }   // r1f: Old lessons in the village
   const st = pr ? (MC.D.villageStart || {}) : {}; for (const k in st)   // v1r (owner): the opening stores are a gift from run 2 on, not run 1
     if (st[k] > 0) { w.res[k] = Math.max(w.res[k] || 0, st[k]); w.seen[k] = true; }
   if (pv && pv.startPop) { w.pop = Math.min(VC.D.maxSettlers, pv.startPop); w.doorPop = w.pop; w.pvExtra = Math.max(0, pv.startPop - w.pop); w.lastArrive = 0;
@@ -214,6 +214,6 @@ function showMoment(id) {
   try { const P = { settler: ['k.settler.p'], end: ['k.end.p1', 'k.end.p2', 'k.end.p3'], open: ['k.open.p1', 'k.open.p2'] }[id]; $('moment').dataset.kind = '';
     $('moment-h').textContent = tx('k.' + id + '.h'); const body = $('moment-body'); body.innerHTML = '';
     P.forEach(k => { const p = document.createElement('p'); p.textContent = tx(k); body.appendChild(p); });
-    $('moment-ok').textContent = tx('k.' + id + '.ok'); $('moment').classList.remove('hidden'); $('moment-ok').focus(); } catch (e) {}
+    $('moment-ok').textContent = tx('k.' + id + '.ok'); momentPlain(); $('moment').classList.remove('hidden'); $('moment-ok').focus(); } catch (e) {}
 }
 

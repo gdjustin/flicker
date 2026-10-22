@@ -112,7 +112,7 @@ var MCORE = function (VC) {
       sureHands: { kind: 'comfort', tier: 'medium', name: 'Sure hands I, II', desc: 'Hand gathering gives twice, then four times as much', hand: [2, 4], costs: [12, 30] },
       stewardsKept: { kind: 'comfort', tier: 'medium', name: 'Stewards kept', desc: 'Your stewards are there from the first place: when a store is full, they buy the next stockpile if you can afford it', costs: [20] },
       openDoors: { kind: 'comfort', tier: 'medium', name: 'Open doors I\u2013IV', desc: 'The village starts with 5, 15, 25, then 50 settlers (past 25 they wait at the reveal)', pop: [5, 15, 25, 50], costs: [15, 30, 60, 100] },
-      lightRemembers: { kind: 'comfort', tier: 'medium', name: 'The light remembers I\u2013III', desc: 'Remembered places need {x}% less light again a level (the paved path deepens)', x: 0.33, costs: [20, 40, 70] },   // R1 adds a fourth level, the rebirth branch's last gift
+      lightRemembers: { kind: 'comfort', tier: 'medium', name: 'The light remembers I\u2013III', desc: 'Remembered places need {x}% less light again a level', x: 0.33, costs: [20, 40, 70] },   // R1 adds a fourth level, the rebirth branch's last gift
       headStart: { kind: 'comfort', tier: 'medium', name: 'Head start', desc: 'The map opens with wood, stone, fiber, food and copper stores full', costs: [20] },
       practisedHaulers: { kind: 'comfort', tier: 'medium', name: 'Practised haulers', desc: 'Projects built in an earlier run haul 2.5\u00d7 as fast (village and map)', x: 2.5, costs: [20] },
       relicsRemembered: { kind: 'comfort', tier: 'medium', name: 'Relics remembered I, II', desc: 'I: relics claimed in an earlier run cost half. II: buy all (no effect in the lab: the bot buys them anyway)', f: 0.5, costs: [15, 30] },
@@ -273,7 +273,7 @@ var MCORE = function (VC) {
     { id: 'longsongs', name: 'Long songs', cost: { ideas: 900 }, at: { fn: vmax('songs') }, desc: 'Opens long songs: songs for the firekeepers on the long watch. Each makes firekeepers stronger; ten in all.' },
     { id: 'away6', name: 'Watch fires', cost: { ideas: 1000 }, at: { tiles: 11 }, away: 6, desc: 'Time away counts for 6 hours.' },
     // Overflow removed in v1g (owner, 2026-10-13): to revisit or redesign later. Its rule stays in the tick behind D.overflowOn (0)
-    { id: 'amps', name: 'Amplifier towers', cost: { ideas: 1400 }, at: { proj: 'repair', tiles: 10 }, desc: 'Build towers of your own on restored land, aimed outward.' },
+    { id: 'amps', name: 'Amplifier towers', cost: { ideas: 1400 }, at: { tiles: 10, fn: function (s) { return !!s.m.done.repair || !!(s.m.builtBefore && s.m.builtBefore.repair); } }, desc: 'Build towers of your own on land you have called back, aimed outward.' },   // r1f (owner): from run 2 the old tower need not be mended first
     { id: 'away8', name: 'Long night', cost: { ideas: 2200 }, at: { tiles: 14 }, away: 8, desc: 'Time away counts for 8 hours.' },
     { id: 'autostore', name: 'Stewards', cost: { ideas: 2500 }, at: { tiles: 13 }, desc: 'When wood, stone, fiber or copper fills its store, your stewards buy the next stockpile if you can afford it, away too.' },
     { id: 'orefloor', name: 'Ore floor', cost: { ideas: 2600 }, at: { proj: 'bellows', tiles: 32 }, project: 'orefloor', desc: 'Plan an ore floor: smelters make half again as much copper.' },
@@ -289,6 +289,10 @@ var MCORE = function (VC) {
   })(bn);
   CARDS.push({ id: 'cuburners', name: 'Copper burners', cost: { ideas: 600 }, sys: 'cuburner', at: { copper: true, tiles: 6 }, desc: 'Opens copper burners: copper burned straight for light. Light them when copper piles up.' });
   CARDS.push({ id: 'cbraziers', name: 'Copper braziers', cost: { ideas: 350 }, at: { copper: true, fn: function (s) { return D.cbrazier.on > 0 && (s.lv.brazier || 0) >= VC.LAD.brazier.max; } }, desc: 'Opens copper braziers: light of their own, and every copper lamp burns brighter for each one.' });
+  // r1f (owner): a chain of research shows one step at a time; the next appears once the one before is learned
+  [['away2', 'away4', 'away6', 'away8', 'away12']].forEach(function (ch) { ch.forEach(function (id, i) { if (!i) return; var c = CARD0(id), prev = ch[i - 1], f0 = c.at.fn;
+    c.at = Object.assign({}, c.at, { fn: function (s) { return !!s.m.cards[prev] && (!f0 || f0(s)); } }); }); });
+  function CARD0(id) { for (var i = 0; i < CARDS.length; i++) if (CARDS[i].id === id) return CARDS[i]; return null; }
   function refreshCards() { CARDS.forEach(function (c) { if (c.beacon) { c.cost = { ideas: Math.ceil(D.beaconResearch * Math.pow(D.beaconResearchGrowth, c.beacon - 1)) }; c.desc = 'Plan a beacon upgrade: all light ' + Math.round(D.beaconStep * 100) + '% stronger.'; } }); }
   var CARD = {}; CARDS.forEach(function (c) { CARD[c.id] = c; });
 
@@ -868,7 +872,9 @@ var MCORE = function (VC) {
       hand: sh ? P.sureHands.hand[sh - 1] : 1, startPop: od ? P.openDoors.pop[od - 1] : 0, doorCards: od ? (D.rb.on ? ['foraging', 'shelters'] : ['foraging']) : [], doorShelters: od && D.rb.on ? doorShelters(P.openDoors.pop[od - 1]) : 0, built: built, haulX: lv.practisedHaulers ? P.practisedHaulers.x : 1,
       // v1q (owner's playtest): the raw crafts and research work in the village too; The village complete builds its projects at once
       raw: { wood: 1 + P.woodcraft.x * (lv.woodcraft || 0), stones: 1 + P.stonecraft.x * (lv.stonecraft || 0), fiber: 1 + P.fibercraft.x * (lv.fibercraft || 0), ideas: 1 + P.scholarLore.x * (lv.scholarLore || 0) },
-      instant: !!lv.villageComplete };
+      instant: !!lv.villageComplete,
+      // r1f: Old lessons reaches the village's research (learned in an earlier run: half, then a quarter)
+      oldL: lv.oldLessons ? { f: P.oldLessons.f[Math.min(lv.oldLessons, P.oldLessons.f.length) - 1], known: (pr.vcards || []).reduce(function (o, k) { o[k] = true; return o; }, {}) } : null };
   }
   // r1c (owner, 2026-10-18): starting with settlers brings the shelters to house them
   function doorShelters(pop) { var L = VC.LAD.shelter; return Math.max(0, Math.min(L.max, Math.ceil((pop - VC.room(VC.fresh())) / L.room))); }
@@ -1019,7 +1025,7 @@ var MCORE = function (VC) {
     var c = levelCost(s, id); if (!VC.canPay(s, c)) return false;
     for (var k in c) s.res[k] -= c[k]; spend(s, sinkOf(id), c);
     if (VC.LAD[id]) { s.lv[id] = (s.lv[id] || 0) + 1; if (VC.LAD[id].burns) s.on[id] = (s.on[id] == null ? s.lv[id] : s.on[id] + 1); }
-    else s.m.lv[id] = MLAD[id] && MLAD[id].burner && D.burnEff.rebuild ? rebuildTo(mlv(s, id)) : mlv(s, id) + 1;
+    else { s.m.lv[id] = MLAD[id] && MLAD[id].burner && D.burnEff.rebuild ? rebuildTo(mlv(s, id)) : mlv(s, id) + 1; if (id === 'cuburner') s.m.cuOn = (s.m.cuOn || 0) + 1; }   // r1f (owner): a copper burner is lit when it is built
     s.stats.buys.push([s.t, 'level', id]); return true;
   }
   function tierUp(s, id) {

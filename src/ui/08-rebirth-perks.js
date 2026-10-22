@@ -103,13 +103,13 @@ function showWhole() {
   $('moment-h').textContent = MT.wholeH; const body = $('moment-body'); body.innerHTML = '';
   const bar = document.createElement('div'); bar.className = 'rbwrap'; bar.innerHTML = rbBar(RB_LAST() + 1, false, true) + '<p class="rbcap">100% of yourself remembered</p>'; body.appendChild(bar);
   [MT.whole1, MT.whole2].forEach(x => { const p = document.createElement('p'); p.textContent = x; body.appendChild(p); });
-  $('moment-ok').textContent = 'Look out over the land'; $('moment').dataset.kind = 'whole'; $('moment').classList.remove('hidden');
+  $('moment-ok').textContent = 'Look out over the land'; $('moment').dataset.kind = 'whole'; momentPlain(); $('moment').classList.remove('hidden');
 }
 function showCombatMoment() {
   $('moment-h').textContent = MT.combatH; const body = $('moment-body'); body.innerHTML = '';
   [MT.combat1].forEach(x => { const p = document.createElement('p'); p.textContent = x; body.appendChild(p); });
   if (GAME.test) { const p = document.createElement('p'); p.className = 'sub'; p.textContent = MT.combatTest; body.appendChild(p); }
-  $('moment-ok').textContent = MT.combatOk; $('moment').dataset.kind = ''; $('moment').classList.remove('hidden');
+  $('moment-ok').textContent = MT.combatOk; $('moment').dataset.kind = ''; momentPlain(); $('moment').classList.remove('hidden');
 }
 // opening the screen changes nothing: close it (or Esc) and the run goes on; the scatter happens only from its button
 function openPerks() {
@@ -314,6 +314,7 @@ function commitScatter() {
   if (w && w.m) { try { checkRun(); const rr = runRec(); rr.end = { tiles: w.m.restored, t: w.t, hs: w.m.hsNew || 0, pop: w.pop, light: MC.lightRate(w), regions: MC.regionsDone(w) }; } catch (e) {}
     m.hist.push({ run: m.run, tiles: w.m.restored, regions: MC.regionsDone(w), hsNew: w.m.hsNew || 0, play: (S.playTime || 0) - (w.m.startPlay || 0), at: Date.now() });
     m.cards = Array.from(new Set((m.cards || []).concat(Object.keys(w.m.cards))));
+    m.vcards = Array.from(new Set((m.vcards || []).concat(Object.keys(w.cards || {}))));   // r1f: the village's research, for Old lessons
     m.built = Array.from(new Set(m.built.concat(Object.keys(w.done || {}), Object.keys(w.m.done || {}))));
     m.relics = Array.from(new Set(m.relics.concat(Object.keys(w.m.relicT || {}))));
     m.levels = { lv: JSON.parse(JSON.stringify(w.m.lv || {})), tier: JSON.parse(JSON.stringify(w.m.tier || {})) };

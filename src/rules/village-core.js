@@ -347,9 +347,14 @@ var VC = (function () {
   function snailRate(s) { return (0.5 + 0.25 * lv(s, 'lettuce')) / 3600; }
 
   // ---------------------------------------------------------------- actions (return true if done)
+  // r1f (owner's playtest): Old lessons in the village too. s.oldL = { f: share, known: ids learned in an earlier run } (from the run's gifts)
+  function cardCost(s, c) {
+    var ol = s.oldL; if (!ol || !ol.f || !ol.known || !ol.known[c.id]) return c.cost;
+    var o = {}; for (var k in c.cost) o[k] = Math.ceil(c.cost[k] * ol.f); return o;
+  }
   function buyCard(s, id) {
-    var c = CARD[id]; if (!c || !cardAvail(s, c) || !canPay(s, c.cost)) return false;
-    pay(s, c.cost); s.cards[id] = true; s.stats.buys.push([s.t, 'card', id]);
+    var c = CARD[id]; if (!c || !cardAvail(s, c)) return false; var cc = cardCost(s, c); if (!canPay(s, cc)) return false;
+    pay(s, cc); s.cards[id] = true; s.stats.buys.push([s.t, 'card', id]);
     if (c.startsProject) startProject(s, c.startsProject);
     return true;
   }
@@ -397,7 +402,7 @@ var VC = (function () {
     ladderMaxed: ladderMaxed, gateOk: gateOk, jobMake: jobMake, jobMult: jobMult, lightRate: lightRate, lightParts: lightParts, lightMult: lightMult,
     keeperLight: keeperLight, keeperWood: keeperWood, burnDemand: burnDemand, burnShare: burnShare, burnersOn: burnersOn, haulRate: haulRate, haulDraw: haulDraw, projNeeds: projNeeds,
     hungerMult: hungerMult, lightFor: lightFor, pctFor: pctFor, recalcBar: recalcBar, startProject: startProject,
-    buyCard: buyCard, buyLevel: buyLevel, gather: gather, gatherAmount: gatherAmount, stoke: stoke, feast: feast, feastCost: feastCost, feastSpec: feastSpec,
+    buyCard: buyCard, cardCost: cardCost, buyLevel: buyLevel, gather: gather, gatherAmount: gatherAmount, stoke: stoke, feast: feast, feastCost: feastCost, feastSpec: feastSpec,
     jobOpen: jobOpen, jobsTotal: jobsTotal, setJob: setJob, snailRate: snailRate, handIdeas: handIdeas
   };
 })();

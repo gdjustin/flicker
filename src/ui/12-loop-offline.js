@@ -4,6 +4,8 @@ let S = loadSaved() || fresh();
 try { const w0 = S.w; if (w0 && w0.m && !MC.D.chearth.on && (w0.m.lv.chearth || 0) > 0) { const n0 = w0.m.lv.chearth; let cu = 0, st = 0;
   for (let i = 0; i < n0; i++) { const g = MC.D.chearth.g, m = Math.pow(g, i); cu += Math.ceil(MC.D.chearth.cost.copper * m); st += Math.ceil(MC.D.chearth.cost.stones * m); }
   w0.m.lv.chearth = 0; w0.res.copper = (w0.res.copper || 0) + cu; w0.res.stones = (w0.res.stones || 0) + st; w0.m.refundHearth = [n0, cu, st]; } } catch (e) {}
+// r1f: saves from before village research was recorded: the village learned so far this run counts as learned before
+try { const m0 = S.meta; if (m0 && (m0.run || 1) > 1 && !m0.vcards && S.w && S.w.cards) m0.vcards = Object.keys(S.w.cards); } catch (e) {}
 // v1r: a tower whose build finished before the fix lights now
 try { if (S.w && S.w.m) MC.repairAmps(S.w); } catch (e) {}
 // v1h: a save from before the copper store keeps its copper: Lined stockpiles comes free if more than the chest holds
@@ -33,7 +35,7 @@ function awayDur(sec) {
 }
 function affordableNow() {
   const w = W(), out = {};
-  for (const c of VC.CARDS) if (w.cards[c.id] == null && VC.gateOk(w, c.at) && VC.canPay(w, c.cost)) out['c:' + c.id] = c.name;
+  for (const c of VC.CARDS) if (w.cards[c.id] == null && VC.gateOk(w, c.at) && VC.canPay(w, VC.cardCost(w, c))) out['c:' + c.id] = c.name;
   for (const l of VC.LADDERS) if (VC.ladderOpen(w, l) && !VC.ladderMaxed(w, l) && VC.canPay(w, VC.ladderCost(w, l))) out['l:' + l.id] = l.name;
   return out;
 }
