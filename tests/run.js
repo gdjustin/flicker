@@ -127,6 +127,14 @@ const { VC, VBOT, MCORE, MBOT } = loadRules();
   check('copper burners: a new one is lit', MC.mlv(v, 'cuburner') === 1 && v.m.cuOn === 1);
 }
 
+// 4e. r1g (owner's playtest): a line Old flames brings back brings its research, so it is never bought again for nothing
+{
+  const MC = MCORE(VC); MC.applySet('R1');
+  const v = VBOT.run(VC, { maxT: 3 * 3600 }).s;
+  MC.init(v, { run: 3, hs: 60, perks: {}, known: [], built: [], cards: [], levels: { lv: { ct_axes: 8, ct_mattocks: 8, ct_spindles: 8, ct_baskets: 8, house: 10 }, tier: {} } });
+  check('Old flames: copper tools come back learned, and their research is not on sale again', MC.perk(v, 'oldFlames') >= 1 && v.m.cards.ctools && v.m.cards.houses && MC.mlv(v, 'ct_axes') === 8 && !MC.cardAvail(v, MC.CARD.ctools), (v.m.oldFlamesList || []).map(x => x[0] + ' ' + x[1]).join(', '));
+}
+
 // 5. Same rules, same numbers: compare with the recorded results.
 if (update || !fs.existsSync(GOLDEN)) {
   fs.writeFileSync(GOLDEN, JSON.stringify(results, null, 2) + '\n');

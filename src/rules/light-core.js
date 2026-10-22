@@ -381,7 +381,9 @@ var MCORE = function (VC) {
     var ofl = perk(s, 'oldFlames'); if (ofl && pl) { var OF = D.perks.oldFlames, back = 0;
       OF.lines.slice(0, ofl).forEach(function (ids) { ids.forEach(function (id) {
         var v = Math.floor((pl.lv[id] || 0) * OF.share), t = pl.tier && pl.tier[id] || 0;
-        if (t > 1) { s.m.tier[id] = t; back++; } if (v > 0) { s.m.lv[id] = Math.max(s.m.lv[id] || 0, v); back++; } }); });
+        if (t > 1) { s.m.tier[id] = t; back++; } if (v > 0) { s.m.lv[id] = Math.max(s.m.lv[id] || 0, v); back++; }
+        // r1g (owner's playtest): a line that comes back brings its research with it, so it is never bought again for nothing
+        if ((t > 1 || v > 0) && MLAD[id] && MLAD[id].card) { s.m.cards[MLAD[id].card] = true; (s.m.oldFlamesList = s.m.oldFlamesList || []).push([id, s.m.lv[id] || 0, t]); } }); });
       s.m.headStart = ofl; s.m.oldFlamesBack = back; }
     return s;
   }

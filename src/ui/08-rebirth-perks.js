@@ -343,7 +343,7 @@ function beginRun() {
   // the rebirth branch: The village stands. The run wakes at the edge of the land, the village as it stood when the map last opened
   if (gifts.villageSkip && m.villageSnap) { try { S.w = JSON.parse(JSON.stringify(m.villageSnap)); S.w.stats = { buys: [], made: {} }; S.w.playStart = S.playTime || 0; S.flags.stood = true;
     say('You wake at the edge of your land. The village stands as you left it.');
-    const w = S.w; MC.villageStand(w); /* r1c: at least the floor of the village built */ MC.init(w, prestigeObj()); w.m.run = m.run; w.m.hsNew = 0; w.m.startPlay = S.playTime || 0; w.m.flags = {}; w.seen.copper = false; S.view = 'map'; } catch (e) { S.w = null; } }
+    const w = S.w; MC.villageStand(w); /* r1c: at least the floor of the village built */ MC.init(w, prestigeObj()); w.m.run = m.run; w.m.hsNew = 0; w.m.startPlay = S.playTime || 0; w.m.flags = {}; w.seen.copper = false; S.view = 'map'; try { oldFlamesNote(w); } catch (e2) {} } catch (e) { S.w = null; } }
   save(true); location.reload();
 }
 $('perk-screen').addEventListener('click', e => {

@@ -183,6 +183,7 @@ const MT = {   // the map's text, in one place for the text editor
   restored: '{name} is back. People step out of it and into your light.', region: 'All of {region} is back: all light +{pct}%.', resonate: 'All of {region} is back, and its relics ring together: each one there counts {k} times, now and when claimed later.',
   copper: 'Copper, in the hills. Someone remembers how to smelt it: a settler can work as a smelter. A chest holds the first hundred; Lined stockpiles hold more.',
   surge: '{name} is back: {what} goes {pct}% faster for {mins} minutes.',
+  oldFlames: 'Old flames: these came back as you left them, already learned: {list}.', oldFlamesDone: 'Finished lines are under Show done.',   // r1g
   eatMore: 'Out here the settlers range farther and work harder: each eats {x} times what they ate in the village.',
   newHS: '+{n} heartstone{s}', oldHS: 'remembered ground',
   thirtyH: 'The light could be scattered', thirty1: 'You have called back thirty places. You could scatter your light now and begin again, remembering everything.',
@@ -244,10 +245,17 @@ function startMap() {
   w.seen.copper = false; S.view = 'map';
   resetWorldDom(); sys('The map is open. Pick a dark place beside your home and send your light there.'); if (w.jobs.storyteller || w.cards.storytelling) sys(MT.scholars);
   if (MC.D.eatMap > 1) sys(fill(MT.eatMore, { x: fmtW(MC.D.eatMap, 1) }));
+  oldFlamesNote(w);
   renderWorld(); save(true);
 }
 // r1f: a moment with one button hides the rebirth moment's "Not yet"
 function momentPlain() { const no = $('moment-no'); if (no) no.classList.add('hidden'); }
+// r1g: say what Old flames brought back, and where finished lines are (at the map's opening, or waking at the map)
+function oldFlamesNote(w) {
+  if (!w.m.oldFlamesList || !w.m.oldFlamesList.length) return;
+  const done = w.m.oldFlamesList.some(([id]) => MC.levelMaxed(w, id));
+  sys(fill(MT.oldFlames, { list: w.m.oldFlamesList.map(([id, n]) => tierName(id) + (MC.levelMax(w, id) && MC.levelMax(w, id) < 99 ? ' ' + n + ' of ' + MC.levelMax(w, id) : ' ' + n)).join(', ') }) + (done ? ' ' + MT.oldFlamesDone : ''));
+}
 function showReveal() {
   $('moment-h').textContent = MT.revealH; const body = $('moment-body'); body.innerHTML = '';
   const again = meta().run > 1;   // r1f: runs 2 and on remember this moment
