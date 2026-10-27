@@ -235,7 +235,7 @@ function regionOf(t) { return MC.REGIONS[t.region]; }
 function regionCount(w, r) { return r.tiles.filter(k => w.m.tiles[k]).length; }
 function dirWord(t) { const a = Math.atan2(-t.y, t.x) * 180 / Math.PI; return a > 112.5 || a < -112.5 ? (a > 157.5 || a < -157.5 ? 'west' : a > 0 ? 'northwest' : 'southwest') : a > 67.5 ? 'north' : a < -67.5 ? 'south' : a > 22.5 ? 'northeast' : a < -22.5 ? 'southeast' : 'east'; }
 
-function fmtC(n) { n = Math.floor(n); const nf = opt('num'); if (nf === 'full') return fmtW(n); if (nf === 'sci') return n >= 1e5 ? n.toExponential(2).replace('e+', 'e') : fmtW(n); return n >= 1e7 ? fmtW(n / 1e6, 1) + 'M' : n >= 1e5 ? fmtW(n / 1e3) + 'k' : fmtW(n); }
+function fmtC(n) { n = Math.floor(n); const nf = opt('num'); if (nf === 'full') return fmtW(n); if (nf === 'sci') return n >= 1e5 ? n.toExponential(2).replace('e+', 'e') : fmtW(n); return n >= 1e9 ? fmtW(n) : n >= 1e7 ? fmtW(n / 1e6, 1) + 'm' : n >= 1e5 ? fmtW(n / 1e3) + 'k' : fmtW(n); }   // r1h (owner): lowercase m, then the billion suffixes
 /* ---------- starting the map ---------- */
 function startMap() {
   const w = W(); if (!w || w.m) return;
@@ -395,9 +395,9 @@ function mapFlows(r) {
   if (r === 'copper' && w.m.cuOn) out.push(['Copper burners (' + w.m.cuOn + ' lit)', -w.m.cuOn * MC.D.cuburner.use * MC.effMult(w, 'cuburner').fuel * (w.m.cuShare == null ? 1 : w.m.cuShare)]);
   if (r === 'wood') { const kw = (w.jobs.firekeeper || 0) * VC.keeperWood(w) * MC.tendMult(w).wood; if (kw) out.push([tx('vw.flow.keepers', { n: w.jobs.firekeeper }), -kw * sh('wood')]);
     const pw = VC.burnersOn(w, 'firepit') * D.firepitWood * MC.effMult(w, 'firepit').fuel; if (pw) out.push([tx('vw.flow.pits', { n: VC.burnersOn(w, 'firepit') }), -pw * sh('wood')]);
-    if (w.jobs.smelter) out.push([w.jobs.smelter + ' smelting', -w.jobs.smelter * MC.D.smeltWood * sh('wood')]); }
+    if (w.jobs.smelter) out.push([w.jobs.smelter + ' smelting', -w.jobs.smelter * MC.D.smeltWood * MC.smeltUse(w) * sh('wood')]); }   // r1h fix: Coppercraft's extra burn and hills relics' saving count
   if (r === 'stones') { const kn = VC.burnersOn(w, 'limekiln'); if (kn) out.push([tx('vw.flow.kilns', { n: kn }), -kn * D.kilnStone * MC.effMult(w, 'limekiln').fuel * sh('stones')]);
-    if (w.jobs.smelter) out.push([w.jobs.smelter + ' smelting', -w.jobs.smelter * MC.D.smeltStone * sh('stones')]);
+    if (w.jobs.smelter) out.push([w.jobs.smelter + ' smelting', -w.jobs.smelter * MC.D.smeltStone * MC.smeltUse(w) * sh('stones')]);
     if (w.jobs.glowcrafter) out.push([w.jobs.glowcrafter + ' glowcrafters', -w.jobs.glowcrafter * MC.D.glow.stone]); }
   if (r === 'fiber' && bd.fiber) out.push([tx('vw.flow.rush', { n: VC.burnersOn(w, 'rushlight') }), -bd.fiber * sh('fiber')]);
   if (r === 'food') { if (w.pop) out.push([tx('vw.flow.eat', { n: w.pop }), -w.pop * MC.eatRate(w)]); if (w.jobs.glowcrafter) out.push([w.jobs.glowcrafter + ' glowcrafters', -w.jobs.glowcrafter * MC.D.glow.food]); }

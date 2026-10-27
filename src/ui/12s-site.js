@@ -90,7 +90,7 @@ function panelSettings(body) {
     opts.forEach(([v, t]) => { const l = el('label', 'popt'), r = el('input'); r.type = 'radio'; r.name = 'o-' + key; r.checked = opt(key) === v || (v === 'os' && opt(key) == null);
       r.addEventListener('change', () => setOpt(key, v === 'os' ? null : v)); l.append(r, ' ' + t); f.appendChild(l); });
     if (help) f.appendChild(el('p', 'pmut', help)); body.appendChild(f); };
-  choice('Large numbers', 'num', [['short', 'Short: 1.2M, 340k'], ['full', 'In full: 1,234,567'], ['sci', 'Scientific: 1.23e6']]);
+  choice('Large numbers', 'num', [['short', 'Short: 340k, 1.2m, 12.6b, 4.1t'], ['full', 'In full: 1,234,567,890'], ['sci', 'Scientific: 1.23e9']]);
   choice('Motion', 'calm', [['os', 'As this device is set'], [true, 'Reduce motion'], [false, 'Full motion']], 'Reduce motion stills the glows, pulses and drifting motes.');
   choice('Before a rebirth', 'confirmRebirth', [[true, 'Show what it brings, and ask first'], [false, 'Go straight to choosing gifts']]);
   if (GAME.countUrl && !GAME.test) choice('Anonymous counts', 'counts', [[true, 'Send them'], [false, 'Don’t send them']], ABOUT.privacyCounts);

@@ -1,5 +1,15 @@
 /* ---------- Display helpers ---------- */
-const fmtW = (n, d) => (n < 0 ? '−' : '') + Math.abs(n).toLocaleString('en-US', { maximumFractionDigits: d == null ? 0 : d, minimumFractionDigits: d == null ? 0 : d });
+// r1h (owner): from a billion, numbers are summarized: b, t, q, Q, s, S, O, N, D (k and m below that, in compact places); past D, scientific.
+// The Large numbers setting: In full keeps every digit up to the sextillions; Scientific uses e-notation from a billion.
+const BIG = [[1e33, 'D'], [1e30, 'N'], [1e27, 'O'], [1e24, 'S'], [1e21, 's'], [1e18, 'Q'], [1e15, 'q'], [1e12, 't'], [1e9, 'b'], [1e6, 'm'], [1e3, 'k']];
+function bigNum(a) {   // a >= 1e3, positive
+  if (a >= 1e36) return a.toExponential(2).replace('e+', 'e');
+  for (const [u, s] of BIG) if (a >= u) { const v = a / u; return v.toLocaleString('en-US', { maximumFractionDigits: v < 10 ? 2 : v < 100 ? 1 : 0 }) + s; }
+  return String(a);
+}
+function bigMode(a) { const nf = typeof opt === 'function' ? opt('num') : 'short'; if (a >= 1e36 || nf === 'sci') return a.toExponential(2).replace('e+', 'e'); if (nf === 'full' && a < 1e21) return null; return bigNum(a); }
+const fmtW = (n, d) => { const a = Math.abs(n), sg = n < 0 ? '−' : ''; if (a >= 1e9) { const b = bigMode(a); if (b) return sg + b; }
+  return sg + a.toLocaleString('en-US', { maximumFractionDigits: d == null ? 0 : d, minimumFractionDigits: d == null ? 0 : d }); };
 function fmtRate(v, signed) { const sg = signed && v > 0 ? '+' : ''; if (v !== 0 && Math.abs(v) < 0.005) return (v < 0 ? '−' : sg) + '<0.01/s'; return sg + fmtW(v, 2) + '/s'; }
 function fmtRateFine(v) { return Math.abs(v) >= 0.005 || v === 0 ? fmtRate(v) : fmtW(v * 3600, 1) + '/h'; }
 function ensureBtn(box, id, onClick, cls) {
@@ -38,8 +48,6 @@ function showTextTip(anchor, title, lines) {
   tip.style.left = Math.max(8, Math.min(window.innerWidth - 300, rect.left)) + 'px'; tip.style.top = (rect.bottom + 8) + 'px';
   tip.classList.remove('hidden');
 }
-// r1f: a research price cut by Old lessons says so (no unexplained rule changes)
-function oldLessonsNote(w) { const f = w.oldL ? w.oldL.f : w.m ? MC.D.perks.oldLessons.f[Math.max(1, MC.perk(w, 'oldLessons')) - 1] : 0.5; return 'Learned in an earlier run: ' + (f <= 0.25 ? 'a quarter' : 'half') + ' price (Old lessons).'; }
 const hideTip = () => $('w-tip').classList.add('hidden');
 function hoverTip(el, fn) {
   if (el.dataset.tip) return; el.dataset.tip = '1';
@@ -52,7 +60,7 @@ function keptBuffLines(w, r) {
   if (craft && lv[craft]) out.push(P[craft].name + ' ' + lv[craft] + ': +' + Math.round(P[craft].x * lv[craft] * 100) + '%' + (craft === 'coppercraft' ? ' (smelters burn +' + Math.round(P.coppercraft.use * lv.coppercraft * 100) + '%)' : w.m ? '' : ', in the village too'));
   if (r === 'food' && lv.openDoors && !w.m) out.push('Open doors: the first settlers came knowing how to forage');
   if (!w.m && lv.sureHands && ['wood', 'stones', 'fiber', 'food'].includes(r)) out.push('Sure hands: gathering by hand ×' + P.sureHands.hand[lv.sureHands - 1]);
-  if (w.m && MC.perk(w, 'stewardsKept') && !w.m.cards.autostore && MC.stewardsOn(w) && stewardRes(w, r)) out.push('Stewards: when this store is full, they buy the next stockpile if you can afford it');
+  if (w.m && MC.perk(w, 'stewardsKept') && MC.stewardsOn(w) && stewardRes(w, r)) out.push('Stewards: when this store is full, they buy the next stockpile if you can afford it');
   return out;
 }
 // r1d (owner's playtest): Stewards learned this run are this run's, not kept from an earlier one
@@ -76,7 +84,7 @@ function showResTip(r, anchor) {
     e.textContent = v >= c - 0.001 ? tx('w.tip.isfull') : net > 0.0005 ? tx('w.tip.full', { t: fmtTime((c - v) / net) }) : net < -0.0005 ? tx('w.tip.empty', { t: fmtTime(v / -net) }) : tx('w.tip.steady'); tip.appendChild(e); }
   if (w.m && r === 'food' && MC.D.eatMap > 1) { const e = document.createElement('div'); e.className = 'tipx'; e.textContent = fill(MT.eatMore, { x: fmtW(MC.D.eatMap, 1) }); tip.appendChild(e); }   // r1e
   let extra = tx('w.use.' + r); if (extra !== 'w.use.' + r) { const e = document.createElement('div'); e.className = 'tipx'; e.textContent = extra; tip.appendChild(e); }
-  if (w.m && w.m.cards.autostore && stewardRes(w, r)) { const e = document.createElement('div'); e.className = 'tipx'; e.textContent = 'Stewards: when this store is full, they buy the next stockpile if you can afford it.'; tip.appendChild(e); }
+  if (w.m && w.m.cards.autostore && !MC.perk(w, 'stewardsKept') && stewardRes(w, r)) { const e = document.createElement('div'); e.className = 'tipx'; e.textContent = 'Stewards: when this store is full, they buy the next stockpile if you can afford it.'; tip.appendChild(e); }
   const kept = keptBuffLines(w, r); if (kept.length) { const e = document.createElement('div'); e.className = 'tipsep'; e.textContent = 'Kept from earlier runs:'; tip.appendChild(e); kept.forEach(t => { const d = document.createElement('div'); d.textContent = t; tip.appendChild(d); }); }
   const rect = anchor.getBoundingClientRect();
   tip.style.left = Math.min(window.innerWidth - 300, rect.right + 12) + 'px'; tip.style.top = Math.max(8, rect.top) + 'px'; tip.classList.remove('hidden');
@@ -285,7 +293,7 @@ function renderWorld() {
       if (!VC.gateOk(w, c.at)) { if ($(id)) $(id).remove(); continue; }
       any = true; const b = ensureBtn(box, id, () => wCard(c.id)); b.classList.remove('done');
       impactTip(b, x => { x.cards[c.id] = true; });
-      const cc = VC.cardCost(w, c); setBtn(b, c.name, c.desc, VC.canPay(w, cc), { kind: c.kind, cost: cc, note: cc !== c.cost ? oldLessonsNote(w) : '', keys: ['world.card.' + c.id + '.name', 'world.card.' + c.id + '.desc', 'vw.kind.' + c.kind, 'w.cost', 'w.over'] });
+      const cc = VC.cardCost(w, c); setBtn(b, c.name, c.desc, VC.canPay(w, cc), { kind: c.kind, cost: cc, keys: ['world.card.' + c.id + '.name', 'world.card.' + c.id + '.desc', 'vw.kind.' + c.kind, 'w.cost', 'w.over'] });
     }
     $('w-showdone-ideas').textContent = tx(showDoneIdeas ? 'w.hidedone' : 'w.showdone') + ' (' + doneC + ')'; $('w-showdone-ideas').classList.toggle('hidden', !doneC);
     $('h-ideas').classList.toggle('hidden', !any && !doneC);

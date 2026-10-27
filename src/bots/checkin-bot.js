@@ -426,7 +426,9 @@ var MBOT = function (MC, VBOT) {
       var end = s.t + hours * 3600, dt = away ? opt.dtAway : opt.dtActive, lastJob = -1e9;
       while (s.t < end - 1e-6) {
         var step = Math.min(dt, end - s.t);
-        if (!away) { decide(); if (s.t - lastJob >= 60) { assignJobs(); lastJob = s.t; } }
+        if (!away) { decide(); if (s.t - lastJob >= 60) { assignJobs(); lastJob = s.t; }
+          // r1h (lab option, off by default): a present player fires the light burst whenever it is ready, keeping food for the settlers and wood for building
+          if (opt.bursts && s.m.target && MC.burstReady(s)) { var bc = MC.burstCost(s); if (s.res.food >= bc.food + MC.cap(s, 'food') * 0.3 && s.res.wood >= bc.wood + MC.cap(s, 'wood') * 0.3) MC.burst(s); } }
         var ev = MC.tick(s, step, away);
         ev.forEach(function (e) {
           if (e[0] === 'restored') { tileT.push([hr(), e[1]]); if (!away && !s.m.target) MC.setTarget(s, pickTarget()); }

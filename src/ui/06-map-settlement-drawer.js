@@ -27,7 +27,7 @@ function mlDescBase(id) {
   const lm = pm * D.src.lamps * MC.famBuff(w, 'brightGlass'), cb = MC.mlv(w, 'cbrazier'), ncl = MC.mlv(w, 'clamp');
   if (id === 'clamp') return 'Burns nothing. Each lamp of this tier makes ' + f2((D.lamp.b * Math.pow(D.lamp.J, MC.mtier(w, id) - 1) + D.cbrazier.lampBonus * cb) * lm) + ' light/s: ' + f2(D.lamp.b * Math.pow(D.lamp.J, MC.mtier(w, id) - 1) * lm) + ' of its own and ' + f2(D.cbrazier.lampBonus * lm) + ' for each of your ' + cb + ' copper braziers. ' + D.lamp.L + ' to a tier; each tier ' + D.lamp.J + '× brighter.';
   if (id === 'cbrazier') return 'Burns nothing. Each makes ' + f2(D.cbrazier.b * lm) + ' light/s of its own, and adds ' + f2(D.cbrazier.lampBonus * lm) + ' to each of your ' + ncl + ' copper lamps.';
-  if (id === 'ctend') return D.fireTend.on ? 'Firekeepers tend the burners too: each level, +' + fmtW(D.fireTend.x * 100, 1) + '% keeper light for every lit burner, up to ' + D.fireTend.cap + ' burners (' + MC.litBurners(w) + ' lit now: keepers ×' + fmtW(MC.tendMult(w).light, 2) + ').' : 'Each firekeeper’s fire ' + Math.round(D.keeperTend.a * 100) + '% brighter a level, for a little more wood. ' + D.tendTier.L + ' to a tier.';
+  if (id === 'ctend') return D.fireTend.on ? 'Firekeepers tend the burners too: each level, +' + fmtW(D.fireTend.x * 100, 1) + '% keeper light for every lit burner, up to ' + MC.tendCap(w) + ' burners (' + MC.litBurners(w) + ' lit now' + (MC.litBurners(w) > MC.tendCap(w) ? ', ' + MC.tendCap(w) + ' count' : '') + ': keepers ×' + fmtW(MC.tendMult(w).light, 2) + ').'   /* r1h fix (owner): the cap counts Fire-warden */ : 'Each firekeeper’s fire ' + Math.round(D.keeperTend.a * 100) + '% brighter a level, for a little more wood. ' + D.tendTier.L + ' to a tier.';
   if (id === 'chearth') return 'All light +' + Math.round(D.chearth.a * 100) + '% a level. No end.';
   if (id === 'longsong') return 'Firekeepers make +' + Math.round(D.longSong * 100) + '% more light a song (' + D.longSongMax + ' songs in all). Each costs more ideas.';
   if (id === 'cuburner') return 'Burns ' + fmtW(D.cuburner.use * 3600, 0) + ' copper an hour for ' + f2(D.cuburner.b * pm) + ' light/s. Light them when copper piles up.';
@@ -48,7 +48,8 @@ const UPG_LINES = ['longsong', 'eff_firepit', 'eff_limekiln', 'eff_rushlight', '
 function renderMapSettlement(w) {
   const showDone = !!S.showDone; let any = false;
   // every line on sale: the village's own (at village prices) and the phase-1 lines
-  const ids = VC.LADDERS.filter(l => l.group !== 'snails' && l.id !== 'songs').map(l => l.id).concat(MC.ML.map(l => l.id).filter(id => !UPG_LINES.includes(id)));
+  const ids0 = VC.LADDERS.filter(l => l.group !== 'snails' && l.id !== 'songs').map(l => l.id).concat(MC.ML.map(l => l.id).filter(id => !UPG_LINES.includes(id) && id !== 'cuburner'));
+  const ids = ids0.slice(0, ids0.indexOf('rushlight') + 1).concat(['cuburner'], ids0.slice(ids0.indexOf('rushlight') + 1));   // r1h (owner): copper burners in a row with the other burners
   UPG_LINES.forEach(id => { const b = $('w-b-' + id); if (b && b.closest('#w-make')) b.remove(); });
   let doneB = 0;
   for (const id of ids) {
@@ -70,6 +71,7 @@ function renderMapSettlement(w) {
     const rb = !isV && MC.MLAD[id] && MC.MLAD[id].burner && MC.D.burnEff.rebuild, shown = rb ? MC.rebuildNo(w, id) : n;   // v1j: burners count rebuilds, not levels
     setBtn(b, (isV ? VC.LAD[id].name : tierName(id)) + (rb ? ': rebuild ' + (shown + 1) : shown ? ' (' + shown + ')' : ''), mlDesc(id), VC.canPay(w, c), { kind: lineKind(id), cost: c, note: mx ? tx('vw.levels', { n, max: mx }) : '' }); any = true;
   }
+  Object.keys(MGROUPS).forEach(gid => { const g = $('mg-' + gid); if (g) orderKids(g.querySelector('.acts'), ids.flatMap(id => ['w-bt-' + id, 'w-b-' + id])); });
   // burners: village burners and copper burners, lit or banked
   const rows = [['firepit', 'wood'], ['limekiln', 'stones'], ['rushlight', 'fiber']];
   const gl = $('mg-light'); if (gl) { const box = gl.querySelector('.burnrows');
@@ -82,6 +84,7 @@ function renderMapSettlement(w) {
   if (gn) { const box = gn.querySelector('.burnrows'); let row = $('burn-cu'); if (!row) row = burnRow(box, 'burn-cu', () => mCuBurn(-1), () => mCuBurn(1));
     const n = MC.mlv(w, 'cuburner'), on = w.m.cuOn || 0; row.children[0].textContent = 'Copper burners, lit'; row.children[1].textContent = 'burning ' + fmtW(on * MC.D.cuburner.use * 3600 * MC.effMult(w, 'cuburner').fuel, 0) + ' copper/h';
     row.children[3].textContent = on + '/' + n; row.children[2].disabled = !on; row.children[4].disabled = on >= n; }
+  { const gl2 = $('mg-light'); if (gl2) orderKids(gl2.querySelector('.burnrows'), ['burn-firepit', 'burn-limekiln', 'burn-rushlight', 'burn-cu']); }
   if (w.m.cards.academy) { const g = mgroup('newsys'), box = g.querySelector('.burnrows'); let row = $('acad-row');
     if (!row) { row = document.createElement('div'); row.id = 'acad-row'; row.className = 'jrow brow'; row.innerHTML = '<span class="jn"></span><span class="jt"></span><span></span><span></span><button class="jb" style="width:auto;padding:0 0.6rem"></button>'; row.children[4].addEventListener('click', mAcademy); box.appendChild(row); }
     const on = MC.academyOn(w), sch = w.jobs.storyteller || 0, keep = Math.min(1, MC.D.perks.quietHalls.f * MC.perk(w, 'quietHalls'));
@@ -97,6 +100,11 @@ function renderMapSettlement(w) {
 // what one more level of a line does, on a copy (the impact hovers): village burners and copper burners come lit
 function mlTry(x, id) { if (VC.LAD[id]) { x.lv[id] = (x.lv[id] || 0) + 1; if (VC.LAD[id].burns && x.on[id] != null) x.on[id]++; return; }
   x.m.lv[id] = MC.MLAD[id] && MC.MLAD[id].burner && MC.D.burnEff.rebuild ? MC.rebuildTo(x.m.lv[id] || 0) : (x.m.lv[id] || 0) + 1; if (id === 'cuburner') x.m.cuOn = (x.m.cuOn || 0) + 1; }
+// r1h: put a box's children in a set order (ids not present are skipped), moving nodes only when the order is wrong
+function orderKids(box, ids) {
+  const want = ids.map(id => $(id)).filter(e => e && e.parentNode === box), have = Array.from(box.children).filter(e => want.includes(e));
+  if (want.some((e, i) => have[i] !== e)) want.forEach(e => box.appendChild(e));
+}
 function burnRow(box, id, minus, plus) {
   const row = document.createElement('div'); row.id = id; row.className = 'jrow brow';
   row.innerHTML = '<span class="jn"></span><span class="jt"></span><button class="jb" aria-label="Bank one">−</button><span class="jc"></span><button class="jb" aria-label="Light one">+</button>';
@@ -189,7 +197,11 @@ function renderMapCards(w) {
   const mc = MC.CARDS.filter(c => MC.cardAvail(w, c));
   const songL = VC.LAD.songs, songOn = MC.levelOpen(w, 'songs') && !MC.levelMaxed(w, 'songs');   // v1s (owner): Fire song sits with the ideas and upgrades
   const upg = UPG_LINES.filter(id => MC.levelOpen(w, id) && !MC.levelMaxed(w, id));
-  const want = new Set(vc.map(c => 'w-r-' + c.id).concat(mc.map(c => 'w-m-' + c.id)).concat(songOn ? ['w-b-songs'] : []).concat(upg.map(id => 'w-b-' + id)));
+  // r1h (owner): a done list, as the buildings have: finished upgrade lines, then research learned this run (the map's, then the village's)
+  const showD = !!S.showDoneIdeas, doneL = ['songs'].concat(UPG_LINES).filter(id => MC.levelOpen(w, id) && MC.levelMaxed(w, id)),
+    doneM = MC.CARDS.filter(c => w.m.cards[c.id]), doneV = VC.CARDS.filter(c => w.cards[c.id] != null), doneC = doneL.length + doneM.length + doneV.length;
+  const want = new Set(vc.map(c => 'w-r-' + c.id).concat(mc.map(c => 'w-m-' + c.id)).concat(songOn ? ['w-b-songs'] : []).concat(upg.map(id => 'w-b-' + id))
+    .concat(showD ? doneL.map(id => 'w-dl-' + id).concat(doneM.map(c => 'w-dm-' + c.id), doneV.map(c => 'w-dv-' + c.id)) : []));
   Array.from(box.children).forEach(b => { if (!want.has(b.id)) b.remove(); });
   if (songOn) { any = true; const n = w.lv.songs || 0, c = MC.levelCost(w, 'songs'), mx = MC.levelMax(w, 'songs'), sb = ensureBtn(box, 'w-b-songs', () => mLevel('songs')); sb.classList.remove('done');
     setBtn(sb, songL.name + (n ? ' (' + n + ')' : ''), mlDesc('songs'), VC.canPay(w, c), { kind: 'upgrade', cost: c, note: mx ? tx('vw.levels', { n, max: mx }) : '' });
@@ -199,10 +211,16 @@ function renderMapCards(w) {
     const c = MC.levelCost(w, id), n = MC.mlv(w, id), mx = MC.levelMax(w, id), rb = MC.MLAD[id].burner && MC.D.burnEff.rebuild, shown = rb ? MC.rebuildNo(w, id) : n;
     setBtn(b, tierName(id) + (rb ? ': rebuild ' + (shown + 1) : shown ? ' (' + shown + ')' : ''), mlDesc(id), VC.canPay(w, c), { kind: 'upgrade', cost: c, note: mx && mx < 99 ? tx('vw.levels', { n, max: mx }) : '' });
     const want2 = after ? after.nextSibling : box.firstChild; if (want2 !== b) box.insertBefore(b, want2); after = b; }
-  for (const c of vc) { any = true; const b = ensureBtn(box, 'w-r-' + c.id, () => mVCard(c.id)), cc = VC.cardCost(w, c); setBtn(b, c.name, scholarText(c.desc), VC.canPay(w, cc), { kind: c.kind, cost: cc, note: cc !== c.cost ? oldLessonsNote(w) : '' }); }
+  for (const c of vc) { any = true; const b = ensureBtn(box, 'w-r-' + c.id, () => mVCard(c.id)), cc = VC.cardCost(w, c); setBtn(b, c.name, scholarText(c.desc), VC.canPay(w, cc), { kind: c.kind, cost: cc }); }
   for (const c of mc) { any = true; const b = ensureBtn(box, 'w-m-' + c.id, () => mCard(c.id)), cc = MC.cardCost(w, c);
-    setBtn(b, c.name, c.desc, VC.canPay(w, cc), { kind: c.project ? 'building' : c.away ? 'upgrade' : 'idea', cost: cc, note: cc !== c.cost ? oldLessonsNote(w) : '' }); }
-  $('w-showdone-ideas').classList.add('hidden'); $('h-ideas').classList.toggle('hidden', !any);
+    setBtn(b, c.name, c.desc, VC.canPay(w, cc), { kind: c.project ? 'building' : c.away ? 'upgrade' : 'idea', cost: cc }); }
+  if (showD) { const done = (id, title, desc, kind, note) => { const b = ensureBtn(box, id, () => {}); b.classList.add('done'); setBtn(b, title, desc, false, { kind, note }); };
+    doneL.forEach(id => done('w-dl-' + id, (id === 'songs' ? VC.LAD.songs.name : tierName(id)) + ' (' + (id === 'songs' ? w.lv.songs || 0 : MC.mlv(w, id)) + ')', mlDesc(id), 'upgrade', tx('w.maxed', { n: MC.levelMax(w, id) })));
+    doneM.forEach(c => done('w-dm-' + c.id, c.name, c.desc, c.project ? 'building' : c.away ? 'upgrade' : 'idea', tx('w.learned')));
+    doneV.forEach(c => done('w-dv-' + c.id, c.name, scholarText(c.desc), c.kind, tx('w.learned'))); }
+  orderKids(box, ['w-b-songs'].concat(upg.map(id => 'w-b-' + id), vc.map(c => 'w-r-' + c.id), mc.map(c => 'w-m-' + c.id), doneL.map(id => 'w-dl-' + id), doneM.map(c => 'w-dm-' + c.id), doneV.map(c => 'w-dv-' + c.id)));
+  $('w-showdone-ideas').textContent = tx(showD ? 'w.hidedone' : 'w.showdone') + ' (' + doneC + ')'; $('w-showdone-ideas').classList.toggle('hidden', !doneC);
+  $('h-ideas').classList.toggle('hidden', !any && !doneC);
 }
 
 /* ---------- the drawer, in the map phase ---------- */

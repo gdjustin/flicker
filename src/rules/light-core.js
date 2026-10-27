@@ -375,6 +375,7 @@ var MCORE = function (VC) {
     s.m.builtBefore = {}; s.m.relicKnown = {};
     if (prestige && prestige.built) prestige.built.forEach(function (k) { s.m.builtBefore[k] = true; });
     if (prestige && prestige.relics) prestige.relics.forEach(function (k) { s.m.relicKnown[k] = true; });
+    if (perk(s, 'stewardsKept')) s.m.cards.autostore = true;   // r1h fix (owner): stewards kept means the Stewards research is never bought again
     if (perk(s, 'keptLights')) Object.keys(s.m.builtBefore).forEach(function (k) { if (PROJ[k] && k !== 'repair' && !/^beacon|^amp|^anchor/.test(k)) s.m.done[k] = s.t; });
     if (perk(s, 'headStart')) { ['wood', 'stones', 'fiber', 'food'].forEach(function (r) { s.res[r] = Math.max(s.res[r] || 0, cap(s, r)); }); s.res.copper = Math.max(s.res.copper, cap(s, 'copper')); }
     if (s.pvExtra) { s.m.pending += s.pvExtra; s.pvExtra = 0; }
@@ -666,7 +667,8 @@ var MCORE = function (VC) {
   function startProject(s, id, front) {
     if (s.m.done[id] || (s.m.proj && s.m.proj.id === id) || s.m.queue.indexOf(id) >= 0) return;
     if (!s.m.proj) { s.m.proj = { id: id, stage: 0, got: {} }; return; }
-    if (front) { s.m.queue.unshift(s.m.proj.id); s.m.paused = s.m.paused || {}; s.m.paused[s.m.proj.id] = s.m.proj; s.m.proj = { id: id, stage: 0, got: {} }; }
+    if (front) { s.m.queue.unshift(s.m.proj.id); s.m.paused = s.m.paused || {}; s.m.paused[s.m.proj.id] = s.m.proj;
+      s.m.proj = s.m.paused[id] || { id: id, stage: 0, got: {} }; delete s.m.paused[id]; }   // r1h fix (owner): a project switched back to keeps what was hauled
     else s.m.queue.push(id);
   }
   // project switching (owner): push a project to the front; the running one pauses with what it has
@@ -1122,7 +1124,8 @@ var MCORE = function (VC) {
   // r1c (owner's Leaning, 2026-10-18): mastery tiers at 100, 1,000 and 10,000 clears (was 10, 100, 1,000). Lab: 150 places in 20 days after whole against 154; the sensible player beats mastering everything by x1.09
   'mastery.need': [100, 1000, 10000],
   // r1c (owner's playtest): books are storage, and come back with the run like the other stores (brought back, research room was 150,000, 85 hours to fill)
-  'perks.oldFlames.lines': [['ct_axes', 'ct_mattocks', 'ct_spindles', 'ct_baskets', 'house'], ['ctend', 'longsong'], ['clamp', 'cbrazier'], ['eff_firepit', 'eff_limekiln', 'eff_rushlight', 'cuburner', 'eff_cuburner']] });
+  // r1h (owner): timber houses do not come back (the run's settlers are housed by the shelters Open doors brings)
+  'perks.oldFlames.lines': [['ct_axes', 'ct_mattocks', 'ct_spindles', 'ct_baskets'], ['ctend', 'longsong'], ['clamp', 'cbrazier'], ['eff_firepit', 'eff_limekiln', 'eff_rushlight', 'cuburner', 'eff_cuburner']] });
   function applySet(name) { var o = DIAL_SETS[name] || name; for (var p in o) { var ks = p.split('.'), last = ks.pop(); var host = ks.reduce(function (a, k) { return a && a[k]; }, D); if (host) host[last] = o[p]; } if (VC.LAD && VC.LAD.hearth) { VC.LAD.hearth.max = D.vHearthMax; VC.LAD.hearth.desc = 'All light {pct}% stronger. ' + D.vHearthMax + ' levels in all.'; } refreshCards(); applyDeal(); }
   return {
     giftsFor: giftsFor, prPerks: prPerks, rbAt: rbAt, wholeShare: wholeShare, becomeWhole: becomeWhole, perkSpentOf: perkSpentOf,

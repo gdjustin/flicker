@@ -132,7 +132,18 @@ const { VC, VBOT, MCORE, MBOT } = loadRules();
   const MC = MCORE(VC); MC.applySet('R1');
   const v = VBOT.run(VC, { maxT: 3 * 3600 }).s;
   MC.init(v, { run: 3, hs: 60, perks: {}, known: [], built: [], cards: [], levels: { lv: { ct_axes: 8, ct_mattocks: 8, ct_spindles: 8, ct_baskets: 8, house: 10 }, tier: {} } });
-  check('Old flames: copper tools come back learned, and their research is not on sale again', MC.perk(v, 'oldFlames') >= 1 && v.m.cards.ctools && v.m.cards.houses && MC.mlv(v, 'ct_axes') === 8 && !MC.cardAvail(v, MC.CARD.ctools), (v.m.oldFlamesList || []).map(x => x[0] + ' ' + x[1]).join(', '));
+  check('Old flames: copper tools come back learned, and their research is not on sale again; timber houses stay behind (r1h)', MC.perk(v, 'oldFlames') >= 1 && v.m.cards.ctools && !v.m.cards.houses && !MC.mlv(v, 'house') && MC.mlv(v, 'ct_axes') === 8 && !MC.cardAvail(v, MC.CARD.ctools), (v.m.oldFlamesList || []).map(x => x[0] + ' ' + x[1]).join(', '));
+}
+
+// 4f. r1h (owner's release-candidate playtest): a project switched back to keeps its hauled progress; Stewards kept means the research comes learned
+{
+  const MC = MCORE(VC); MC.applySet('R1');
+  const v = VBOT.run(VC, { maxT: 3 * 3600 }).s; MC.init(v, { run: 2, hs: 10, perks: {}, known: [], built: [] });
+  v.m.proj = { id: 'beacon1', stage: 0, got: { stones: 500 } }; v.m.queue = ['smithy'];
+  MC.prioritize(v, 'smithy'); v.m.proj.got = { wood: 100 }; MC.prioritize(v, 'beacon1');
+  const back = v.m.proj; MC.prioritize(v, 'smithy');
+  check('projects: switching away and back keeps what was hauled, both ways', back.id === 'beacon1' && back.got.stones === 500 && v.m.proj.id === 'smithy' && v.m.proj.got.wood === 100, JSON.stringify(back.got) + ' ' + JSON.stringify(v.m.proj.got));
+  check('Stewards kept: the Stewards research comes learned', MC.perk(v, 'stewardsKept') === 1 && v.m.cards.autostore && !MC.cardAvail(v, MC.CARD.autostore));
 }
 
 // 5. Same rules, same numbers: compare with the recorded results.

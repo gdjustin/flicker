@@ -19,7 +19,7 @@ const GIFT_TEXT = {
   openDoors: n => 'The village starts with ' + MC.D.perks.openDoors.pop[n - 1] + ' settlers.',
   practisedHaulers: () => 'Projects built in an earlier run haul ' + fmtW(MC.D.perks.practisedHaulers.x, 1) + '× as fast.',
   relicsRemembered: n => n >= 2 ? 'Relics claimed in an earlier run cost half, and can all be claimed at once.' : 'Relics claimed in an earlier run cost half.',
-  oldFlames: n => 'Last run’s upgrade lines come back already bought: ' + ['copper tools and timber houses', 'fire-tending and long songs', 'copper lamps and braziers', 'burner rebuilds and copper burners'].slice(0, n).join('; ') + '.',
+  oldFlames: n => 'Last run’s upgrade lines come back already bought: ' + ['copper tools', 'fire-tending and long songs', 'copper lamps and braziers', 'burner rebuilds and copper burners'].slice(0, n).join('; ') + '.',
   villageSkip: () => 'You wake at the edge of your land: the village stands as it was when you last looked out.',
   headStart: () => 'The map opens with the wood, stone, fiber, food and copper stores full.',
   keptLights: () => 'Light projects built in an earlier run stay built (not the beacon or the towers).'
