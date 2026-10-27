@@ -126,7 +126,7 @@ function renderRelicsTab(w) {
   const open = relicTiles(w), rr = MC.perk(w, 'relicsRemembered');
   const ringTip = 'Finish a region and its relics ring: each counts ' + (1 + D.resonance.R) + ' times.';   // v1r (owner): the old intro, now a hover
   let h = '<div class="rclaim"><p class="sech">Relics to claim' + (rr ? ' <span style="font-style:normal;color:var(--form)">· relics you claimed in an earlier run cost half</span>' : '') + '</p><div class="acts" id="rel-acts"></div></div>';
-  h += '<div class="rel"><div><p class="sech">Relics by land</p><div class="rgrid">';
+  h += '<div class="rel"><div><p class="sech">Light relics collected</p><div class="rgrid">';
   let wTot = 0;
   for (const land of ['forest', 'hills', 'marsh', 'river', 'meadow', 'mountain', 'water']) {
     const RO = RELIC_OF[land], n = L[land] || 0, rg = ring[land] || 0, wt = n + D.resonance.R * rg, back = backOf[land] || 0; wTot += wt;
@@ -146,7 +146,7 @@ function renderRelicsTab(w) {
   h += '<div class="relregs"><p class="sech"><span class="tipme" tabindex="0" data-tip="' + ringTip + '">Regions</span></p><div class="mregions">';
   for (const r of regs) { const fin = r.on === r.N;   // r1d (owner): the same row as the map's region list
     const past = r.fin && r.fin < m.run ? 'finished in run ' + r.fin + (fin ? ' too' : '') : r.best && !fin ? 'best: ' + r.best + ' of ' + r.N + ', in an earlier run' : '';
-    h += regionRowHtml(w, r.rg, fin ? 'Its relics ring: each counts ' + (1 + D.resonance.R) + ' times' + (past ? '. ' + capFirst(past) : '') + '.' : past ? capFirst(past) + '.' : ''); }
+    h += regionRowHtml(w, r.rg, fin ? '' : past ? capFirst(past) + '.' : ''); }   // r1k (owner): a finished region carries no note
   if (!regs.length) h += '<p class="note" style="color:var(--ash);font-style:italic">Call back a place and its region appears here.</p>';
   h += '</div></div></div>';
   if (box.dataset.sig !== h) { box.dataset.sig = h; box.innerHTML = h;

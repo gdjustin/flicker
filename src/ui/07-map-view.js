@@ -188,7 +188,6 @@ function renderPanel(w) {
   add('p', 'mptitle', lit || reach || far ? tileName(t) : 'Darkness');
   const lines = document.createElement('div'); lines.className = 'mplines'; box.appendChild(lines);
   const line = s => { const p = document.createElement('p'); p.textContent = s; lines.appendChild(p); };
-  if (lit || reach || far) line(LANDN[t.land] + ' · ' + r.name + ': ' + rc + ' of ' + r.tiles.length + ' back');
   if (!lit && (reach || far)) {
     const need = MC.tileCost(t, w), got = w.m.got[k] || 0, amp = MC.ampMult(w, k), mm = MC.masteryMult(w), L = MC.lightRate(w) * amp * mm;   /* r1c fix: mastery counts in the estimate */
     line('Needs ' + fmtW(need) + ' light' + (got > 0 ? ' (' + Math.floor(got / need * 100) + '% there)' : '') + '. At your light: about ' + fmtTime((need - got) / Math.max(1e-9, L)) + '.');
@@ -199,7 +198,7 @@ function renderPanel(w) {
     const m = meta(), mem = !!m.ever[k], gv = document.createElement('div'); gv.className = 'mgives';
     const gi = (txt, cls) => { const p = document.createElement('p'); p.className = 'mg-i' + (cls ? ' ' + cls : ''); p.textContent = txt; gv.appendChild(p); };
     const hd = document.createElement('p'); hd.className = 'mg-h'; hd.textContent = 'You will gain'; gv.appendChild(hd);
-    if (mem) gi('No new heartstones: remembered ground', 'mg-q'); else gi(fmtW(MC.hsFor(t.dstep)) + ' heartstone' + (MC.hsFor(t.dstep) === 1 ? '' : 's') + ' to remember', 'mg-key');
+    if (mem) gi('No new heartstones: remembered ground', 'mg-q'); else gi(fmtW(MC.hsFor(t.dstep)) + ' heartstone' + (MC.hsFor(t.dstep) === 1 ? '' : 's'), 'mg-key');
     gi(t.land === 'river' ? MC.D.riverSettlers + ' settlers' : 'A settler');
     if (MC.D.surge.effect[t.land] && MC.D.surge.x > 0 && !(mem && !MC.D.surge.reclear)) gi(capFirst(surgeWhat(MC.D.surge.effect[t.land])) + ' ' + Math.round(MC.D.surge.x * 100) + '% faster for ' + MC.D.surge.mins + ' minutes');
     gi('A relic to claim: ' + relicGain(w, k));
@@ -219,7 +218,7 @@ function renderPanel(w) {
     const L = MC.lightRate(w) * MC.ampMult(w, k), left = Math.max(0, nd - c) * MC.mClearCost(t) / Math.max(1e-9, L);
     const mb = document.createElement('div'); mb.className = 'mmast t' + tr;
     mb.innerHTML = '<p class="mm-h">Attunement <b>' + mastPct(tr) + '%</b>' + (tr ? ' · ' + MASTER_WORD[tr] : '') + '</p>' +
-      (tr < cap ? '<div class="mm-bar"><i style="width:' + (Math.min(1, c / nd) * 100).toFixed(1) + '%"></i></div><p class="mm-l">' + fmtW(Math.floor(c)) + ' of ' + fmtW(nd) + ' clears to ' + mastPct(tr + 1) + '% · about ' + fmtTime(left) + ' at your light</p>' : '<p class="mm-l">As far as it can be attuned for now.</p>') +
+      (tr < cap ? '<div class="mm-bar"><i style="width:' + (Math.min(1, c / nd) * 100).toFixed(1) + '%"></i></div><p class="mm-l">' + fmtW(Math.floor(c)) + ' of ' + fmtW(nd) + ' clears to ' + mastPct(tr + 1) + '% · about ' + fmtTime(left) + ' at your light</p>' : '')   // r1k (owner): no line once a place is as attuned as it can be +
       '<p class="mm-l sub">' + (MC.D.mastery.weight === 'hs' ? 'Each tier counts its ' + fmtW(hs) + ' heartstone' + (hs === 1 ? '' : 's') + ' toward attunement' : 'Each star anywhere adds ' + Math.round(MC.D.mastery.per * 100) + '% to light reaching new land') + ': ×' + fmtW(MC.masteryMult(w), 2) + ' now' + (tr < cap ? ', ×' + fmtW(MC.masteryMultAt(MC.masteryPoints(w) + MC.mPointsOf(t)), 2) + ' after the next' : '') + '.</p>';
     lines.appendChild(mb);
   }

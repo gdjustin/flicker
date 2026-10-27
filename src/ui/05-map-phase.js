@@ -200,13 +200,13 @@ const MT = {   // the map's text, in one place for the text editor
   rb1: 'The land you called back dissolves, but it has given you back a piece of who you were before. You now know that you will wake again, stronger.',   // owner, 2026-10-18
   rb1Last: 'This time you do not come apart. Everything you called back stays in place, and now so do you. You sense this is just the beginning.',
   rbLastWarn: 'WARNING: The land you called back stays, but it isn\u2019t just peaceful fields and meadows that returned...',
-  rbGo: 'Choose what you remember', rbLastGo: 'Return', rbLater: 'Not yet',
+  rbGo: 'Choose what you remember', rbLastGo: 'The final rebirth', rbLater: 'Not yet',
   rbWait: 'The land beyond waits until you are reborn.', rbBtn: 'Be reborn',
   rbPill: 'Next milestone: {n} of {at} lands restored', rbPillReady: 'Ready to be reborn',   // owner, 2026-10-18
   wholeH: 'Whole', whole1: 'From now on nothing you call back fades: the land stays, and every new place adds to your strength.',   // owner, 2026-10-26
   whole2: 'You can now attune further to the land you know, and your settlement will still yet grow. Critical new research and new challenges await you.',
   combatH: 'Something has seen your light', combat1: 'Smoke rises past the ford. Not everything you called back is friendly, and not all of this land is yours.',
-  combatEnd: 'This is the end of the Glimmer in the Dark\u2019s current content. Please join the {discord} to provide feedback. Far more content (including combat - could you tell?) is coming soon.',   // owner, 2026-10-26
+  combatEnd: 'This is the end of A Glimmer in the Dark\u2019s current content. Please join the {discord} to provide feedback. Far more content (including combat - could you tell?) is coming soon.',   // owner, 2026-10-26
   combatOk: 'Keep playing',
   mastLog: '{name} is attuned to your light: {word}.', mastRegion: 'All you have called back of {region} is attuned.',
   merchLog: 'A mysterious traveler has come to the edge of your settlement. He trades in heartstones, and he will wait.',   // owner, 2026-10-26
