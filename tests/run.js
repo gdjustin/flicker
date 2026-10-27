@@ -88,11 +88,13 @@ const { VC, VBOT, MCORE, MBOT } = loadRules();
   const s = r.s, at = MC.rbAt(1), key = MC.cheapestTarget(s);
   check('rebirth branch: run 1 stops at its milestone and the land beyond waits', s.m.restored === at && !!s.m.rbReady && !MC.setTarget(s, key), s.m.restored + ' places, rebirth at ' + at);
   MC.becomeWhole(s, 100, {}, s.t);
-  check('rebirth branch: the last rebirth makes the run whole, and the land answers again', s.m.whole && MC.masteryOn(s) && MC.setTarget(s, MC.cheapestTarget(s)));
+  const mastBefore = MC.masteryOn(s), cardOpen = MC.cardAvail(s, MC.CARD.mastery) && MC.cardAvail(s, MC.CARD.traveler); s.m.cards.mastery = true; s.m.cards.traveler = true;   // r1i: both open by research
+  check('rebirth branch: the last rebirth makes the run whole, and the land answers again; mastery and the traveler open by research', s.m.whole && !mastBefore && cardOpen && MC.masteryOn(s) && MC.setTarget(s, MC.cheapestTarget(s)));
   const home = Object.keys(s.m.tiles).sort((a, b) => MC.mClearCost(MC.MAP.tiles[MC.MAP.idx[a]]) - MC.mClearCost(MC.MAP.tiles[MC.MAP.idx[b]]))[0], m0 = MC.masteryMult(s);
   MC.masterPlace(s, home); for (let i = 0; i < 600 && MC.mTier(s, home) < MC.D.mastery.tiers; i++) MC.tick(s, 10, false);
   check('rebirth branch: mastering a place reaches gold and raises light to new land', MC.mTier(s, home) === MC.D.mastery.tiers && MC.masteryMult(s) > m0 && s.m.target !== home, 'tier ' + MC.mTier(s, home) + ', ×' + MC.masteryMult(s).toFixed(2));
-  const here = MC.merchantArrive(s, s.t + MC.D.merchant.first + 1); MC.merchantLeave(s, s.t + MC.D.merchant.first + 2);
+  // r1i: his clock starts with his research
+  const early = MC.merchantArrive(s, s.t); const here = !early && MC.merchantArrive(s, s.t + MC.D.merchant.first + 1); MC.merchantLeave(s, s.t + MC.D.merchant.first + 2);
   check('rebirth branch: the traveler comes, waits and goes', here && !MC.merchantHere(s) && s.m.merch.visits === 1);
 }
 

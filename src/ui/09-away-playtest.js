@@ -113,7 +113,7 @@ function botToWhole(btn) {
   };
   setTimeout(step, 30);
 }
-function callMerchant() { const w = W(); if (!w || !w.m || !w.m.whole) { notice('The traveler comes once you are whole.'); return; } MC.merchantArrive(w, Date.now() / 1000); w.m.merch.next = 0; MC.merchantArrive(w, Date.now() / 1000); mapTick(0); renderWorld(); save(true); }
+function callMerchant() { const w = W(); if (!w || !w.m || !w.m.whole) { notice('The traveler comes once you are whole.'); return; } w.m.cards.traveler = true; MC.merchantArrive(w, Date.now() / 1000); w.m.merch.next = 0; MC.merchantArrive(w, Date.now() / 1000); mapTick(0); renderWorld(); save(true); }
 /*@end-test*/
 // v1g: what needs the player, for the tab dots (owner, 2026-10-13)
 function mapNeedsYou(w) {
@@ -153,7 +153,9 @@ function renderMapPhase(w) {
   // the rebirth branch: a rebirth reached while away (or before a reload) asks once the player is back and nothing else is open
   if (MC.D.rb.on && w.m.rbReady && !MV.rbAsked && !S.inPerks && $('away').classList.contains('hidden') && $('moment').classList.contains('hidden')) { MV.rbAsked = true; setTimeout(askScatter, 300); }
   { const showP = MC.D.rb.on ? !!(w.m.rbAt || w.m.rbReady) : canScatter(w); $('w-scatter').classList.toggle('hidden', !showP); if (showP) scatterPill(w); }
-  $('w-merch').classList.toggle('hidden', !MC.merchantHere(w)); if (MC.merchantHere(w)) $('w-merch').textContent = MT.merchPill;
+  { const b = $('w-merch'), here = MC.merchantHere(w), M = w.m.merch, on = !!(w.m.whole && w.m.cards.traveler);   // r1i (owner): a countdown to his next visit once his research is learned
+    b.classList.toggle('hidden', !on); b.classList.toggle('wait', on && !here);
+    if (on) { const left = M ? M.next - Date.now() / 1000 : MC.D.merchant.first; const t = here ? MT.merchPill : left <= 0 ? MT.merchHere : fill(MT.merchSoon, { t: fmtTime(left) }); if (b.textContent !== t) b.textContent = t; b.title = MT.merchTip; } }
   $('w-naming').classList.toggle('hidden', !(w.flags.askName && !w.name));
   renderMapDrawer(w);
 }

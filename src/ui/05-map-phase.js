@@ -203,13 +203,18 @@ const MT = {   // the map's text, in one place for the text editor
   rbWait: 'The land beyond waits until you are reborn.', rbBtn: 'Be reborn',
   rbPill: 'Next milestone: {n} of {at} lands restored', rbPillReady: 'Ready to be reborn',   // owner, 2026-10-18
   wholeH: 'Whole', whole1: 'You remember all of yourself. From now on nothing you call back fades: the land stays, and every new place adds to what you remember at once.',
-  whole2: 'You can go back over land you know and master it, and a traveler has started walking toward your light.',
+  whole2: 'You can go back over land you know, and your settlement may yet draw visitors. New research waits for you.',   // r1i: both open by research now
   combatH: 'Something has seen your light', combat1: 'Smoke rises past the ford. Not everything you called back is friendly, and not all of this land is yours.',
   combatTest: 'Playtest: in the game, combat opens here. This branch has no combat: keep playing to try mastery and the traveling merchant.',
   combatOk: 'Keep playing',
   mastLog: '{name} is {word}: {pct}%.', mastRegion: 'All you have called back of {region} is mastered.',
   merchLog: 'A traveler has come to the edge of your land. He trades in heartstones, and he will wait.',
-  merchPill: 'A traveler waits', merchH: 'The traveler', merchKick: 'A traveling merchant · he comes every two days and waits',
+  merchPill: 'A traveler waits', merchSoon: 'The traveler · {t}', merchHere: 'Arriving now',   // r1i
+  merchTip: 'Your settlement has attracted the attention of a traveling merchant who deals in heartstones and other rarities.',
+  // r1i (owner): the modal when the mastery research is learned (Claude\u2019s draft, for the owner\u2019s copy edit; the feature\u2019s name is still open)
+  mastH: 'Going back over the land', mast1: 'The land you called back stays now. Your light can go back into it, again and again, and each time it passes through, a place holds a little more of it.',
+  mast2: 'Pick a place you have called back and choose Master this place, or master a whole region at once. Your light flows there instead of into new land. A place earns a bronze star at 100 clears, silver at 1,000 and gold at 10,000.',
+  mast3: 'Every star you earn makes light reaching new land {pct}% stronger. Light poured into old land gets no stronger, so you choose when to look back and when to push on.', mastOk: 'Back to the land', merchH: 'The traveler', merchKick: 'A traveling merchant · he comes every two days and waits',
   merchSub: 'He wants heartstones and knows the old gifts. What you buy works at once.', merchGo: 'Send him on his way',
   glow: 'A glowstone is cut and set by the fire. ({n} now)',
   // v1g: the broken tower, found on the map (owner, 2026-10-13)
@@ -280,6 +285,12 @@ function relicMomentCheck(w) {
   if (S.inPerks || !$('away').classList.contains('hidden') || !$('moment').classList.contains('hidden') || !$('panel').classList.contains('hidden')) return;
   m.relicSeen = true; showRelicMoment(); save(true);
 }
+// r1i (owner): the mastery research's modal
+function showMasteryMoment() {
+  $('moment-h').textContent = MT.mastH; const body = $('moment-body'); body.innerHTML = '';
+  [MT.mast1, MT.mast2, fill(MT.mast3, { pct: Math.round(MC.D.mastery.per * 100) })].forEach(t => { const p = document.createElement('p'); p.textContent = t; body.appendChild(p); });
+  $('moment-ok').textContent = MT.mastOk; $('moment').dataset.kind = ''; momentPlain(); $('moment').classList.remove('hidden'); $('moment-ok').focus();
+}
 function showThirty() {
   $('moment-h').textContent = MT.thirtyH; const body = $('moment-body'); body.innerHTML = '';
   [MT.thirty1, MT.thirty2].forEach(t => { const p = document.createElement('p'); p.textContent = t; body.appendChild(p); });
@@ -335,6 +346,8 @@ function mLevel(id) { const w = W(); if (MC.buyLevel(w, id)) { w.stats.buys.leng
 function mTier(id) { const w = W(); if (MC.tierUp(w, id)) { w.stats.buys.length = 0; sys('A new tier: ' + tierName(id) + '.'); renderWorld(); } }
 function mCard(id) {
   const w = W(), c = MC.CARD[id]; if (!MC.buyCard(w, id)) return; w.stats.buys.length = 0;
+  if (id === 'mastery') setTimeout(showMasteryMoment, 200);   // r1i (owner): explain it as it opens
+  if (id === 'traveler') MC.merchantArrive(w, Date.now() / 1000);   // r1i: his clock starts now
   sys(tx('w.msg.learned', { name: c.name }));
   if (id === 'academy') sys('Open the Academy in the settlement when you want scholars to make light instead of ideas.');
   renderWorld(); save(true);

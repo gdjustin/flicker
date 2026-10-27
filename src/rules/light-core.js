@@ -287,6 +287,9 @@ var MCORE = function (VC) {
       at: { fn: function (s) { return n <= D.beaconMax && s.m.restored >= beaconGate(s, n) && (n === 1 || !!s.m.cards['beacon' + (n - 1)]); } },   // v1q (owner's playtest): the next upgrade's research shows once the last is planned, not built
       desc: 'Plan a beacon upgrade: all light stronger.' });
   })(bn);
+  // r1i (owner): once the self is whole, two inexpensive research cards open the long game's features
+  CARDS.push({ id: 'mastery', name: 'Going back', cost: { ideas: 1500 }, at: { fn: function (s) { return !!(D.rb.on && s.m.whole); } }, desc: 'Send your light back into land you have called back, to make it hold more light. Opens mastery.' });
+  CARDS.push({ id: 'traveler', name: 'A mysterious traveler', cost: { ideas: 1500 }, at: { fn: function (s) { return !!(D.rb.on && s.m.whole); } }, desc: 'Your settlement has attracted the attention of a traveling merchant who deals in heartstones and other rarities.' });
   CARDS.push({ id: 'cuburners', name: 'Copper burners', cost: { ideas: 600 }, sys: 'cuburner', at: { copper: true, tiles: 6 }, desc: 'Opens copper burners: copper burned straight for light. Light them when copper piles up.' });
   CARDS.push({ id: 'cbraziers', name: 'Copper braziers', cost: { ideas: 350 }, at: { copper: true, fn: function (s) { return D.cbrazier.on > 0 && (s.lv.brazier || 0) >= VC.LAD.brazier.max; } }, desc: 'Opens copper braziers: light of their own, and every copper lamp burns brighter for each one.' });
   // r1f (owner): a chain of research shows one step at a time; the next appears once the one before is learned
@@ -814,12 +817,11 @@ var MCORE = function (VC) {
   function becomeWhole(s, hsLife, perks, now) {
     s.m.memHS = hsLife; s.m.perks = prPerks({ perks: perks, run: D.rb.last + 1 }); s.m.run = D.rb.last + 1; s.m.rbAt = null; s.m.rbReady = 0; s.m.whole = true;
     for (var k in s.m.tiles) s.m.known[k] = true;
-    if (D.merchant.on) s.m.merch = { next: (now != null ? now : s.t) + D.merchant.first, here: false, visits: 0 };
     s.m.wholeAt = s.t; return true;
   }
   function perkSpentOf(lv) { var t = 0; for (var id in lv) { if (!D.perks[id] || D.perks[id].kind === 'comfort') continue; for (var i = 0; i < lv[id]; i++) t += perkCost(id, i); } return t; }
   // ---------------------------------------------------------------- mastery
-  function masteryOn(s) { return !!(D.mastery.on && s.m && s.m.whole); }
+  function masteryOn(s) { return !!(D.mastery.on && s.m && s.m.whole && s.m.cards.mastery); }   // r1i: opened by its research
   function mClears(s, key) { return (s.m.mast && s.m.mast[key]) || 0; }
   function mTierAt(t) { return D.mastery.need ? D.mastery.need[t - 1] : Math.pow(D.mastery.base, t); }   // clears for tier t (1-based)
   function mTierOf(c) { var t = 0; while (t < D.mastery.tiers && c >= mTierAt(t + 1) - 1e-9) t++; return t; }
@@ -855,7 +857,8 @@ var MCORE = function (VC) {
   }
   // ---------------------------------------------------------------- the merchant (clock: real seconds in the game, s.t in the lab)
   function merchantArrive(s, now) {
-    if (!D.merchant.on || !s.m.whole) return false; var M = s.m.merch; if (!M) M = s.m.merch = { next: now + D.merchant.first, here: false, visits: 0 };
+    // r1i: his clock starts when his research is learned
+    if (!D.merchant.on || !s.m.whole || !s.m.cards.traveler) return false; var M = s.m.merch; if (!M) M = s.m.merch = { next: now + D.merchant.first, here: false, visits: 0 };
     if (!M.here && now >= M.next) { M.here = true; M.came = now; return true; } return false;
   }
   function merchantHere(s) { return !!(s.m && s.m.merch && s.m.merch.here); }

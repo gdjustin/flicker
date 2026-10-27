@@ -83,13 +83,12 @@ function cellMarks(k, cls, qn, rel, anchors, towers) {
   // v1r (owner): relic medallions are off the map; the place card shows the relic instead
   if (anchors[k] === 'plan' || (towers[k] && !towers[k].lit)) s += medal('hammer', 'tl', 31, '#d9a64e', '#f3dfae');
   if (cls.includes('ruin') || (towers[k] && towers[k].lit)) s += medal('tower', 'c', 56, towers[k] && towers[k].lit ? '#f3dfae' : '#d9a64e', '#f3dfae');
-  if (cls.includes('motes')) s += MK_SPARK;
   { const mt = cls.includes('m3') ? 3 : cls.includes('m2') ? 2 : cls.includes('m1') ? 1 : 0; if (mt) s += mastStars(mt); }
   return s;
 }
 // the rebirth branch: mastery's mark, one star a tier along the bottom of the place (bronze, silver, gold)
 const MSTAR_COL = ['', '#c98a4b', '#d7dde4', '#f3d48a'];
-function mastStars(n) { let s = '<i class="mstars t' + n + '">'; for (let i = 0; i < n; i++) s += '<svg viewBox="0 0 12 12"><path d="M6 0l1.6 4.4L12 6 7.6 7.6 6 12 4.4 7.6 0 6l4.4-1.6z" fill="' + MSTAR_COL[n] + '" stroke="#1f1813" stroke-width="0.9"/></svg>'; return s + '</i>'; }
+function mastStars(n) { let s = '<i class="mstars t' + n + '">'; for (let i = 0; i < Math.min(n, 1); i++) s +=   /* r1i (owner): one star, bronze, silver or gold */ '<svg viewBox="0 0 24 24"><path d="M12 1.5l3.1 6.6 7.2.9-5.3 5 1.4 7.1L12 17.6l-6.4 3.5L7 14l-5.3-5 7.2-.9z" fill="' + MSTAR_COL[n] + '" stroke="#1f1813" stroke-width="1.6" stroke-linejoin="round"/></svg>'; return s + '</i>'; }
 function renderMap(w) {
   buildMapGrid(mapRadius(w)); renderBeam(w, mapRadius(w)); mapZoom(w);
   const water = {}; MC.MAP.water.forEach(x => { water[x.key] = x; });
@@ -113,7 +112,6 @@ function renderMap(w) {
       cls.push('dark'); if (MC.reachable(w, t)) { cls.push('reach', 'scout', 'land-' + LANDC[t.land]); lb = etaShort((MC.tileCost(t, w) - (w.m.got[k] || 0)) / Math.max(1e-9, L0 * MC.ampMult(w, k))); }
       else if (seen[k] || rev[k]) { cls.push('scout', 'far', 'land-' + LANDC[t.land]); lb = etaShort((MC.tileCost(t, w) - (w.m.got[k] || 0)) / Math.max(1e-9, L0 * MC.ampMult(w, k))); }
       if (known[k]) cls.push('paved');
-      if ((t.name || t.tag) && t.name !== 'A lit window' && t.step <= (w.m.maxStep || 0) + 3 && !(w.m.got[k] > 0)) cls.push('motes');   // v1g: motes gather over special places (only you see them)
     }
     if (k === ruinK && !w.m.done.repair && t && (w.m.tiles[k] || MC.reachable(w, t) || seen[k] || rev[k])) { cls.push('ruin'); if (w.m.tiles[k] && !MC.repairStarted(w)) cls.push('ruinwait'); }
     if (towers[k]) cls.push(towers[k].lit ? 'relay' : 'building');
@@ -188,7 +186,6 @@ function renderPanel(w) {
   // v1r (owner): a place called back shows its relic at the top of the card
   if (lit) { const has = !!(w.m.relicT && w.m.relicT[k]), rh = add('p', 'mprelic'); rh.innerHTML = relicIconHtml(t.land) + ' '; rh.appendChild(document.createTextNode(relicName(k) + (has ? ' · claimed' : ' · waits: ' + fmtW(MC.relicCost(w, k).copper) + ' copper'))); }
   add('p', 'mptitle', lit || reach || far ? tileName(t) : 'Darkness');
-  if (!lit && (t.name || t.tag) && t.name !== 'A lit window' && t.step <= (w.m.maxStep || 0) + 3) add('p', 'mmut', 'Motes gather over it. Only you can see them: something is waiting there.');
   const lines = document.createElement('div'); lines.className = 'mplines'; box.appendChild(lines);
   const line = s => { const p = document.createElement('p'); p.textContent = s; lines.appendChild(p); };
   if (lit || reach || far) line(LANDN[t.land] + ' · ' + r.name + ': ' + rc + ' of ' + r.tiles.length + ' back');

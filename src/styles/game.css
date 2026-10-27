@@ -804,10 +804,9 @@ body.calm *, body.calm *::before, body.calm *::after { animation: none !importan
 #perk-screen .chip.gift.lockonly { padding: 8px 10px; min-width: 0; width: auto; flex: 0 0 auto; opacity: 0.8; }
 #perk-screen .chip.gift[data-gift] { cursor: help; }
 /* mastery on the land: a tint at each tier, and a star a tier along the bottom of the place */
-#m-grid .cell.done.m1 { box-shadow: inset 0 0 0 1px rgba(201, 138, 75, 0.55); }
-#m-grid .cell.done.m2 { box-shadow: inset 0 0 0 1.5px rgba(215, 221, 228, 0.6); }
-#m-grid .cell.done.m3 { box-shadow: inset 0 0 0 2px rgba(243, 212, 138, 0.75), inset 0 0 10px rgba(243, 212, 138, 0.25); }
-#m-grid .cell .mk i.mstars { position: absolute; left: 6%; bottom: 5%; display: flex; gap: 1px; width: 52%; height: 22%; pointer-events: none; }
+/* r1i (owner): no outline for mastery; one star in the tier's colour */
+#m-grid .cell .mk i.mstars { position: absolute; left: 6%; bottom: 5%; display: flex; width: 32%; height: 32%; pointer-events: none; }
+.wbar .scatter.merch.wait { opacity: 0.85; cursor: help; }
 #m-grid .cell .mk i.mstars svg { display: inline-block; height: 100%; width: auto; filter: drop-shadow(0 0 1px #000); }
 .mmast { margin: 0.45rem 0 0.6rem; padding: 0.45rem 0.65rem; border-left: 3px solid #9c7440; background: color-mix(in srgb, #f3d48a 6%, transparent); border-radius: 0 6px 6px 0; }
 .mmast.t1 { border-left-color: #c98a4b; } .mmast.t2 { border-left-color: #d7dde4; } .mmast.t3 { border-left-color: #f3d48a; }

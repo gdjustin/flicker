@@ -164,6 +164,7 @@ var MBOT = function (MC, VBOT) {
       if (id === 'books' || id === 'house' || id === 'shelter') return null;
       if (id === 'longsong') return trial(function () { s.m.lv.longsong = (s.m.lv.longsong || 0) + 1; });
       if (opt.keeperHeavy && id === 'ctend') return 2 * trial(function () { s.m.lv.ctend = (s.m.lv.ctend || 0) + 1; });
+      if (L && L.burns && opt.tendLit && burnersBuilt() < MC.tendCap(s)) return trial(function () { s.lv[id] = (s.lv[id] || 0) + 1; s.on[id] = (s.on[id] == null ? s.lv[id] : s.on[id] + 1); }) + 1;   // r1i probe: build to the fire-tending cap
       if (L && L.burns) { if (opt.burnPlay === 'store' ? s.res[L.burns] < MC.cap(s, L.burns) * 0.7 : burnFit(id) <= MC.VC.burnersOn(s, id) && s.res[L.burns] < MC.cap(s, L.burns) * 0.7) return 0; return trial(function () { s.lv[id] = (s.lv[id] || 0) + 1; s.on[id] = (s.on[id] == null ? s.lv[id] : s.on[id] + 1); }); }
       if (id === 'cuburner') { if (opt.burnPlay === 'store' ? s.res.copper < cuReserve() + 3000 : cuFit() <= (s.m.lv.cuburner || 0) && s.res.copper < cuReserve() + 3000) return 0; return trial(function () { s.m.lv.cuburner = (s.m.lv.cuburner || 0) + 1; s.m.cuOn = s.m.lv.cuburner; }); }
       if (opt.econ === 'full' && id === 'keepcraft') return trial(function () { s.lv[id] = (s.lv[id] || 0) + 1; }) + gateV(id);
@@ -388,8 +389,17 @@ var MBOT = function (MC, VBOT) {
         if (opt.burnPlay === 'store') { if (f >= 0.6 && on < nn) s.on[id] = Math.min(nn, on + 2); else if (f < 0.2 && on > 0) s.on[id] = on - 1; }
         else s.on[id] = f >= 0.6 ? nn : f < 0.1 ? Math.min(nn, Math.max(0, burnFit(id) - 1)) : Math.min(nn, burnFit(id));
       });
+      tendFloor();
       if (s.cards.feasting && !s.feast && s.res.food >= VC.feastCost(s) && s.res.food >= MC.cap(s, 'food') * 0.6) { if (VC.feast(s)) n++; }
       return n;
+    }
+    // r1i (owner: the firekeeper all-in probe counts getting enough burners to fully buff fire-tending): opt.tendLit keeps at least
+    // the fire-tending cap's worth of burners lit (fuel or not), and values building burners until that many exist
+    function burnersBuilt() { return (s.lv.firepit || 0) + (s.lv.limekiln || 0) + (s.lv.rushlight || 0) + (s.m.lv.cuburner || 0); }
+    function tendFloor() {
+      if (!opt.tendLit || !s.m) return; var need = MC.tendCap(s) - MC.litBurners(s);
+      ['firepit', 'limekiln', 'rushlight'].forEach(function (id) { if (need <= 0) return; var on = MC.VC.burnersOn(s, id), add = Math.min(need, (s.lv[id] || 0) - on); if (add > 0) { s.on[id] = on + add; need -= add; } });
+      if (need > 0 && s.m.lv.cuburner) { var add = Math.min(need, s.m.lv.cuburner - (s.m.cuOn || 0)); if (add > 0) s.m.cuOn = (s.m.cuOn || 0) + add; }
     }
     function leave() {
       // before leaving: bank burners whose fuel won't last (overflow does this by itself once researched)
@@ -399,6 +409,7 @@ var MBOT = function (MC, VBOT) {
         else s.on[id] = Math.min(nn, burnFit(id));   // what the income feeds stays lit overnight
       });
       if (opt.burnPlay !== 'store' && (s.m.lv.cuburner || 0) > 0) s.m.cuOn = Math.min(s.m.lv.cuburner, cuFit());
+      tendFloor();
       MC.autoStore(s);
     }
 
