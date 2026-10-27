@@ -167,7 +167,7 @@ const MT = {   // the map's text, in one place for the text editor
   reveal2: 'But your light has changed. It’s no longer mere firelight. You sense this light can be used to call the world back, and you dare to hope.',
   reveal3: 'You are beginning to remember. Copper to the north. Something big to the east. Choose land beyond your home and call it back.', revealOk: 'Choose a land to call back',
   // r1f (owner: the reveal on runs 2 and 3 knows this has happened before). Claude's draft
-  revealAgain1: 'Your light reaches the edge of your homeland, and again finds the void beyond. This time you know it.',
+  revealAgain1: 'Your light reaches the edge of your homeland, and again finds the void beyond. This time you remember it.',
   revealAgain2: 'You have stood here before. You remember more of yourself now, and your light is stronger than it was.',
   revealAgain3: 'Copper to the north. The old tower to the east. You know the way, and you are sure your light can call back more of the world than before.', revealAgainOk: 'Call the land back',
   ampH: 'An Amplifier Restored', amp1: 'You have discovered and repaired an ancient amplifier. Who built it? How long has it been here?',
@@ -195,27 +195,28 @@ const MT = {   // the map's text, in one place for the text editor
   prestGo: 'See what you would remember', prestNo: 'Not yet',
   // the rebirth branch (2026-10-18): Claude's drafts, for the owner's text pass
   rbLog: 'You have called back enough of the land to remember more of yourself. The dark beyond will not answer until you are reborn ({n} of 5).',
-  rbLastLog: 'The last of you comes back. You are nearly whole.',
-  rbH: 'You remember more of yourself', rbLastH: 'You remember all of yourself',
-  rb1: 'The land you called back dissolves, but it has given you back a piece of who you were before. You sense that you will soon wake again, remembering more.',   // owner, 2026-10-18
-  rb1Last: 'This time you do not come apart. Everything you called back stays called back, and you stay with it.',
-  rbGo: 'Choose what you remember', rbLastGo: 'Choose what you remember', rbLater: 'Not yet',
+  rbLastLog: 'The last of you comes back. You are now whole.',
+  rbH: 'You feel a bit more whole', rbLastH: 'You are whole',   // owner, 2026-10-26
+  rb1: 'The land you called back dissolves, but it has given you back a piece of who you were before. You now know that you will wake again, stronger.',   // owner, 2026-10-18
+  rb1Last: 'This time you do not come apart. Everything you called back stays in place, and now so do you. You sense this is just the beginning.',
+  rbLastWarn: 'WARNING: The land you called back stays, but it isn\u2019t just peaceful fields and meadows that returned...',
+  rbGo: 'Choose what you remember', rbLastGo: 'Return', rbLater: 'Not yet',
   rbWait: 'The land beyond waits until you are reborn.', rbBtn: 'Be reborn',
   rbPill: 'Next milestone: {n} of {at} lands restored', rbPillReady: 'Ready to be reborn',   // owner, 2026-10-18
-  wholeH: 'Whole', whole1: 'You remember all of yourself. From now on nothing you call back fades: the land stays, and every new place adds to what you remember at once.',
-  whole2: 'You can go back over land you know, and your settlement may yet draw visitors. New research waits for you.',   // r1i: both open by research now
+  wholeH: 'Whole', whole1: 'From now on nothing you call back fades: the land stays, and every new place adds to your strength.',   // owner, 2026-10-26
+  whole2: 'You can now attune further to the land you know, and your settlement will still yet grow. Critical new research and new challenges await you.',
   combatH: 'Something has seen your light', combat1: 'Smoke rises past the ford. Not everything you called back is friendly, and not all of this land is yours.',
-  combatTest: 'Playtest: in the game, combat opens here. This branch has no combat: keep playing to try mastery and the traveling merchant.',
+  combatEnd: 'This is the end of the Glimmer in the Dark\u2019s current content. Please join the {discord} to provide feedback. Far more content (including combat - could you tell?) is coming soon.',   // owner, 2026-10-26
   combatOk: 'Keep playing',
-  mastLog: '{name} is {word}: {pct}%.', mastRegion: 'All you have called back of {region} is mastered.',
-  merchLog: 'A traveler has come to the edge of your land. He trades in heartstones, and he will wait.',
+  mastLog: '{name} is attuned to your light: {word}.', mastRegion: 'All you have called back of {region} is attuned.',
+  merchLog: 'A mysterious traveler has come to the edge of your settlement. He trades in heartstones, and he will wait.',   // owner, 2026-10-26
   merchPill: 'A traveler waits', merchSoon: 'The traveler · {t}', merchHere: 'Arriving now',   // r1i
   merchTip: 'Your settlement has attracted the attention of a traveling merchant who deals in heartstones and other rarities.',
-  // r1i (owner): the modal when the mastery research is learned (Claude\u2019s draft, for the owner\u2019s copy edit; the feature\u2019s name is still open)
-  mastH: 'Going back over the land', mast1: 'The land you called back stays now. Your light can go back into it, again and again, and each time it passes through, a place holds a little more of it.',
-  mast2: 'Pick a place you have called back and choose Master this place, or master a whole region at once. Your light flows there instead of into new land. A place earns a bronze star at 100 clears, silver at 1,000 and gold at 10,000.',
-  mast3: 'Every star you earn makes light reaching new land {pct}% stronger. Light poured into old land gets no stronger, so you choose when to look back and when to push on.', mastOk: 'Back to the land', merchH: 'The traveler', merchKick: 'A traveling merchant · he comes every two days and waits',
-  merchSub: 'He wants heartstones and knows the old gifts. What you buy works at once.', merchGo: 'Send him on his way',
+  // the modal when Light Attunement is learned (owner's text, 2026-10-26)
+  mastH: 'Attunement', mast1: 'The land you called back is now permanent, as is your physical form. You can now further attune previously-recalled lands to your light.',   // owner, 2026-10-26
+  mast2: 'Pick a place you have called back and select Attune. Your light flows there instead of into new land. You will get much stronger after attuning previous lands 100, 1,000, 10,000 more times.',
+  mast3: 'Every land\u2019s attunement level makes light reaching new land {pct}% stronger, allowing you to recall more and more of the world.', mastOk: 'Press on', merchH: 'The traveler', merchKick: 'A mysterious merchant · he comes every two days and waits for your trade.',
+  merchSub: 'He wants heartstones. He knows the old gifts. What you buy works at once.', merchGo: 'Bid him farewell',
   glow: 'A glowstone is cut and set by the fire. ({n} now)',
   // v1g: the broken tower, found on the map (owner, 2026-10-13)
   ruinGlimpse: 'Something tall stands up out of the dark here, too straight to be a hill.',
@@ -364,8 +365,8 @@ function relicGain(w, key) { const t = tileOf(key), D = MC.D;
 function mRelic(key) { const w = W(), gainTxt = relicGain(w, key); if (MC.buyRelic(w, key)) { w.stats.buys.length = 0; sys(relicName(key) + ' is claimed: ' + gainTxt + '.'); /* v1s fix: the journal names relics by region too */ renderWorld(); } }
 function mAnchor(key) { const w = W(); if (MC.planAnchor(w, key)) { sys('A Light Anchor is planned for ' + shortName(tileOf(key)) + '. Haulers will build it.'); renderWorld(); } }
 function mTarget(key) { const w = W(); const had = w.m.pool || 0; if (MC.setTarget(w, key)) { if (had >= 1) sys('The light you saved, ' + fmtC(had) + ', pours into ' + shortName(tileOf(key)) + '.'); mapTick(0); renderWorld(); } }
-function mMaster(key) { const w = W(); if (MC.masterPlace(w, key)) { sys('Your light turns back to ' + shortName(tileOf(key)) + ', to master it.'); mapTick(0); renderWorld(); } }
-function mMasterRegion(ri) { const w = W(); if (MC.masterRegion(w, ri)) { sys('Your light turns back to ' + MC.REGIONS[ri].name + ', to master all of it.'); mapTick(0); renderWorld(); } }
+function mMaster(key) { const w = W(); if (MC.masterPlace(w, key)) { sys('Your light turns back to ' + shortName(tileOf(key)) + ', to attune it.'); mapTick(0); renderWorld(); } }
+function mMasterRegion(ri) { const w = W(); if (MC.masterRegion(w, ri)) { sys('Your light turns back to ' + MC.REGIONS[ri].name + ', to attune all of it.'); mapTick(0); renderWorld(); } }
 function mLineup(key) { const w = W(); if (MC.lineupAdd(w, key)) renderWorld(); }
 function mUnline(key) { const w = W(); if (MC.lineupRemove(w, key)) { renderWorld(); } }
 function mFinish() { const w = W(); const id = w.m.awaitClick; if (MC.clickFinish(w)) { const p = MC.projDef(w, id); wsay(pname(w, id) + ' is finished.'); renderWorld(); save(true);
@@ -431,7 +432,7 @@ function mapLightTip(anchor) {
   const rl = MC.relicMult(w); if (rl > 1.001) mult.push('Relics, ' + (w.m.relicsN || 0) + ': ×' + x(rl));
   const bl = MC.beaconLv(w); if (bl) mult.push('Beacon upgrades, ' + bl + ': ×' + x(1 + MC.beaconStepOf(w) * bl));
   const am = w.m.target ? MC.ampMult(w, w.m.target) : 1; if (am > 1) mult.push('An amplifier on the place you call back: ×' + x(am));
-  if (MC.masteryOn(w)) mult.push({ t: 'Mastery (' + fmtW(MC.masteryPoints(w)) + (MC.D.mastery.weight === 'hs' ? ' mastered heartstones' : ' stars') + '): light reaching new land ×' + x(MC.masteryMult(w)) + '. Light into land you master is not.', cls: 'tipx' });
+  if (MC.masteryOn(w)) mult.push({ t: 'Attunement (' + fmtW(MC.masteryPoints(w)) + (MC.D.mastery.weight === 'hs' ? ' attuned heartstones' : ' stars') + '): light reaching new land ×' + x(MC.masteryMult(w)) + '. Light into land you attune is not.', cls: 'tipx' });
   const ls = MC.mlv(w, 'longsong'); const kept = keptLightLines(w); if (ls || kept.length) mult.push({ t: 'On single lines:', cls: 'tipsep' }); if (ls) mult.push('Long songs, ' + ls + ': firekeepers ×' + x(1 + MC.D.longSong * ls)); kept.forEach(t => mult.push(t));
   if (!w.m.target) mult.push({ cls: 'tipx', t: MT.poolTip + ' Saved now: ' + fmtC(w.m.pool || 0) + ' of ' + fmtC(MC.poolCap(w)) + '.' });
   showTextTip(anchor, 'Light', lines.concat(mult));

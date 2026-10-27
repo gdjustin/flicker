@@ -8,21 +8,21 @@ const RB_LAST = () => MC.D.rb.last;
 const rbPct = (run, after) => Math.round(Math.min(1, ((run - 1) + (after ? 1 : 0)) / RB_LAST()) * 100);
 // the gifts a rebirth brings (packet n-1 comes with rebirth n), as names
 function giftName(id, lv) { const p = MC.D.perks[id]; if (!p) return id; return MC.perkMax(id) > 1 || (p.costs && p.costs.length > 1) ? comfortLevelName(id, lv) : p.name; }
-// what each gift does, at the level it comes with (Claude's drafts, for the owner's text pass)
+// what each gift does, at the level it comes with (the owner's text, 2026-10-26)
 const GIFT_TEXT = {
   skipPrologue: () => 'Runs begin in the village.',
-  waymarks: () => 'When a place comes back and nothing is lined up, your light moves on to the cheapest place beside your land.',
-  oldLessons: n => 'Research learned in an earlier run costs ' + (n >= 2 ? 'a quarter' : 'half') + '.',
-  sureHands: n => 'Gathering by hand brings ' + (n >= 2 ? 'four' : 'twice') + ' times as much.',
-  lightRemembers: n => 'Places you called back before need ' + Math.round(100 / (MC.D.pave * Math.pow(1 / (1 - MC.D.perks.lightRemembers.x), n))) + '% of their light.',
-  stewardsKept: () => 'Your stewards are there from the first place: when a store is full, they buy the next stockpile if you can afford it.',
+  waymarks: () => 'When a land comes back and no new land is selected, your light moves on to the quickest next land to restore.',
+  oldLessons: n => 'Any research learned in an earlier run costs ' + (n >= 2 ? '25% as much' : 'half as much') + '.',
+  sureHands: n => 'Gathering by hand brings ' + (n >= 2 ? 'four times' : 'twice') + ' as many resources.',
+  lightRemembers: n => 'Lands you called back before need ' + Math.round(100 / (MC.D.pave * Math.pow(1 / (1 - MC.D.perks.lightRemembers.x), n))) + '% as much light.',
+  stewardsKept: () => 'Your stewards have come with you: when a resource is full, they buy a stockpile if you can afford it.',
   openDoors: n => 'The village starts with ' + MC.D.perks.openDoors.pop[n - 1] + ' settlers.',
-  practisedHaulers: () => 'Projects built in an earlier run haul ' + fmtW(MC.D.perks.practisedHaulers.x, 1) + '× as fast.',
-  relicsRemembered: n => n >= 2 ? 'Relics claimed in an earlier run cost half, and can all be claimed at once.' : 'Relics claimed in an earlier run cost half.',
-  oldFlames: n => 'Last run’s upgrade lines come back already bought: ' + ['copper tools', 'fire-tending and long songs', 'copper lamps and braziers', 'burner rebuilds and copper burners'].slice(0, n).join('; ') + '.',
-  villageSkip: () => 'You wake at the edge of your land: the village stands as it was when you last looked out.',
-  headStart: () => 'The map opens with the wood, stone, fiber, food and copper stores full.',
-  keptLights: () => 'Light projects built in an earlier run stay built (not the beacon or the towers).'
+  practisedHaulers: () => 'Projects built in an earlier run haul ' + fmtW(MC.D.perks.practisedHaulers.x, 1) + '× faster.',
+  relicsRemembered: n => n >= 2 ? 'Relics claimed in an earlier run cost half, and can all be claimed at once.' : 'Relics claimed in an earlier run cost half as much.',
+  oldFlames: n => ['Copper tools purchased last run no longer need to be repurchased.', 'Copper tools, Long Songs, and Fire-Tending upgrades purchased last run do not need to be repurchased.', 'Copper Lamps and Braziers, Copper tools, Long Songs, and Fire-Tending upgrades purchased last run do not need to be repurchased.', 'Copper Lamps and Braziers, burning buildings, Copper tools, Long Songs, and Fire-Tending upgrades purchased last run do not need to be repurchased.'][Math.min(n, 4) - 1],
+  villageSkip: () => 'The village stands as it was when you last looked out, and no longer needs to be rebuilt.',
+  headStart: () => 'Your next run begins with wood, stone, fiber, food and copper stores full.',
+  keptLights: () => 'Construction projects built in an earlier run stay built (excluding the beacon and amplifiers).'
 };
 function giftLines(pk) { return Object.keys(pk || {}).map(id => ({ id, lv: pk[id], name: giftName(id, pk[id]), desc: GIFT_TEXT[id] ? GIFT_TEXT[id](pk[id]) : MC.D.perks[id] ? MC.perkDesc(id) : '' })); }
 function rbBar(run, after, big) {   // five segments: filled for every rebirth taken, the next one glowing
@@ -57,7 +57,7 @@ function askScatter() {
   row('New heartstones from this run', '<b class="hl">+' + fmtW(w.m.hsNew || 0) + '</b>');
   row((w.m.newPlaces || 0) + ' places called back for the first time', '', 'sub');
   row('Heartstones in all', fmtW(before) + ' → <b>' + fmtW(now) + '</b>');
-  row('Memory, all light', '×' + fmtW(memMultFor(before), 2) + ' → <b class="hl">×' + fmtW(memMultFor(now), 2) + '</b>');
+  row('Memory, multiplier for all light', '×' + fmtW(memMultFor(before), 2) + ' → <b class="hl">×' + fmtW(memMultFor(now), 2) + '</b>');
   row('Heartstones a day', fmtW(perDay, 1) + (last && last.play > 0 ? ' <span class="sub">(last run: ' + fmtW(last.hsNew / (last.play / 86400), 1) + ')</span>' : ''));
   row('Free to spend on the other side', fmtW(now - perkSpent(m.perks)));
   body.appendChild(led);
@@ -88,27 +88,27 @@ function askRebirth(w, m) {
   const led = document.createElement('div'); led.className = 'ledger';
   const row = (a, b, cls) => { const x = document.createElement('span'), y = document.createElement('span'); x.innerHTML = a; y.innerHTML = b; if (cls) { x.className = cls; y.className = cls; } led.appendChild(x); led.appendChild(y); };
   row('New heartstones from this run', '<b class="hl">+' + fmtW(w.m.hsNew || 0) + '</b>');
-  row('Memory, all light', '×' + fmtW(memMultFor(before), 2) + ' → <b class="hl">×' + fmtW(memMultFor(now), 2) + '</b>');
+  row('Memory, multiplier for all light', '×' + fmtW(memMultFor(before), 2) + ' → <b class="hl">×' + fmtW(memMultFor(now), 2) + '</b>');
   row('Free to spend on the other side', fmtW(now - perkSpent(m.perks)));
   body.appendChild(led);
   const gl = giftLines(MC.D.rb.packets[m.run - 1]);
   if (gl.length) { const h = document.createElement('p'); h.className = 'rbgh'; h.textContent = 'This rebirth also brings, for every run after it:'; body.appendChild(h);
     const ul = document.createElement('ul'); ul.className = 'rbgifts'; gl.forEach(g => { const li = document.createElement('li'); li.innerHTML = '<b>' + g.name + '</b> <span>' + g.desc + '</span>'; ul.appendChild(li); }); body.appendChild(ul); }
-  else if (last) { const p2 = document.createElement('p'); p2.className = 'sub'; p2.textContent = 'Nothing resets. The land you called back stays, and from now on memory grows as new land comes back.'; body.appendChild(p2); }
+  else if (last) { const p2 = document.createElement('p'); p2.className = 'sub'; p2.textContent = MT.rbLastWarn; body.appendChild(p2); }
   $('moment-ok').textContent = last ? MT.rbLastGo : MT.rbGo; $('moment').dataset.kind = 'scatter'; $('moment').classList.remove('hidden');
   momentNo(MT.rbLater);   // r1c (owner): forced, but it can be put aside; "Ready to be reborn" brings it back
 }
 // the last rebirth and what follows: whole, then the moment combat would open
 function showWhole() {
   $('moment-h').textContent = MT.wholeH; const body = $('moment-body'); body.innerHTML = '';
-  const bar = document.createElement('div'); bar.className = 'rbwrap'; bar.innerHTML = rbBar(RB_LAST() + 1, false, true) + '<p class="rbcap">100% of yourself remembered</p>'; body.appendChild(bar);
+  const bar = document.createElement('div'); bar.className = 'rbwrap'; bar.innerHTML = rbBar(RB_LAST() + 1, false, true); body.appendChild(bar);   // owner: nothing under the bar
   [MT.whole1, MT.whole2].forEach(x => { const p = document.createElement('p'); p.textContent = x; body.appendChild(p); });
-  $('moment-ok').textContent = 'Look out over the land'; $('moment').dataset.kind = 'whole'; momentPlain(); $('moment').classList.remove('hidden');
+  $('moment-ok').textContent = 'Return'; $('moment').dataset.kind = 'whole'; momentPlain(); $('moment').classList.remove('hidden');
 }
 function showCombatMoment() {
   $('moment-h').textContent = MT.combatH; const body = $('moment-body'); body.innerHTML = '';
   [MT.combat1].forEach(x => { const p = document.createElement('p'); p.textContent = x; body.appendChild(p); });
-  if (GAME.test) { const p = document.createElement('p'); p.className = 'sub'; p.textContent = MT.combatTest; body.appendChild(p); }
+  { const p = document.createElement('p'), parts = MT.combatEnd.split('{discord}'); p.append(parts[0]); const a = document.createElement('a'); a.href = GAME.links.discord || '#'; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Discord'; p.append(a, parts[1] || ''); body.appendChild(p); }
   $('moment-ok').textContent = MT.combatOk; $('moment').dataset.kind = ''; momentPlain(); $('moment').classList.remove('hidden');
 }
 // opening the screen changes nothing: close it (or Esc) and the run goes on; the scatter happens only from its button
@@ -191,7 +191,7 @@ function renderPerks() {
   if (!MV.prest) MV.prest = { lv: Object.assign({}, meta().perks), base: Object.assign({}, meta().perks), respec: false };
   ps.classList.remove('hidden'); const m = meta(), w = W(), P = MV.prest, lv = P.lv, spent = perkSpent(lv), free = m.hsLife - spent;
   const newHs = w && w.m ? (w.m.hsNew || 0) : 0, before = m.hsLife - newHs, sel = MV.perk, RBon = MC.D.rb.on, merch = !!P.merchant, lastRb = RBon && m.run >= RB_LAST();
-  const kick = merch ? MT.merchKick : RBon ? (lastRb ? 'The last rebirth · nothing will reset' : 'Between runs · rebirth ' + m.run + ' of ' + RB_LAST()) : 'Between runs · run ' + m.run + ' is ending';
+  const kick = merch ? MT.merchKick : RBon ? (lastRb ? 'The last rebirth' : 'Between runs · rebirth ' + m.run + ' of ' + RB_LAST()) : 'Between runs · run ' + m.run + ' is ending';
   const sub = merch ? MT.merchSub : 'Run ' + m.run + ' called back ' + (w && w.m ? w.m.restored : 0) + ' places, ' + (w && w.m ? (w.m.newPlaces || 0) : 0) + ' of them new: ' + fmtW(newHs) + ' new heartstones. What you remembered before stays remembered.';
   let h = '<div class="pk-sky"></div><div class="pk-glow"></div><div class="pk"><div class="pk-top"><div><div class="pk-kicker">' + kick + '</div><h1>' + (merch ? MT.merchH : 'What will you remember?') + '</h1>' +
     '<div class="pk-sub">' + sub + '</div></div>' +
@@ -237,8 +237,8 @@ function renderPerks() {
     h += '</div></div>';
   }
   h += '</section>';
-  h += '<section class="cur locked"><div class="cur-strip"><span class="cur-name"><span class="hex" style="width:30px;height:27px;background:#26233a">' + pkSvg('lock', '#8a8399', 15) + '</span><span><span class="cz cur-t" style="color:#8f8798">Something older</span><span class="cur-s">Chained in the dark</span></span></span>' +
-    '<span class="cur-mem" style="color:#8f8798;font-style:italic;font-size:15px">Its stones are not heartstones.</span><span></span><span></span></div></section>';
+  h += '<section class="cur locked"><div class="cur-strip"><span class="cur-name"><span class="hex" style="width:30px;height:27px;background:#26233a">' + pkSvg('lock', '#8a8399', 15) + '</span><span><span class="cz cur-t" style="color:#8f8798">Something dangerous stirs</span><span class="cur-s">Your work is far from finished</span></span></span>' +
+    '<span class="cur-mem"></span><span></span><span></span></div></section>';
   const hist = m.hist.map(x => 'Run ' + x.run + ': ' + x.tiles + ' places, +' + fmtW(x.hsNew)).concat(w && w.m ? ['Run ' + m.run + ': ' + w.m.restored + ' places, +' + fmtW(newHs)] : []);
   const goTxt = merch ? MT.merchGo : RBon ? (lastRb ? 'Remember all of yourself' : 'Be reborn, and begin run ' + (m.run + 1)) : 'Scatter, and begin run ' + (m.run + 1);
   h += '<div class="pk-foot"><div class="pk-last">' + (merch ? 'His next visit: about two days after you send him on.' : hist.join(' · ') + ' · Close or press Esc to go back to run ' + m.run) + '</div><button type="button" class="pk-return" id="pk-go">' + pkSvg('flame', '#ffb35c', 19, 1.8) + goTxt + '</button></div></div>';

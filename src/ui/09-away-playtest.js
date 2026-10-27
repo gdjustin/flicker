@@ -22,7 +22,7 @@ function mapAwayReport(a, seconds, capped) {
   if ((w.m.glowN || 0) > a.glow) rows.push(['Glowstones', '+' + ((w.m.glowN || 0) - a.glow)]);
   const t = w.m.target ? tileOf(w.m.target) : null;
   if (w.m.made.light > (a.light || 0) + 1) rows.push([tx('a.row.light'), fill(MT.lightAway, { n: fmtC(w.m.made.light - (a.light || 0)) })]);
-  if (t && w.m.tiles[t.key]) rows.push([tx('a.row.now'), 'Mastering ' + shortName(t) + ': ' + mastPct(MC.mTier(w, t.key)) + '%, ' + fmtW(Math.floor(MC.mClears(w, t.key))) + ' of ' + fmtW(MC.mNeed(w, t.key)) + ' clears to the next.']); else
+  if (t && w.m.tiles[t.key]) rows.push([tx('a.row.now'), 'Attuning ' + shortName(t) + ': ' + mastPct(MC.mTier(w, t.key)) + '%, ' + fmtW(Math.floor(MC.mClears(w, t.key))) + ' of ' + fmtW(MC.mNeed(w, t.key)) + ' clears to the next.']); else
   rows.push([tx('a.row.now'), t ? 'Calling back ' + shortName(t) + ': ' + Math.floor((w.m.got[t.key] || 0) / MC.tileCost(t, w) * 100) + '%, about ' + fmtTime((MC.tileCost(t, w) - (w.m.got[t.key] || 0)) / Math.max(1e-9, MC.sentRate(w))) + ' left.' : tx('a.now.none')]);
   for (const r of WORLD.resOrder) { if (!w.seen[r]) continue; const d = (w.res[r] || 0) - (a.res[r] || 0); if (Math.abs(d) < 1) continue; rep.res.push({ name: resName(r), d, full: w.res[r] >= cap(r) - 0.5 }); }
   const now = mapAffordable(); rep.fresh = Object.keys(now).filter(k => !(a.afford || {})[k]).map(k => now[k]);

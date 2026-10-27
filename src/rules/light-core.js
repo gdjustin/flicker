@@ -288,7 +288,7 @@ var MCORE = function (VC) {
       desc: 'Plan a beacon upgrade: all light stronger.' });
   })(bn);
   // r1i (owner): once the self is whole, two inexpensive research cards open the long game's features
-  CARDS.push({ id: 'mastery', name: 'Going back', cost: { ideas: 1500 }, at: { fn: function (s) { return !!(D.rb.on && s.m.whole); } }, desc: 'Send your light back into land you have called back, to make it hold more light. Opens mastery.' });
+  CARDS.push({ id: 'mastery', name: 'Light Attunement', cost: { ideas: 1500 }, at: { fn: function (s) { return !!(D.rb.on && s.m.whole); } }, desc: 'Pour your light back into previously-recalled land. HINT: This will make you much stronger from here on out....' });   // owner, 2026-10-26
   CARDS.push({ id: 'traveler', name: 'A mysterious traveler', cost: { ideas: 1500 }, at: { fn: function (s) { return !!(D.rb.on && s.m.whole); } }, desc: 'Your settlement has attracted the attention of a traveling merchant who deals in heartstones and other rarities.' });
   CARDS.push({ id: 'cuburners', name: 'Copper burners', cost: { ideas: 600 }, sys: 'cuburner', at: { copper: true, tiles: 6 }, desc: 'Opens copper burners: copper burned straight for light. Light them when copper piles up.' });
   CARDS.push({ id: 'cbraziers', name: 'Copper braziers', cost: { ideas: 350 }, at: { copper: true, fn: function (s) { return D.cbrazier.on > 0 && (s.lv.brazier || 0) >= VC.LAD.brazier.max; } }, desc: 'Opens copper braziers: light of their own, and every copper lamp burns brighter for each one.' });

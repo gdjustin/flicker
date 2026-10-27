@@ -503,6 +503,7 @@ footer .speed button.on { color: var(--ember); text-decoration: none; }
 #moment { z-index: 41; }
 .moment-card p { margin: 0.5rem 0 0; line-height: 1.55; }
 #moment-ok { margin-top: 1.1rem; min-width: 9rem; }
+#moment p a { color: var(--ember); text-decoration: underline; text-underline-offset: 2px; }   /* r1j: the Discord link at the demo's end */
 /* v24: a feast ready to hold */
 .feastpill.ready button { position: relative; }
 .feastpill.ready button::after { content: ''; position: absolute; right: -4px; top: -4px; width: 7px; height: 7px; border-radius: 50%; background: var(--ember); box-shadow: 0 0 6px 2px var(--ember); animation: glow 1.6s ease-in-out infinite; }

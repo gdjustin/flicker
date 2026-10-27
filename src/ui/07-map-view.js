@@ -144,7 +144,7 @@ function renderMap(w) {
   const m = meta(), hsNow = m.hsLife;
   { const pl = (n, one, many) => fmtW(n) + ' ' + (n === 1 ? one : many), rd = MC.regionsDone(w), hn = w.m.hsNew || 0;   // v1r (owner): run 1 shows only what run 1 has
     $('m-world').textContent = w.m.whole
-      ? 'Whole · ' + pl(w.m.restored, 'place', 'places') + ' called back · ' + pl(rd, 'region', 'regions') + ' finished · memory ×' + fmtW(MC.memMult(w), 2) + ' (' + fmtW(hsNow) + ' heartstones)' + (MC.masteryOn(w) ? ' · mastery: new land ×' + fmtW(MC.masteryMult(w), 2) : '')
+      ? 'Whole · ' + pl(w.m.restored, 'place', 'places') + ' called back · ' + pl(rd, 'region', 'regions') + ' finished · memory ×' + fmtW(MC.memMult(w), 2) + ' (' + fmtW(hsNow) + ' heartstones)' + (MC.masteryOn(w) ? ' · attunement: new land ×' + fmtW(MC.masteryMult(w), 2) : '')
       : MC.D.rb.on && w.m.rbAt && m.run === 1 ? ''   // r1d (owner): run 1 shows no run line; it comes back from run 2
       : MC.D.rb.on && w.m.rbAt ? 'Run ' + m.run + ' of ' + MC.D.rb.last + ' · ' + pl(w.m.restored, 'place', 'places') + ' called back · rebirth at ' + w.m.rbAt + ' · ' + pl(rd, 'region', 'regions') + ' finished · memory ×' + fmtW(MC.memMult(w), 2) + (m.run > 1 ? ' · ' + pl(hn, 'new heartstone', 'new heartstones') + ' this run' : ' · ' + pl(hn, 'heartstone', 'heartstones'))
       : m.run > 1
@@ -169,7 +169,7 @@ function regionRowHtml(w, r, note) {
   let pips = ''; r.tiles.slice().sort((a, b) => { const p = xy(a), q = xy(b); return p[1] - q[1] || p[0] - q[0]; }).forEach(k => {
     pips += '<i class="pip' + (w.m.tiles[k] ? ' on' : (w.m.target === k || lu.includes(k)) ? ' nx' : '') + '"></i>'; });
   let ct = fin ? '\u2713' : n + ' of ' + N, tt = '';
-  if (MC.masteryOn(w)) { const mp = Math.round(MC.regionMastery(w, r.i) * 100); if (mp > 0 || w.m.mreg === r.i) { ct += ' \u00b7 \u2605' + mp + '%'; tt = mp + '% mastered' + (w.m.mreg === r.i ? ' (mastering now)' : ''); } }
+  if (MC.masteryOn(w)) { const mp = Math.round(MC.regionMastery(w, r.i) * 100); if (mp > 0 || w.m.mreg === r.i) { ct += ' \u00b7 \u2605' + mp + '%'; tt = mp + '% attuned' + (w.m.mreg === r.i ? ' (attuning now)' : ''); } }
   return '<div class="mreg' + (fin ? ' fin' : '') + (note ? ' noted' : '') + '"><span>' + esc(capFirst(r.name)) + '</span><span class="tally" aria-label="' + n + ' of ' + N + ' back">' + pips +
     '<span class="tct"' + (tt ? ' title="' + esc(tt) + '"' : '') + '>' + ct + '</span></span>' + (note ? '<span class="mreg-x">' + esc(note) + '</span>' : '') + '</div>';
 }
@@ -193,7 +193,7 @@ function renderPanel(w) {
     const need = MC.tileCost(t, w), got = w.m.got[k] || 0, amp = MC.ampMult(w, k), mm = MC.masteryMult(w), L = MC.lightRate(w) * amp * mm;   /* r1c fix: mastery counts in the estimate */
     line('Needs ' + fmtW(need) + ' light' + (got > 0 ? ' (' + Math.floor(got / need * 100) + '% there)' : '') + '. At your light: about ' + fmtTime((need - got) / Math.max(1e-9, L)) + '.');
     if (amp > 1) line('An amplifier strengthens light sent here ×' + fmtW(amp, 0) + '.');
-    if (mm > 1.005) line('Mastery strengthens light reaching new land ×' + fmtW(mm, 2) + '.');
+    if (mm > 1.005) line('Attunement strengthens light reaching new land ×' + fmtW(mm, 2) + '.');
     if (w.m.known && w.m.known[k]) line('Remembered ground: you have called it back before, so it needs only ' + fmtW(MC.tileCost(t, w) / MC.mClearCost(t) * 100, MC.tileCost(t, w) / MC.mClearCost(t) < 0.1 ? 1 : 0) + '% of its light.');   // r1f: no dev words
     // v1q (owner's playtest): the clearer "You will gain" block, one line each, the big ones in bold
     const m = meta(), mem = !!m.ever[k], gv = document.createElement('div'); gv.className = 'mgives';
@@ -218,17 +218,17 @@ function renderPanel(w) {
     const tr = MC.mTier(w, k), c = MC.mClears(w, k), nd = MC.mNeed(w, k), cap = MC.D.mastery.tiers, hs = MC.hsFor(t.dstep);
     const L = MC.lightRate(w) * MC.ampMult(w, k), left = Math.max(0, nd - c) * MC.mClearCost(t) / Math.max(1e-9, L);
     const mb = document.createElement('div'); mb.className = 'mmast t' + tr;
-    mb.innerHTML = '<p class="mm-h">Mastery <b>' + mastPct(tr) + '%</b>' + (tr ? ' · ' + MASTER_WORD[tr] : '') + '</p>' +
-      (tr < cap ? '<div class="mm-bar"><i style="width:' + (Math.min(1, c / nd) * 100).toFixed(1) + '%"></i></div><p class="mm-l">' + fmtW(Math.floor(c)) + ' of ' + fmtW(nd) + ' clears to ' + mastPct(tr + 1) + '% · about ' + fmtTime(left) + ' at your light</p>' : '<p class="mm-l">As far as it can be mastered for now.</p>') +
-      '<p class="mm-l sub">' + (MC.D.mastery.weight === 'hs' ? 'Each tier counts its ' + fmtW(hs) + ' heartstone' + (hs === 1 ? '' : 's') + ' toward mastery' : 'Each star anywhere adds ' + Math.round(MC.D.mastery.per * 100) + '% to light reaching new land') + ': ×' + fmtW(MC.masteryMult(w), 2) + ' now' + (tr < cap ? ', ×' + fmtW(MC.masteryMultAt(MC.masteryPoints(w) + MC.mPointsOf(t)), 2) + ' after the next' : '') + '.</p>';
+    mb.innerHTML = '<p class="mm-h">Attunement <b>' + mastPct(tr) + '%</b>' + (tr ? ' · ' + MASTER_WORD[tr] : '') + '</p>' +
+      (tr < cap ? '<div class="mm-bar"><i style="width:' + (Math.min(1, c / nd) * 100).toFixed(1) + '%"></i></div><p class="mm-l">' + fmtW(Math.floor(c)) + ' of ' + fmtW(nd) + ' clears to ' + mastPct(tr + 1) + '% · about ' + fmtTime(left) + ' at your light</p>' : '<p class="mm-l">As far as it can be attuned for now.</p>') +
+      '<p class="mm-l sub">' + (MC.D.mastery.weight === 'hs' ? 'Each tier counts its ' + fmtW(hs) + ' heartstone' + (hs === 1 ? '' : 's') + ' toward attunement' : 'Each star anywhere adds ' + Math.round(MC.D.mastery.per * 100) + '% to light reaching new land') + ': ×' + fmtW(MC.masteryMult(w), 2) + ' now' + (tr < cap ? ', ×' + fmtW(MC.masteryMultAt(MC.masteryPoints(w) + MC.mPointsOf(t)), 2) + ' after the next' : '') + '.</p>';
     lines.appendChild(mb);
   }
   const acts = document.createElement('div'); acts.className = 'mpacts'; box.appendChild(acts);
   const btn = (title, sub, on, fn, cls) => { const b = document.createElement('button'); b.className = 'act' + (cls ? ' ' + cls : ''); b.type = 'button'; b.addEventListener('click', fn); setBtn(b, title, sub, on, {}); acts.appendChild(b); return b; };
   if (lit && MC.masteryOn(w)) {
     const tr = MC.mTier(w, k), cap = MC.D.mastery.tiers, rgl = MC.regionToMaster(w, t.region);
-    if (tr < cap) btn(w.m.target === k ? 'Mastering this place' : 'Master this place', w.m.target === k ? 'All your light flows here.' : 'All your light flows here until it is ' + MASTER_WORD[cap] + ' (' + mastPct(cap) + '%), then back to new land.', w.m.target !== k || w.m.mreg != null, () => mMaster(k), w.m.target === k ? '' : 'primary');
-    if (rgl.length > 1 || (rgl.length === 1 && rgl[0] !== k)) btn(w.m.mreg === t.region ? 'Mastering ' + r.name : 'Master all of ' + r.name, w.m.mreg === t.region ? 'Your light moves from place to place in it, the least mastered first.' : Math.round(MC.regionMastery(w, t.region) * 100) + '% mastered. Your light moves from place to place in it, the least mastered first, until all of it is ' + MASTER_WORD[cap] + '.', w.m.mreg !== t.region, () => mMasterRegion(t.region));
+    if (tr < cap) btn(w.m.target === k ? 'Attuning this place' : 'Attune', w.m.target === k ? 'All your light flows here.' : 'All your light flows here until it is ' + MASTER_WORD[cap] + ' (' + mastPct(cap) + '%), then back to new land.', w.m.target !== k || w.m.mreg != null, () => mMaster(k), w.m.target === k ? '' : 'primary');
+    if (rgl.length > 1 || (rgl.length === 1 && rgl[0] !== k)) btn(w.m.mreg === t.region ? 'Attuning ' + r.name : 'Attune all of ' + r.name, w.m.mreg === t.region ? 'Your light moves from place to place in it, the least attuned first.' : Math.round(MC.regionMastery(w, t.region) * 100) + '% attuned. Your light moves from place to place in it, the least mastered first, until all of it is ' + MASTER_WORD[cap] + '.', w.m.mreg !== t.region, () => mMasterRegion(t.region));
   }
   if (!lit && reach) btn(w.m.target === k ? 'Calling this land back' : 'Send light here', w.m.target === k ? 'All your light flows here.' : 'All your light flows here' + (w.m.pool >= 1 ? ', and the ' + fmtC(w.m.pool) + ' saved up pours in at once.' : '.'), w.m.target !== k, () => mTarget(k), 'primary');
   const lmax = MC.lineupMax(w), lu = w.m.lineup || [], qi = lu.indexOf(k);
