@@ -281,9 +281,12 @@ var MCORE = function (VC) {
     { id: 'away12', name: 'Keepers of the dark', cost: { ideas: 6000 }, at: { tiles: 20 }, away: 12, desc: 'Time away counts for 12 hours.' },
   ];
   // beacon upgrades are generated so their count, strength and price are dials (owner, 2026-10-12)
-  var BEACON_NAMES = ['Raise the beacon', 'Beacon: the lens', 'Beacon: the mirror', 'Beacon: the crown', 'Beacon: the flame', 'Beacon: the second lens', 'Beacon: the spire', 'Beacon: the halo', 'Beacon: the star', 'Beacon: the sun', 'Beacon XI', 'Beacon XII'];
+  // r1l (owner, 2026-10-27): the second lens is gone; past the sun, Beacon Raising and the stage's number in Roman numerals. Strength and prices unchanged.
+  var BEACON_NAMES = ['Raise the beacon', 'Beacon: the lens', 'Beacon: the mirror', 'Beacon: the crown', 'Beacon: the flame', 'Beacon: the spire', 'Beacon: the halo', 'Beacon: the star', 'Beacon: the sun'];
+  function roman(n) { var v = [[40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']], o = ''; v.forEach(function (p) { while (n >= p[0]) { o += p[1]; n -= p[0]; } }); return o; }
+  function beaconName(n) { return BEACON_NAMES[n - 1] || 'Beacon Raising ' + roman(n); }
   for (var bn = 1; bn <= 40; bn++) (function (n) {
-    CARDS.push({ id: 'beacon' + n, name: BEACON_NAMES[n - 1] || 'Beacon ' + n, cost: { ideas: 0 }, project: 'beacon' + n, beacon: n,
+    CARDS.push({ id: 'beacon' + n, name: beaconName(n), cost: { ideas: 0 }, project: 'beacon' + n, beacon: n,
       at: { fn: function (s) { return n <= D.beaconMax && s.m.restored >= beaconGate(s, n) && (n === 1 || !!s.m.cards['beacon' + (n - 1)]); } },   // v1q (owner's playtest): the next upgrade's research shows once the last is planned, not built
       desc: 'Plan a beacon upgrade: all light stronger.' });
   })(bn);
@@ -319,7 +322,7 @@ var MCORE = function (VC) {
   var BEACON = [{ name: 'The scaffold', cost: { stones: 6000, wood: 3000 } }, { name: 'The fitting', cost: { copper: 40, fiber: 2000, stones: 3000 } }, { name: 'The setting', cost: { stones: 4500, copper: 25 } }];
   function beaconProject(n, s) {
     var m = Math.pow(D.beaconGrowth, n - 1) * (s && s.m && enabling(s) ? Math.max(0.1, 1 - D.perks.beaconWrights.x * perk(s, 'beaconWrights')) : 1), st = (n >= 3 ? BEACON : BEACON.slice(0, 2)).map(function (x) { var c = {}; for (var k in x.cost) c[k] = Math.ceil(x.cost[k] * m); return { name: x.name, cost: c }; });
-    return P('beacon' + n, BEACON_NAMES[n - 1] || 'Beacon ' + n, 'big', st, 'All light +' + Math.round(D.beaconStep * 100) + '%.');
+    return P('beacon' + n, beaconName(n), 'big', st, 'All light +' + Math.round(D.beaconStep * 100) + '%.');
   }
   // an anchor for tile key: two raw stages scaled by the tile's step; the relic goes in with a click at the end
   function anchorProject(key) {

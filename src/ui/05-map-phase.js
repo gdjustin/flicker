@@ -180,7 +180,7 @@ const MT = {   // the map's text, in one place for the text editor
   burst: 'Light burst', burstSub: 'Send {n} light here at once: {s} seconds of your light. Then the light takes {t} to gather again.', burstStore: 'Save {n} light at once: {s} seconds of your light. Then the light takes {t} to gather again.', burstAway: 'Gathering again: {t}', burstShort: 'Burn {c}: +{n} light {where}',
   seenH: 'Seen from afar', lightAway: '{n} light was made.', keepLearn: 'Learn {name} to keep it working for {h} hours.', keepLater: 'Later research will keep it working longer.',
   scholars: 'Your storytellers have turned to study: in the world beyond they are scholars now.',
-  restored: '{name} is back. People step out of it and into your light.', region: 'All of {region} is back: all light +{pct}%.', resonate: 'All of {region} is back, and its relics ring together: each one there counts {k} times, now and when claimed later.',
+  restored: '{name} is back. People step out of it and into your light.', region: 'All of {region} is back: all light +{pct}%.', resonate: 'All of {region} has returned, and its relics now ring together: each one there counts {k} times, now and when claimed later.',
   copper: 'Copper, in the hills. Someone remembers how to smelt it: a settler can work as a smelter. A chest holds the first hundred; Lined stockpiles hold more.',
   surge: '{name} is back: {what} goes {pct}% faster for {mins} minutes.',
   oldFlames: 'Old flames: these came back as you left them, already learned: {list}.', oldFlamesDone: 'Finished lines are under Show done.',   // r1g
@@ -219,9 +219,9 @@ const MT = {   // the map's text, in one place for the text editor
   merchSub: 'He wants heartstones. He knows the old gifts. What you buy works at once.', merchGo: 'Bid him farewell',
   glow: 'A glowstone is cut and set by the fire. ({n} now)',
   // v1g: the broken tower, found on the map (owner, 2026-10-13)
-  ruinGlimpse: 'Something tall stands up out of the dark here, too straight to be a hill.',
-  ruinStory: 'On the rise stands an old tower of fitted stone, its great lens cracked and its rigging rotted away. Someone built this to throw light far into the dark. You think you could repair it.',
-  ruinFound: 'Where the land comes back there is an old tower, broken but standing. Its card on the map says what it might do.',
+  ruinGlimpse: 'Something tall stands here, too straight to be a hill.',   // owner, 2026-10-27
+  ruinStory: 'On the rise stands an old tower of fitted stone, its great lens cracked and its rigging rotted. Someone built this long ago to direct light far into the void. You think you can repair it.',
+  ruinFound: 'There is an old tower, broken but standing. Investigate it on the map.',
   ruinStart: 'Haulers start clearing the rubble around the old tower.'
 };
 
