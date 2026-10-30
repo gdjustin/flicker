@@ -337,7 +337,8 @@ var MCORE = function (VC) {
   // tiered (Trimps equipment prestige): levels reset at each tier; tier t's first level costs tp^(t-1) more
   var JOB_TOOL = { woodcutter: 'axes', gatherer: 'mattocks', twiner: 'spindles', forager: 'baskets' };
   var ML = [
-    { id: 'clamp', name: 'Copper lamps', tierNames: ['Copper lamps', 'Tempered copper lamps', 'Mirrored lamps', 'Lamps IV', 'Lamps V'], spec: 'lamp', card: 'clamps' },
+    // owner, 2026-10-30: lamp tiers past Mirrored lamps are Lamps IV, V, VI and on
+    { id: 'clamp', name: 'Copper lamps', tierNames: ['Copper lamps', 'Tempered copper lamps', 'Mirrored lamps'].concat(Array.from({ length: 37 }, function (_, i) { return 'Lamps ' + roman(i + 4); })), spec: 'lamp', card: 'clamps' },
     { id: 'ctend', name: 'Copper fire-irons', tierNames: ['Copper fire-irons', 'Tempered fire-irons'], spec: 'tendTier', card: 'ctend' },
     { id: 'cbrazier', name: 'Copper brazier', card: 'cbraziers' },
     { id: 'cuburner', name: 'Copper burner', card: 'cuburners' },

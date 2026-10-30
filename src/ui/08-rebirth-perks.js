@@ -279,6 +279,7 @@ function pkBuy(id) {
 function pkUndo(id) {   // only a rank chosen on this screen can be taken back without a respec
   const P = MV.prest, lv = P.lv, n = lv[id] || 0, floor = P.respec ? 0 : (P.base[id] || 0); if (n > floor) { lv[id] = n - 1; if (!lv[id]) delete lv[id]; if (P.merchant) { merchantApply(); renderWorld(); } }
 }
+// r1o: the gift's own line (owner's text) leads its mouseover, above Now and Next
 function perkTipHTML(id) {
   const P = MV.prest, lv = P.lv, m = meta(), p = MC.D.perks[id], u = PK_UI[id] || {}, n = lv[id] || 0, max = MC.perkMax(id), done = n >= max, free = m.hsLife - perkSpent(lv), price = done ? 0 : MC.perkCost(id, n);
   const floor = P.respec ? 0 : (P.base[id] || 0), canUndo = n > floor;
@@ -289,7 +290,7 @@ function perkTipHTML(id) {
   }
   const fam = PK_FAMS.find(f => f.id === p.fam), kind = p.role === 'unlock' ? 'Opens a system' : fam && fam.kind === 'enabling' ? (p.role === 'cheaper' ? 'This phase: cheaper rungs of a ladder you climb in the run' : 'This phase: stronger rungs of something you build in the run') : 'Power from the first moment of the run';
   return '<strong>' + p.name + ' <span>' + (p.role === 'unlock' ? (n ? 'chosen' : 'one-time') : 'rank ' + n + ' of ' + max) + '</span></strong><div class="pt-k">' + kind + '</div>' + (u.story ? '<div class="pt-s">' + u.story + '</div>' : '') +
-    '<div class="pt-r"><span>Now</span><span>' + (u.fx ? u.fx(n) : MC.perkDesc(id)) + '</span>' + (done || !u.fx ? '' : '<span>Next</span><span class="pt-n">' + u.fx(n + 1) + '</span>') + '</div><div class="pt-a">' + act + '</div>';
+    '<div class="pt-r">' + (u.fx ? '<span>Does</span><span>' + MC.perkDesc(id) + '</span>' : '') + '<span>Now</span><span>' + (u.fx ? u.fx(n) : MC.perkDesc(id)) + '</span>' + (done || !u.fx ? '' : '<span>Next</span><span class="pt-n">' + u.fx(n + 1) + '</span>') + '</div><div class="pt-a">' + act + '</div>';
 }
 function giftTipHTML(code) {
   const [id, lv, n] = code.split(':'), g = giftLines({ [id]: +lv })[0];
