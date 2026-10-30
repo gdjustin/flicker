@@ -2,7 +2,7 @@
    Changelog entries follow Trimps' shape: version and date, then New content, Balance, Quality of life, Bug fixes.
    Each entry names the internal builds it covers. Newest first. Text outside the fiction: "rebirth" and "prestige" are both fine here. */
 const CHANGELOG = [
-  { version: '0.1.0', title: 'first playtest', date: 'October 19, 2026', internal: 'internal builds v1a to v1s',
+  { version: '0.1.0', title: 'first playtest', date: 'October 30, 2026', internal: 'internal builds v1a to v1s',
     sections: [
       ['New content', [
         'The prologue',

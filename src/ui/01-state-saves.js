@@ -1,6 +1,6 @@
 /* ---------- State and saves (keyed, versioned, migratable) ---------- */
 // The test build keeps the save key the owner's playtests have always used; the public build has its own.
-const SAVE_KEY = GAME.branch ? 'flicker-' + GAME.branch + '-branch-v1' + (GAME.test ? '' : '-public') : GAME.test ? 'flicker-map1-branch-v1' : 'flicker-v0';   // the rebirth branch keeps its own save
+const SAVE_KEY = GAME.test ? 'flicker-map1-branch-v1' : 'flicker-v0';   // v1t: the rebirth game is main, so it saves under main's keys again
 const GOOD_KEY = SAVE_KEY + '.good';       // v1s: an automatic copy of the last save that loaded cleanly
 const SAVE_VERSION = 1;
 const MIGRATIONS = {};                     // MIGRATIONS[n](o) turns a version-n save into version n+1; every public save must keep loading
@@ -10,13 +10,14 @@ function fresh() {
     stats: { motesEver: D(0), gathers: 0, startedAt: Date.now(), finishedAt: null },
     lastSeen: Date.now(), log: [], w: null, speed: 1 };
 }
+// v1t: milestones are kept in the save, so one reached just before a reload is still counted once (before, each load re-recorded them silently)
 function serialize(s) {
   return JSON.stringify({ v: SAVE_VERSION, motes: s.motes.toString(), form: s.form.toString(),
     formEver: s.formEver, drift: s.drift, parts: s.parts, ups: s.ups, flags: s.flags,
     stats: { motesEver: s.stats.motesEver.toString(), gathers: s.stats.gathers,
       startedAt: s.stats.startedAt, finishedAt: s.stats.finishedAt },
     w: s.w, meta: s.meta || null, view: s.view || null, inPerks: !!s.inPerks, speed: s.speed || 1, showDone: !!s.showDone, showDoneIdeas: !!s.showDoneIdeas, showDoneBuilds: !!s.showDoneBuilds, playTime: s.playTime || 0,
-    opt: s.opt || null, lastBackup: s.lastBackup || 0, lastBuild: s.lastBuild || null, counted: s.counted || null, persistAsked: !!s.persistAsked, born: s.born || 0,
+    opt: s.opt || null, lastBackup: s.lastBackup || 0, lastBuild: s.lastBuild || null, counted: s.counted || null, miles: s.miles || null, persistAsked: !!s.persistAsked, born: s.born || 0,
     lastSeen: Date.now(), log: s.log.slice(0, 30) });
 }
 function deserialize(json) {
@@ -31,7 +32,7 @@ function deserialize(json) {
     startedAt: st.startedAt || Date.now(), finishedAt: st.finishedAt || null };
   s.lastSeen = o.lastSeen || Date.now(); s.log = Array.isArray(o.log) ? o.log : [];
   s.w = o.w || null; s.meta = o.meta || null; s.view = o.view || null; s.inPerks = !!o.inPerks; s.speed = o.speed || 1; s.showDone = !!o.showDone; s.showDoneIdeas = !!o.showDoneIdeas; s.showDoneBuilds = !!o.showDoneBuilds; s.playTime = o.playTime || 0;
-  s.opt = o.opt || null; s.lastBackup = o.lastBackup || 0; s.lastBuild = o.lastBuild || null; s.counted = o.counted || null; s.persistAsked = !!o.persistAsked; s.born = o.born || 0;
+  s.opt = o.opt || null; s.lastBackup = o.lastBackup || 0; s.lastBuild = o.lastBuild || null; s.counted = o.counted || null; if (o.miles) s.miles = o.miles; s.persistAsked = !!o.persistAsked; s.born = o.born || 0;
   if (!GAME.test) { s.speed = 1; s.debug = false; }   // the public build has no playtest speed or tools
   return s;
 }
@@ -58,7 +59,7 @@ function save(quiet) {
 let LOAD_NOTE = '';
 function loadSaved() {
   let raw = null;
-  try { raw = localStorage.getItem(SAVE_KEY) || (GAME.test && !GAME.branch ? localStorage.getItem('flicker-village-rebuild-v1') : null); } catch (e) { return null; }
+  try { raw = localStorage.getItem(SAVE_KEY) || (GAME.test ? localStorage.getItem('flicker-village-rebuild-v1') : null); } catch (e) { return null; }
   if (!raw) return null;
   try { const s = deserialize(raw); try { localStorage.setItem(GOOD_KEY, JSON.stringify({ at: Date.now(), raw })); lastGood = Date.now(); } catch (e) {} return s; }
   catch (err) {

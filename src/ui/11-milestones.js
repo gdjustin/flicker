@@ -10,7 +10,8 @@ const MILES = [
   ['light75', 'Home tile 75% lit', () => S.w && S.w.pct >= 75],
   ['light100', 'Home tile fully lit', () => S.w && S.w.pct >= 100]
 ].concat(VC.PROJECTS.map(p => ['p_' + p.id, p.name + ' built', () => S.w && S.w.done[p.id] != null]), [['end', 'Village done (home lit, beacon built)', () => S.w && S.w.flags.end]], (() => { const M = () => S.w && S.w.m, run = () => (S.meta && S.meta.run) || 1, r1 = f => () => M() && run() === 1 && f(S.w.m);
-  return [['map', 'Map opened (run 1)', () => !!M() && run() === 1], ['run2', 'First scatter (run 2 begun)', () => run() >= 2], ['run3', 'Run 3 begun', () => run() >= 3], ['best100', '100 places in one run', () => S.meta && (S.meta.best || 0) >= 100]]; })());
+  return [['map', 'Map opened (run 1)', () => !!M() && run() === 1], ['run2', 'First rebirth (run 2 begun)', () => run() >= 2], ['run3', 'Run 3 begun', () => run() >= 3], ['best100', '100 places in one run', () => S.meta && (S.meta.best || 0) >= 100],
+    ['demoEnd', 'Whole: the fifth rebirth (the end of the playtest)', () => !!M() && !!M().whole]]; })());   // v1t: the count's "end" point
 function checkMiles() {
   const first = !S.miles; if (first) S.miles = {};
   for (const [k, , cond] of MILES) { if (S.miles[k]) continue; let ok = false; try { ok = !!cond(); } catch (e) {} if (ok) { S.miles[k] = first ? { t: null } : { t: S.playTime || 0, at: Date.now() }; if (!first) countMile(k); } }

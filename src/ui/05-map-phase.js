@@ -153,7 +153,7 @@ const LAND = (function () {
   return { paint, build: m => build(m) };
 })();
 
-const MC = MCORE(VC); MC.applySet(GAME.branch === 'rebirth' ? 'R1' : 'V3');   // the rebirth branch (2026-10-18): dial set R1   // v1q: Light Lab v3's dials (owner, 2026-10-16)
+const MC = MCORE(VC); MC.applySet('R1');   // v1t (2026-10-30): the rebirth game is main; dial set R1 is the game's only set (labs can still load V3)
 /*@if-test*/const MB = MBOT(MC, VBOT);/*@end-test*/
 const inMap = () => !!(S.w && S.w.m);
 const MV = { sel: null, ampDir: null, ampArm: false, perk: null, lastMap: 0, cells: null, prest: null };

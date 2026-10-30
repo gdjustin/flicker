@@ -190,7 +190,7 @@ setTimeout(checkVersion, 60000); setInterval(checkVersion, 15 * 60000);
    nothing identifies the player. Only the public build sends, only from a real web address, and only if the setting allows. */
 function countMile(k) {
   const name = ({ prologue: 'prologue', stood: 'village', map: 'map', run2: 'rebirth1', demoEnd: 'end' })[k]; if (!name) return;
-  if (GAME.test || GAME.branch || !GAME.countUrl || opt('counts') === false) return;   // a design branch never counts
+  if (GAME.test || !GAME.countUrl || opt('counts') === false) return;
   if (!(location.protocol === 'https:' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) || /claude\.ai|claudeusercontent/.test(location.hostname)) return;
   S.counted = S.counted || {}; if (S.counted[name]) return; S.counted[name] = 1;
   const born = S.born || (S.stats && S.stats.startedAt) || Date.now();
