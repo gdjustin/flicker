@@ -285,11 +285,11 @@ function perkTipHTML(id) {
   const floor = P.respec ? 0 : (P.base[id] || 0), canUndo = n > floor;
   const act = done ? (canUndo ? 'Kept. Right-click to take back the rank you chose here.' : 'Kept.') : free >= price ? 'Click to remember: ' + fmtW(price) + ' heartstones.' + (canUndo ? ' Right-click to take one back.' : '') : 'Needs ' + fmtW(price - free) + ' more heartstones.';
   if (p.kind === 'comfort') {
-    return '<strong>' + (n ? comfortLevelName(id, n) : comfortLevelName(id, 1)) + ' <span>comfort' + (max > 1 ? ', ' + n + ' of ' + max : '') + '</span></strong>' + (u.story ? '<div class="pt-s">' + u.story + '</div>' : '') +
+    return '<strong>' + (n ? comfortLevelName(id, n) : comfortLevelName(id, 1)) + ' <span>comfort' + (max > 1 ? ', ' + n + ' of ' + max : '') + '</span></strong>' + 
       '<div class="pt-r"><span>Does</span><span>' + MC.perkDesc(id) + '</span>' + (max > 1 ? '<span>Prices</span><span>' + MC.D.perks[id].costs.join(' / ') + ' heartstones</span>' : '') + '</div><div class="pt-a">' + act + '</div>';
   }
-  // r1p (owner, 2026-10-30): no kind line under the name; Does, Now and Next are enough
-  return '<strong>' + p.name + ' <span>' + (p.role === 'unlock' ? (n ? 'chosen' : 'one-time') : 'rank ' + n + ' of ' + max) + '</span></strong>' + (u.story ? '<div class="pt-s">' + u.story + '</div>' : '') +
+  // r1p/r1q (owner, 2026-10-30): no kind line and no story under the name; Does, Now and Next are enough
+  return '<strong>' + p.name + ' <span>' + (p.role === 'unlock' ? (n ? 'chosen' : 'one-time') : 'rank ' + n + ' of ' + max) + '</span></strong>' + 
     '<div class="pt-r">' + (u.fx ? '<span>Does</span><span>' + MC.perkDesc(id) + '</span>' : '') + '<span>Now</span><span>' + (u.fx ? u.fx(n) : MC.perkDesc(id)) + '</span>' + (done || !u.fx ? '' : '<span>Next</span><span class="pt-n">' + u.fx(n + 1) + '</span>') + '</div><div class="pt-a">' + act + '</div>';
 }
 function giftTipHTML(code) {
