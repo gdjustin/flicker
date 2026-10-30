@@ -162,8 +162,8 @@ var VC = (function () {
     { id: 'woodcutter', card: 'woodcutting', name: 'Woodcutter', tag: '+wood', desc: 'Cuts wood.' },
     { id: 'twiner', card: 'grasswork', name: 'Twiner', tag: '+fiber', desc: 'Twists grass into fiber.' },
     { id: 'storyteller', card: 'storytelling', name: 'Storyteller', tag: '+ideas', desc: 'Tells stories by the fire. Ideas come of it.' },
-    { id: 'firekeeper', card: 'firekeeping', name: 'Firekeeper', tag: 'tends the light', desc: 'Tends the light all day. A firekeeper needs no wood: the light feeds itself. The best light there is, for a settler.' },
-    { id: 'hauler', card: 'hauling', name: 'Hauler', tag: 'carries to projects', desc: 'Carries materials from the stores to the project being built.' }
+    { id: 'firekeeper', card: 'firekeeping', name: 'Firekeeper', tag: 'tends the light', desc: 'Tends the light.' },
+    { id: 'hauler', card: 'hauling', name: 'Hauler', tag: 'carries to projects', desc: 'Carries materials from your stores to major projects, when there is one.' }
   ];
 
   // ---------------------------------------------------------------- state

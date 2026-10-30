@@ -386,7 +386,7 @@ function tierNow(w, id) { return id === 'clamp' ? MC.mlv(w, 'clamp') * MC.D.lamp
 function tierAfter(w, id, n) { const x = JSON.parse(JSON.stringify({ lv: w.m.lv, tier: w.m.tier })), o = { m: { lv: x.lv, tier: x.tier } };
   o.m.tier[id] = MC.mtier(w, id) + 1; o.m.lv[id] = n; return id === 'clamp' ? n * MC.D.lamp.b * Math.pow(MC.D.lamp.J, o.m.tier[id] - 1) : MC.tendMult(Object.assign({}, w, o)).light; }
 function tierDesc(id) { const w = W(), l = MC.MLAD[id], nt = MC.mtier(w, id) + 1;
-  if (id === 'clamp') return 'Each ' + (l.tierNames[nt - 1] || 'lamp').toLowerCase().replace(/s$/, '') + ' makes ' + MC.D.lamp.J + '× the light of a lamp now, but you start again from one.';
+  if (id === 'clamp') return 'Each lamp of the new tier makes ' + MC.D.lamp.J + '× the light of a lamp now, but you start again from one.';
   return 'Fires burn hotter again: the line climbs past where it stops now.'; }
 function tierNote(id) { const w = W(), now = tierNow(w, id), L = MC.levelMax(w, id); let back = 0; for (let n = 1; n <= L; n++) if (tierAfter(w, id, n) >= now - 1e-9) { back = n; break; }
   const first = tierAfter(w, id, 1), top = tierAfter(w, id, L), pct = Math.round((1 - first / now) * 100);
@@ -395,7 +395,7 @@ function tierName(id) { const l = MC.MLAD[id], t = MC.mtier(W(), id); return l.t
 
 /* ---------- flows and light, in the map phase ---------- */
 // storytellers are scholars once the map opens (owner, 2026-10-12)
-const SCHOLAR = { name: 'Scholar', tag: '+ideas', desc: 'Studies what the light remembers. Ideas come of it, and at the Light Academy, light.' };
+const SCHOLAR = { name: 'Scholar', tag: '+ideas', desc: 'Studies what the light remembers. Ideas come of it.' };
 function mJobName(j, n) { return j.id === 'storyteller' ? (n === 1 ? 'scholar' : 'scholars') : jobName(j, n); }
 const scholarText = t => String(t).replace(/Storytellers/g, 'Scholars').replace(/storytellers/g, 'scholars').replace(/Storyteller/g, 'Scholar').replace(/storyteller/g, 'scholar');
 function mapFlows(r) {

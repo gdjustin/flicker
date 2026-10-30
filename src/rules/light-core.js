@@ -83,27 +83,27 @@ var MCORE = function (VC) {
     // kind: enabling (raises a ladder's ceiling or cuts its price growth), direct (power from the start), qol (catch-up)
     perks: {
       // Beacon: two lines (owner, 2026-10-12): one strengthens every upgrade, one opens upgrades sooner (the ladder is endless)
-      beaconFire: { fam: 'beacon', kind: 'enabling', role: 'buff', name: 'Beacon fire', desc: 'Each beacon upgrade +{x}% stronger a level', x: 0.1, base: 6, g: 1.9, max: 8 },
-      beaconSurvey: { fam: 'beacon', kind: 'enabling', role: 'extend', name: 'Beacon-raising', desc: 'Beacon upgrades open {cut}% sooner a level (fewer tiles apart)', cut: 0.88, base: 5, g: 1.8, max: 8 },
-      ampSites: { fam: 'map', kind: 'enabling', role: 'extend', name: 'Amplifier sites', desc: 'One more amplifier tower each run', base: 6, g: 2.5, max: 4 },
-      wideLenses: { fam: 'map', kind: 'enabling', role: 'buff', name: 'Wide lenses', desc: 'Amplifier cones grow: 3,3,1 then 5,3,3,1 then 5,5,5,3', base: 15, g: 3, max: 2 },
-      firewright: { fam: 'keepers', kind: 'enabling', role: 'cheaper', name: 'Firewright', desc: 'Fire-tending price growth {cut}% gentler a level', base: 3, g: 1.6, max: 10, cut: 0.85 },   // v1l: replaces Hearthwright (the copper hearth is gone), same prices and shape
-      keeperLore: { fam: 'keepers', kind: 'enabling', role: 'buff', name: 'Keepers\u2019 lore', desc: 'What fire-tending and long songs add to firekeepers, {x}% more a level', x: 0.25, base: 6, g: 1.8, max: 10 },
-      fireWarden: { fam: 'keepers', kind: 'enabling', role: 'extend', name: 'Fire-warden', desc: 'Fire-tending counts 5 more lit fires a level (the cap starts at 20)', base: 4, g: 1.9, max: 20 },
-      lampwright: { fam: 'lamps', kind: 'enabling', role: 'cheaper', name: 'Lampwright', desc: 'Copper lamp price growth {cut}% gentler a level', base: 3, g: 1.6, max: 10, cut: 0.85 },
-      brightGlass: { fam: 'lamps', kind: 'enabling', role: 'buff', name: 'Bright glass', desc: 'Copper lamps and braziers make {x}% more light a level (not the village\u2019s)', x: 0.25, base: 6, g: 1.8, max: 10 },
-      hotHearths: { fam: 'burners', kind: 'enabling', role: 'buff', name: 'Hot hearths', desc: 'What rebuilds add to burners, and copper burners, {x}% more a level', x: 0.25, base: 6, g: 1.8, max: 10 },
-      kilnwright: { fam: 'burners', kind: 'enabling', role: 'cheaper', name: 'Kilnwright', desc: 'Each burner rebuild\u2019s price step {cut}% gentler a level', base: 3, g: 1.6, max: 10, cut: 0.9 },
-      cuburnerUnlock: { fam: 'burners', kind: 'enabling', role: 'unlock', name: 'Copper burning', desc: 'Opens copper burners from the first tile (when the unlock dial is set to perk)', base: 10, g: 1, max: 1, sys: 'cuburner' },
-      bankedFires: { fam: 'burners', kind: 'enabling', role: 'buff', name: 'Banked fires', desc: 'Burners burn {cut}% less fuel a level for the same light, so more fires stay lit', cut: 0.9, base: 6, g: 1.8, max: 10 },
-      woodcraft: { fam: 'raw', kind: 'direct', role: 'raw', name: 'Woodcraft', desc: 'All wood made +{x}% a level (hard cap: 4 levels)', x: 0.15, base: 8, g: 2, max: 4 },
-      stonecraft: { fam: 'raw', kind: 'direct', role: 'raw', name: 'Stonecraft', desc: 'All stone made +{x}% a level (hard cap: 4 levels)', x: 0.15, base: 8, g: 2, max: 4 },
-      fibercraft: { fam: 'raw', kind: 'direct', role: 'raw', name: 'Fibercraft', desc: 'All fiber made +{x}% a level (hard cap: 4 levels)', x: 0.15, base: 8, g: 2, max: 4 },
-      relicLore: { fam: 'map', kind: 'enabling', role: 'buff', name: 'Relic lore', desc: 'Each relic\u2019s light part {x}% stronger a level (takes in Anchor lore)', x: 0.25, base: 6, g: 1.8, max: 8 },
-      scholarLore: { fam: 'raw', kind: 'direct', role: 'raw', name: 'Scholars\u2019 lore', desc: 'All research +{x}% a level', x: 0.2, base: 8, g: 2, max: 5 },
+      beaconFire: { fam: 'beacon', kind: 'enabling', role: 'buff', name: 'Beacon fire', desc: 'Each beacon upgrade is +{x}% stronger per level.', x: 0.1, base: 6, g: 1.9, max: 8 },
+      beaconSurvey: { fam: 'beacon', kind: 'enabling', role: 'extend', name: 'Beacon-raising', desc: 'Beacon upgrades unlock {cut}% faster per level.', cut: 0.88, base: 5, g: 1.8, max: 8 },
+      ampSites: { fam: 'map', kind: 'enabling', role: 'extend', name: 'Amplifier sites', desc: 'You can construct one more amplifier tower.', base: 6, g: 2.5, max: 4 },
+      wideLenses: { fam: 'map', kind: 'enabling', role: 'buff', name: 'Wide lenses', desc: 'Amplifier cones grow, covering a greater area: 3,3,1 then 5,3,3,1 then 5,5,5,3.', base: 15, g: 3, max: 2 },
+      firewright: { fam: 'keepers', kind: 'enabling', role: 'cheaper', name: 'Firewright', desc: 'Reduces fire-tending price growth -{cut}% per level.', base: 3, g: 1.6, max: 10, cut: 0.85 },   // v1l: replaces Hearthwright (the copper hearth is gone), same prices and shape
+      keeperLore: { fam: 'keepers', kind: 'enabling', role: 'buff', name: 'Keepers\u2019 lore', desc: 'Increases fire-tending and long songs\u2019 firekeepers boost +{x}% a level.', x: 0.25, base: 6, g: 1.8, max: 10 },
+      fireWarden: { fam: 'keepers', kind: 'enabling', role: 'extend', name: 'Fire-warden', desc: 'Fire-tending buffs count 5 more burner buildings per level (the cap starts at 20).', base: 4, g: 1.9, max: 20 },
+      lampwright: { fam: 'lamps', kind: 'enabling', role: 'cheaper', name: 'Lampwright', desc: 'Copper lamp price growth reduced -{cut}% per level.', base: 3, g: 1.6, max: 10, cut: 0.85 },
+      brightGlass: { fam: 'lamps', kind: 'enabling', role: 'buff', name: 'Bright glass', desc: 'Copper lamps and braziers make +{x}% more light per level (not the village\u2019s).', x: 0.25, base: 6, g: 1.8, max: 10 },
+      hotHearths: { fam: 'burners', kind: 'enabling', role: 'buff', name: 'Hot hearths', desc: 'Burner building tier buffs grow +{x}% per level.', x: 0.25, base: 6, g: 1.8, max: 10 },
+      kilnwright: { fam: 'burners', kind: 'enabling', role: 'cheaper', name: 'Kilnwright', desc: 'Each burner rebuild\u2019s price reduced -{cut}% per level.', base: 3, g: 1.6, max: 10, cut: 0.9 },
+      cuburnerUnlock: { fam: 'burners', kind: 'enabling', role: 'unlock', name: 'Copper burning', desc: 'Unlocks copper burners. You can now directly burn copper to generate light.', base: 10, g: 1, max: 1, sys: 'cuburner' },
+      bankedFires: { fam: 'burners', kind: 'enabling', role: 'buff', name: 'Banked fires', desc: 'Burners burn {cut}% less fuel per level for the same light.', cut: 0.9, base: 6, g: 1.8, max: 10 },
+      woodcraft: { fam: 'raw', kind: 'direct', role: 'raw', name: 'Woodcraft', desc: 'All wood made +{x}% per level.', x: 0.15, base: 8, g: 2, max: 4 },
+      stonecraft: { fam: 'raw', kind: 'direct', role: 'raw', name: 'Stonecraft', desc: 'All stone made +{x}% a level.', x: 0.15, base: 8, g: 2, max: 4 },
+      fibercraft: { fam: 'raw', kind: 'direct', role: 'raw', name: 'Fibercraft', desc: 'All fiber made +{x}% a level.', x: 0.15, base: 8, g: 2, max: 4 },
+      relicLore: { fam: 'map', kind: 'enabling', role: 'buff', name: 'Relic lore', desc: 'Each light relic\u2019s light bonus grows +{x}% per level.', x: 0.25, base: 6, g: 1.8, max: 8 },
+      scholarLore: { fam: 'raw', kind: 'direct', role: 'raw', name: 'Scholars\u2019 lore', desc: 'All research +{x}% per level.', x: 0.2, base: 8, g: 2, max: 5 },
       // Light Lab v2 (owner, 2026-10-16): the beacon and copper lines
-      beaconWrights: { fam: 'beacon', kind: 'enabling', role: 'cheaper', name: 'Beacon-wrights', desc: 'Beacon upgrades need {x}% less material a level (5 levels)', x: 0.1, base: 4, g: 1.8, max: 5 },
-      coppercraft: { fam: 'raw', kind: 'direct', role: 'raw', name: 'Coppercraft', desc: 'All copper made +{x}% a level; smelters burn 8% more a level, so copper gets a little cheaper (hard cap: 4 levels)', x: 0.1, use: 0.08, base: 3, g: 2, max: 4 },
+      beaconWrights: { fam: 'beacon', kind: 'enabling', role: 'cheaper', name: 'Beacon-wrights', desc: 'Beacon upgrades require -{x}% fewer materials per level.', x: 0.1, base: 4, g: 1.8, max: 5 },
+      coppercraft: { fam: 'raw', kind: 'direct', role: 'raw', name: 'Coppercraft', desc: 'All copper made +{x}% a level; smelters burn 8% more raw resources a level.', x: 0.1, use: 0.08, base: 3, g: 2, max: 4 },
       // comforts (Light Lab v2, owner 2026-10-16): cheap, not a tree, affordable by the end of phase 1. They speed up catching up
       // to the last frontier and never push it. costs: heartstones for each level in turn
       waymarks: { kind: 'comfort', tier: 'cheap', name: 'Waymarks', desc: 'When a place comes back and nothing is lined up, your light moves on to the cheapest place beside your land by itself', costs: [3] },
@@ -249,36 +249,36 @@ var MCORE = function (VC) {
   // ---------------------------------------------------------------- phase-1 cards (research), gates: tiles, prerequisites
   function vmax(id) { return function (s) { return (s.lv[id] || 0) >= VC.LAD[id].max; }; }
   var CARDS = [
-    { id: 'books', name: 'Bound books', cost: { ideas: 150 }, at: { tiles: 7 }, desc: 'Research storage keeps growing: books of bark and cord.' },
-    { id: 'cubins', name: 'Lined stockpiles', cost: { ideas: 100 }, at: { copper: true }, desc: 'Line the stockpiles with clay and bark: they hold copper too, as much copper as wood, every stockpile you have and every one after.' },
-    { id: 'away2', name: 'Long watches', cost: { ideas: 120 }, at: { tiles: 1 }, away: 2, desc: 'Time away counts for 2 hours.' },
-    { id: 'houses', name: 'Timber houses', cost: { ideas: 250 }, at: { tiles: 2 }, desc: 'Opens timber houses: room for 4 settlers each.' },
-    { id: 'smithy', name: 'The smithy', cost: { ideas: 200 }, at: { copper: true, tiles: 15 }, project: 'smithy', desc: 'Plan a smithy: smelters make half again as much copper.' },
-    { id: 'ctools', name: 'Copper tools', cost: { ideas: 300 }, at: { copper: true, fn: function (s) { return ['axes', 'mattocks', 'spindles', 'baskets'].some(function (i) { return vmax(i)(s); }); } }, desc: 'Opens copper tools for each village tool line you have finished.' },
-    { id: 'clamps', name: 'Copper lamps', cost: { ideas: 300 }, at: { copper: true, fn: vmax('lamp') }, desc: 'Opens copper lamps: the light that asks nothing.' },
-    { id: 'ctend', name: 'Copper fire-irons', cost: { ideas: 300 }, at: { copper: true, fn: vmax('keepcraft') }, desc: 'Opens copper tending: firekeepers keep brighter fires.' },
-    { id: 'away4', name: 'Night watch', cost: { ideas: 450 }, at: { tiles: 6 }, away: 4, desc: 'Time away counts for 4 hours.' },
-    { id: 'beff', name: 'Hotter burning', cost: { ideas: 500 }, at: { copper: true, tiles: 9 }, desc: 'Opens burner work: each burner burns harder and gives more light per load.' },
+    { id: 'books', name: 'Bound books', cost: { ideas: 150 }, at: { tiles: 7 }, desc: 'Unlocks books, allowing your researches to store more ideas.' },
+    { id: 'cubins', name: 'Lined stockpiles', cost: { ideas: 100 }, at: { copper: true }, desc: 'Line the stockpiles with clay and bark: they now hold copper too.' },
+    { id: 'away2', name: 'Long watches', cost: { ideas: 120 }, at: { tiles: 1 }, away: 2, desc: 'Log up to 2 hours of offline progress.' },
+    { id: 'houses', name: 'Timber houses', cost: { ideas: 250 }, at: { tiles: 2 }, desc: 'Unlocks timber houses: room for 4 settlers each.' },
+    { id: 'smithy', name: 'The smithy', cost: { ideas: 200 }, at: { copper: true, tiles: 15 }, project: 'smithy', desc: 'Plan a smithy: smelters make 50% more copper.' },
+    { id: 'ctools', name: 'Copper tools', cost: { ideas: 300 }, at: { copper: true, fn: function (s) { return ['axes', 'mattocks', 'spindles', 'baskets'].some(function (i) { return vmax(i)(s); }); } }, desc: 'Unlocks copper tools.' },
+    { id: 'clamps', name: 'Copper lamps', cost: { ideas: 300 }, at: { copper: true, fn: vmax('lamp') }, desc: 'Unlocks copper lamps: these burn brighter the more copper braziers you have.' },
+    { id: 'ctend', name: 'Copper fire-irons', cost: { ideas: 300 }, at: { copper: true, fn: vmax('keepcraft') }, desc: 'Unlocks copper tending: firekeepers will keep brighter fires.' },
+    { id: 'away4', name: 'Night watch', cost: { ideas: 450 }, at: { tiles: 6 }, away: 4, desc: 'Log up to 4 hours of offline progress.' },
+    { id: 'beff', name: 'Hotter burning', cost: { ideas: 500 }, at: { copper: true, tiles: 9 }, desc: 'Unlocks burner work: each burner burns hotter and gives more light.' },
     // the line-up ladder (owner, 2026-10-12): first tier at 2 places back, ending at 8. Waymarks moved to a QOL perk
     { id: 'harvest', name: 'Harvest feast', cost: { ideas: 300 }, at: { tiles: 5, fn: function (s) { return !!s.cards.feasting; } }, desc: 'Feasts become harvest feasts: twice the food, twice as long, and all light 55% stronger instead of 50%.' },
-    { id: 'packs', name: 'Held breath', cost: { ideas: 800 }, at: { fn: function (s) { return (s.m.bursts || 0) >= 5; } }, desc: 'You hold the light longer before you let it go: each light burst carries a minute of your light instead of 30 seconds.' },   // r1e (owner): re-themed, was Pack frames
-    { id: 'waystations', name: 'Quickened light', cost: { ideas: 2400 }, at: { fn: function (s) { return !!s.m.cards.packs && (s.m.bursts || 0) >= 25; } }, desc: 'The light answers you sooner: after a light burst it gathers again in half the time.' },   // r1e (owner): re-themed, was Waystations
-    { id: 'darkread', name: 'Reading the dark', cost: { ideas: 1600 }, at: { tiles: 19 }, scout: 1, desc: 'See one ring further into the dark: the land of places two steps from yours, and how long each would take.' },
-    { id: 'farsight', name: 'Far sight', cost: { ideas: 4000 }, at: { tiles: 21, fn: function (s) { return !!s.m.cards.darkread; } }, scout: 2, desc: 'See two rings into the dark.' },
-    { id: 'plan1', name: 'Planning', cost: { ideas: 250 }, at: { tiles: 2 }, lineup: 1, desc: 'Line up the next place to call back: when one comes back, your light moves on to it by itself.' },
-    { id: 'plan2', name: 'Longer plans', cost: { ideas: 1000 }, at: { tiles: 8, fn: function (s) { return !!s.m.cards.plan1; } }, lineup: 3, desc: 'Line up 3 places.' },
-    { id: 'plan3', name: 'Charted routes', cost: { ideas: 3500 }, at: { tiles: 18, fn: function (s) { return !!s.m.cards.plan2; } }, lineup: 8, desc: 'Line up 8 places.' },
+    { id: 'packs', name: 'Held breath', cost: { ideas: 800 }, at: { fn: function (s) { return (s.m.bursts || 0) >= 5; } }, desc: 'You hold the light longer before you let it go: double the power of your Light Burst.' },   // r1e (owner): re-themed, was Pack frames
+    { id: 'waystations', name: 'Quickened light', cost: { ideas: 2400 }, at: { fn: function (s) { return !!s.m.cards.packs && (s.m.bursts || 0) >= 25; } }, desc: 'The light answers you sooner: Reduce the Light Burst cooldown by 50%.' },   // r1e (owner): re-themed, was Waystations
+    { id: 'darkread', name: 'Sensing the void', cost: { ideas: 1600 }, at: { tiles: 19 }, scout: 1, desc: 'You can sense unrestored lands from even further away.' },
+    { id: 'farsight', name: 'Far sight', cost: { ideas: 4000 }, at: { tiles: 21, fn: function (s) { return !!s.m.cards.darkread; } }, scout: 2, desc: 'You can sense unrestored lands from even further away.' },
+    { id: 'plan1', name: 'Planning', cost: { ideas: 250 }, at: { tiles: 2 }, lineup: 1, desc: 'When your light restores a land, it will now automatically move to the next.' },
+    { id: 'plan2', name: 'Longer plans', cost: { ideas: 1000 }, at: { tiles: 8, fn: function (s) { return !!s.m.cards.plan1; } }, lineup: 3, desc: 'Line up 3 total lands for your light to fill next.' },
+    { id: 'plan3', name: 'Charted routes', cost: { ideas: 3500 }, at: { tiles: 18, fn: function (s) { return !!s.m.cards.plan2; } }, lineup: 8, desc: 'Line up 8 total lands for your light to fill next.' },
     // v1g: the broken tower is found on the map, not learned: its tile's card offers the repair (owner, 2026-10-13)
-    { id: 'bellows', name: 'The bellows house', cost: { ideas: 700 }, at: { proj: 'smithy', tiles: 24 }, project: 'bellows', desc: 'Plan a bellows house: smelters make half again as much copper.' },
-    { id: 'longsongs', name: 'Long songs', cost: { ideas: 900 }, at: { fn: vmax('songs') }, desc: 'Opens long songs: songs for the firekeepers on the long watch. Each makes firekeepers stronger; ten in all.' },
-    { id: 'away6', name: 'Watch fires', cost: { ideas: 1000 }, at: { tiles: 11 }, away: 6, desc: 'Time away counts for 6 hours.' },
+    { id: 'bellows', name: 'The bellows house', cost: { ideas: 700 }, at: { proj: 'smithy', tiles: 24 }, project: 'bellows', desc: 'Plan a bellows house: smelters make 50% more copper, again.' },
+    { id: 'longsongs', name: 'Long songs', cost: { ideas: 900 }, at: { fn: vmax('songs') }, desc: 'Opens long songs: songs for the firekeepers on the long watch. Each makes firekeepers stronger.' },
+    { id: 'away6', name: 'Watch fires', cost: { ideas: 1000 }, at: { tiles: 11 }, away: 6, desc: 'Log up to 6 hours of offline progress.' },
     // Overflow removed in v1g (owner, 2026-10-13): to revisit or redesign later. Its rule stays in the tick behind D.overflowOn (0)
-    { id: 'amps', name: 'Amplifier towers', cost: { ideas: 1400 }, at: { tiles: 10, fn: function (s) { return !!s.m.done.repair || !!(s.m.builtBefore && s.m.builtBefore.repair); } }, desc: 'Build towers of your own on land you have called back, aimed outward.' },   // r1f (owner): from run 2 the old tower need not be mended first
-    { id: 'away8', name: 'Long night', cost: { ideas: 2200 }, at: { tiles: 14 }, away: 8, desc: 'Time away counts for 8 hours.' },
-    { id: 'autostore', name: 'Stewards', cost: { ideas: 2500 }, at: { tiles: 13 }, desc: 'When wood, stone, fiber or copper fills its store, your stewards buy the next stockpile if you can afford it, away too.' },
-    { id: 'orefloor', name: 'Ore floor', cost: { ideas: 2600 }, at: { proj: 'bellows', tiles: 32 }, project: 'orefloor', desc: 'Plan an ore floor: smelters make half again as much copper.' },
+    { id: 'amps', name: 'Amplifier towers', cost: { ideas: 1400 }, at: { tiles: 10, fn: function (s) { return !!s.m.done.repair || !!(s.m.builtBefore && s.m.builtBefore.repair); } }, desc: 'Build towers on the map to amplify your light.' },   // r1f (owner): from run 2 the old tower need not be mended first
+    { id: 'away8', name: 'Long night', cost: { ideas: 2200 }, at: { tiles: 14 }, away: 8, desc: 'Log up to 8 hours of offline progress.' },
+    { id: 'autostore', name: 'Stewards', cost: { ideas: 2500 }, at: { tiles: 13 }, desc: 'When storage space fills, your Stewards automatically purchase another Stockpile, if you can afford it.' },
+    { id: 'orefloor', name: 'Ore floor', cost: { ideas: 2600 }, at: { proj: 'bellows', tiles: 32 }, project: 'orefloor', desc: 'Plan an ore floor: smelters make 50% more copper.' },
     { id: 'hall', name: 'The great hall', cost: { ideas: 1800 }, at: { pop: 38 }, project: 'hall', desc: 'Plan a great hall: room for ten more settlers.' },
-    { id: 'away12', name: 'Keepers of the dark', cost: { ideas: 6000 }, at: { tiles: 20 }, away: 12, desc: 'Time away counts for 12 hours.' },
+    { id: 'away12', name: 'Keepers of the void', cost: { ideas: 6000 }, at: { tiles: 20 }, away: 12, desc: 'Log up to 12 hours of offline progress.' },
   ];
   // beacon upgrades are generated so their count, strength and price are dials (owner, 2026-10-12)
   // r1l (owner, 2026-10-27): the second lens is gone; past the sun, Beacon Raising and the stage's number in Roman numerals. Strength and prices unchanged.
@@ -293,8 +293,8 @@ var MCORE = function (VC) {
   // r1i (owner): once the self is whole, two inexpensive research cards open the long game's features
   CARDS.push({ id: 'mastery', name: 'Light Attunement', cost: { ideas: 1500 }, at: { fn: function (s) { return !!(D.rb.on && s.m.whole); } }, desc: 'Pour your light back into previously-recalled land. HINT: This will make you much stronger from here on out....' });   // owner, 2026-10-26
   CARDS.push({ id: 'traveler', name: 'A mysterious traveler', cost: { ideas: 1500 }, at: { fn: function (s) { return !!(D.rb.on && s.m.whole); } }, desc: 'Your settlement has attracted the attention of a traveling merchant who deals in heartstones and other rarities.' });
-  CARDS.push({ id: 'cuburners', name: 'Copper burners', cost: { ideas: 600 }, sys: 'cuburner', at: { copper: true, tiles: 6 }, desc: 'Opens copper burners: copper burned straight for light. Light them when copper piles up.' });
-  CARDS.push({ id: 'cbraziers', name: 'Copper braziers', cost: { ideas: 350 }, at: { copper: true, fn: function (s) { return D.cbrazier.on > 0 && (s.lv.brazier || 0) >= VC.LAD.brazier.max; } }, desc: 'Opens copper braziers: light of their own, and every copper lamp burns brighter for each one.' });
+  CARDS.push({ id: 'cuburners', name: 'Copper burners', cost: { ideas: 600 }, sys: 'cuburner', at: { copper: true, tiles: 6 }, desc: 'Opens copper burners: copper burned for light.' });
+  CARDS.push({ id: 'cbraziers', name: 'Copper braziers', cost: { ideas: 350 }, at: { copper: true, fn: function (s) { return D.cbrazier.on > 0 && (s.lv.brazier || 0) >= VC.LAD.brazier.max; } }, desc: 'Unlocks copper braziers: another way to generate light.' });
   // r1f (owner): a chain of research shows one step at a time; the next appears once the one before is learned
   [['away2', 'away4', 'away6', 'away8', 'away12']].forEach(function (ch) { ch.forEach(function (id, i) { if (!i) return; var c = CARD0(id), prev = ch[i - 1], f0 = c.at.fn;
     c.at = Object.assign({}, c.at, { fn: function (s) { return !!s.m.cards[prev] && (!f0 || f0(s)); } }); }); });
