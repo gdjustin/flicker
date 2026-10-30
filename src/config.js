@@ -4,7 +4,7 @@
 const GAME = {
   title: 'A Glimmer in the Dark',   // the game's name (owner, 2026-10-18; was the working title A Flicker in the Dark)
   version: '0.1.0',              // the public number players see
-  internal: 'v1t',               // the internal build name: the test footer (v1t, 2026-10-30: the rebirth branch, v1s-r1 to r1q, became main)
+  internal: 'v1u',               // the internal build name: the test footer (v1t, 2026-10-30: the rebirth branch, v1s-r1 to r1q, became main)
   test: /*@test*/true,
   links: {
     feedback: '',                // the Google Form (owner sets it up); empty hides the footer link in the public build

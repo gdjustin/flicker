@@ -1,5 +1,5 @@
 /* ---------- Rules ---------- */
-const clickPower = () => (S.parts.hand ? 2 : 1) * (S.ups.grasp ? 3 : 1) * memoryMult();   // v24e: memory speeds the prologue too
+const clickPower = () => (S.parts.hand ? 3 : 1) * (S.ups.grasp ? 3 : 1) * memoryMult();   // v24e: memory speeds the prologue too
 const driftMult = () => (S.ups.still ? 2 : 1) * (S.ups.focus ? 2 : 1) * (S.parts.heart ? 1.5 : 1) *
   (S.ups.gravity ? 1 + 0.04 * S.formEver : 1);
 const rate = () => S.drift * CONTENT.drift.prod * driftMult() * memoryMult();

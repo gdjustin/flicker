@@ -19,10 +19,11 @@ const D = x => new Big(x);
 /* ---------- Content: everything the prologue contains, as data ---------- */
 const CONTENT = {
   gather: { base: 1 },
-  drift: { costBase: 8, costRate: 1.17, prod: 0.2 },
-  cohere: { costBase: 12, costRate: 1.13 },
+  // v1u (owner, 2026-10-30): the prologue about 28-30% faster: Draw in 0.25 (was 0.2), Press starts at 10 (was 12), the hand gathers 3 (was 2)
+  drift: { costBase: 8, costRate: 1.17, prod: 0.25 },
+  cohere: { costBase: 10, costRate: 1.13 },
   parts: [
-    { id: 'hand', name: 'A hand', cost: 3, desc: 'Each gather brings 2 motes instead of 1.',
+    { id: 'hand', name: 'A hand', cost: 3, desc: 'Each gather brings 3 motes instead of 1.',
       msg: 'A hand. It opens. It closes. It is yours.' },
     { id: 'eyes', name: 'Eyes', cost: 6, desc: 'See exact amounts and rates.',
       msg: 'Eyes. The dark was never empty. It was full of numbers.' },
