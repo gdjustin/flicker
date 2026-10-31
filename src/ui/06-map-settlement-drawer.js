@@ -242,13 +242,13 @@ function renderMapDrawer(w) {
   if (pe.dataset.s !== pt + rest) { pe.dataset.s = pt + rest; pe.textContent = ''; const bb = document.createElement('b'); bb.textContent = pt; pe.append(bb, rest); }
   const lu = (w.m.lineup || []).filter(k => !w.m.tiles[k]), then = lu.length ? fill(MT.thenLine, { list: lu.slice(0, 3).map(k => shortName(tileOf(k))).join(', ') + (lu.length > 3 ? ' and ' + (lu.length - 3) + ' more' : '') }) : MC.perk(w, 'waymarks') ? MT.thenOn : '';
   $('vl-left').textContent = t ? 'about ' + fmtTime((need - got) / Math.max(1e-9, L * amp)) + ' left' + then : (pool >= pcap - 1 ? MT.poolFull : MT.poolLeft);
-  $('vl-bar').style.width = ((t ? f : Math.min(1, pool / pcap)) * 100).toFixed(2) + '%'; $('vl-bar').parentNode.classList.toggle('pooling', !t);
+  $('vl-bar').style.width = ((t ? f : Math.min(1, pool / pcap)) * 100).toFixed(2) + '%'; $('vl-bar').parentNode.classList.toggle('pooling', !t); combatStrip(w, L);
   // stoke sends a burst to the tile
   const va = vs.querySelector('.st-act'); { const om = $('vl-map'); if (om) om.remove(); }
   { const rb = $('vl-rebirth'); if (w.m.rbReady) setBtn(ensureBtn(va, 'vl-rebirth', askScatter, 'primary'), MT.rbBtn, rbPct(w.m.run, true) + '% of yourself, after it', true, {}); else if (rb) rb.remove(); } if (w.cards.stoking) { const sb = ensureBtn(va, 'm-stoke', mBurst, 'slim');
     const bc = MC.burstCost(w), bcs = Object.keys(bc).map(k => fmtW(bc[k]) + ' ' + resName(k).toLowerCase()).join(', ');
     if (w.m.trip > 0) setBtn(sb, MT.burst, fill(MT.burstAway, { t: fmtTime(w.m.trip) }), false, {});
-    else setBtn(sb, MT.burst, fill(MT.burstShort, { c: bcs, n: fmtC(MC.burstLight(w)), where: t ? 'here' : 'saved' }), VC.canPay(w, bc), {});
+    else setBtn(sb, MT.burst, fill(MT.burstShort, { c: bcs, n: fmtC(MC.burstLight(w)), where: t ? 'here' : 'saved' }), VC.canPay(w, bc) && !w.m.hold, {});
     sb.title = fill(t ? MT.burstSub : MT.burstStore, { n: fmtC(MC.burstLight(w)), s: (w.m.cards.packs ? 60 : 30), t: fmtTime(MC.burstTrip(w)) }) + ' Costs ' + bcs + '.'; }
   // the project being built
   if (!w.m.proj && !w.m.awaitClick) { ps.classList.add('hidden'); $('vp-act').innerHTML = ''; return; }

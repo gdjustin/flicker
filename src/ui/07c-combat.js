@@ -14,9 +14,13 @@ const CPU = 100;   // combat power is shown ×100 (the rules' first companies ar
 function fmtCP(v) { const x = v * CPU; return x < 10 ? fmtW(Math.floor(x * 10) / 10, 1) : fmtC(x); }
 const CT = {   // combat's text, in one place for the text editor (placeholders the owner will rewrite)
   tab: 'Defense',
-  openH: 'Something has seen your light', open1: 'Smoke rises past the ford. Not everything you called back is friendly, and not all of this land is yours.',
-  open2: 'In the rubble your people find two lumps of iron. Enough to open a mine. Enough to begin.', open3: 'The Defense tab is open: start with the mine.',
-  mineMsg: 'The iron mine is dug. Put settlers to work in it (Settlement).', capMsg: 'Your first defenders muster. The battle front is open on the Defense tab, and the map shows what holds each place.', openOk: 'To the defense',
+  // the scripted opening (owner, 2026-10-31; placeholder words): whole → the land wakes → the wolf pack, held off with light → the dormant mine
+  wakeH: 'Something has seen your light', wake1: 'As more of the land comes back, it wakes, and not all of it kindly. Things that slept in the dark are stirring again.',
+  wake2: 'A wolf pack has come down on your settlement. Turn your light on them and drive them off.', wakeGo: 'Turn your light on them',
+  threatLab: 'Your light holds them back', threatName: 'Repelling the wolf pack', threatLeft: 'about {t} left', threatDone: 'The wolf pack is driven off.',
+  openH: 'The pack is driven off', open1: 'Where the wolves made their den, the fighting has torn open an old iron mine, long dormant, its mouth choked with rubble.',
+  open2: 'Loose iron lies about the entrance: two lumps, just enough to get the mine working again.', open3: 'The Defense tab is open: start with the mine.',
+  mineMsg: 'The old iron mine is open again. Put settlers to work in it (Settlement).', capMsg: 'Your first defenders muster. The battle front is open on the Defense tab, and the map shows what holds each place.', openOk: 'To the defense',
   barCP: 'Combat power', barRes: 'Reserves', resolveIs: 'Resolve: ready in {t}', resolveRate: '+{n} combat power an hour',
   iron: 'Iron', ironRate: '+{n}/h', noMiners: 'no miners',
   attack: 'Attack', attackSub: 'Commit {n} combat power against their {d}.', leadH: 'Lead the charge', leadSub: 'You join this battle yourself: strength ×{x}. Again in {t}.',
@@ -36,7 +40,7 @@ const CT = {   // combat's text, in one place for the text editor (placeholders 
   againMsg: 'Your defense musters anew: run {run}. Two lumps of iron wait at the old mine.'
 };
 const LINE = {   // the combat lines on the Defense tab: name, what it does (fn of w, C, life)
-  mine: ['Deepen the iron mine', (w, C, L) => !C.lv.mine ? 'Dig a mine for the iron. Room for ' + CB.P.mine.slots0 + ' miners, ' + fmtW(CB.ironPerMinerH(C), 2) + ' iron an hour each.' : 'Room for one more miner and each miner digs ×' + CB.P.mine.depthX + ' more. Now ' + CB.mineSlots(C) + ' places, ' + fmtW(CB.ironPerMinerH(C), 2) + ' iron an hour a miner.', 'building'],
+  mine: ['Deepen the iron mine', (w, C, L) => !C.lv.mine ? 'Clear the dormant mine and put it to work. Room for ' + CB.P.mine.slots0 + ' miners, ' + fmtW(CB.ironPerMinerH(C), 2) + ' iron an hour each.' : 'Room for one more miner and each miner digs ×' + CB.P.mine.depthX + ' more. Now ' + CB.mineSlots(C) + ' places, ' + fmtW(CB.ironPerMinerH(C), 2) + ' iron an hour a miner.', 'building'],
   barracks: ['Barracks', (w, C, L) => 'Recruit ' + (C.lv.barracks ? 'another company' : 'your first company') + ': combat power ×' + fmtW(CB.recruitAt(C.lv.barracks + 1) / CB.recruitAt(C.lv.barracks), 2) + (C.lv.barracks ? ' (×' + fmtW(CB.recruitF(C), 2) + ' now).' : '.'), 'building'],
   armory: ['Armory', (w, C, L) => { const A = CB.P.armory, ap = CB.armPrice(C, L); return ap.up ? 'Forge a new tier: each level of the next tier arms ×' + A.J + ' better. The Forge wing takes wood and stone.' : 'Arm your companies better: tier ' + C.tier.armory + ', level ' + C.lv.armory + ' of ' + CB.armL(L) + ' (×' + fmtW(CB.armF(C), 2) + ' combat power now).'; }, 'building'],
   drill: ['Drill yards', (w, C, L) => 'Room for ' + CB.P.drill.slotsLv + ' more drillmasters. Drillmasters cut the time your bar takes to refill (now ' + fmtTime(CB.fillH(C, L) * 3600) + ', never under ' + CB.P.drill.floorH + ' h).', 'building'],
@@ -65,11 +69,23 @@ function cLightApply(w) {
 function combatUnlocked(w) { return CB.P.unlock.whole ? !!(w.m.whole || meta().whole) : w.m.restored >= CB.P.unlock.places; }
 function combatOpen(w, show) {
   const L = cLife(); if (L.opened) return; L.opened = true; L.openDay = (S.playTime || 0) / 86400; w.c = CB.newRun(L, (L.runs || 0) + 1); wsay(CT.openH + '. ' + CT.open2);
-  if (show) showCombatOpen();
+  if (show) showCombatOpen(); else L.openPending = true;
 }
-function combatTick(dt, away) {
+// the land wakes (after the whole moment): the wolf pack comes, and all light goes to holding it off (the rules' hold)
+function combatWake(w) {
+  const L = cLife(); if (L.opened || !w || !w.m) return;
+  if (!L.threat) { L.threat = 'on'; MC.startHold(w, CB.P.threat); wsay(CT.wake2); }
+  $('moment-h').textContent = CT.wakeH; const body = $('moment-body'); body.innerHTML = '';
+  [CT.wake1, CT.wake2].forEach(t => { const p = document.createElement('p'); p.textContent = t; body.appendChild(p); });
+  $('moment-ok').textContent = CT.wakeGo; $('moment').dataset.kind = 'wake'; momentPlain(); $('moment').classList.remove('hidden');
+}
+function combatTick(dt, away, ev) {
   const w = W(); if (!w || !w.m) return; const L = cLife();
-  if (!L.opened && combatUnlocked(w) && !away && $('moment').classList.contains('hidden') && !S.inPerks) combatOpen(w, true);   // whole: the moment opens it (or this, for a save already whole)
+  (ev || []).forEach(e => { if (e[0] === 'holdDone' && e[1] === CB.P.threat.id) { L.threat = 'done'; sys(CT.threatDone); combatOpen(w, !away); } });
+  const calm = !away && $('moment').classList.contains('hidden') && !S.inPerks;
+  if (!L.opened && combatUnlocked(w) && calm && L.threat !== 'on') combatWake(w);   // a save already whole (the whole moment leads here itself)
+  if (L.threat === 'on' && !w.m.hold && !L.opened) MC.startHold(w, CB.P.threat);   // a save from before the hold
+  if (L.openPending && calm) { L.openPending = false; showCombatOpen(); }
   if (L.opened && !w.c) w.c = CB.newRun(L, (L.runs || 0) + 1);
   const C = cRun(w); if (!C) return;
   if (C.capOpen == null) C.capOpen = CB.cap(C, L) > 0;   // saves from v1s-c1: the cap was already open
@@ -92,6 +108,14 @@ function showCombatOpen() {
   $('moment-h').textContent = CT.openH; const body = $('moment-body'); body.innerHTML = '';
   [CT.open1, CT.open2, CT.open3].forEach(t => { const p = document.createElement('p'); p.textContent = t; body.appendChild(p); });
   $('moment-ok').textContent = CT.openOk; $('moment').dataset.kind = 'combat'; $('moment').classList.remove('hidden');
+}
+
+/* ---------- the light strip while the wolf pack is held off: a red bar (owner) ---------- */
+function combatStrip(w, L) {
+  const H = w.m.hold, bar = $('vl-bar').parentNode; bar.classList.toggle('threat', !!H); $('w-vstrip').classList.toggle('threat', !!H); if (!H) return;
+  $('vl-lab').textContent = CT.threatLab; $('vl-name').textContent = CT.threatName; $('vl-rate').textContent = tx('w.lrate', { n: fmtW(L, L < 100 ? 2 : 0) });
+  const pe = $('vl-pct'); pe.dataset.s = ''; pe.textContent = ''; const bb = document.createElement('b'); bb.textContent = Math.floor(H.p * 100) + '%'; pe.append(bb, ' driven back');
+  $('vl-left').textContent = fill2(CT.threatLeft, { t: fmtTime((1 - H.p) / Math.max(1e-9, MC.holdRate(w))) }); $('vl-bar').style.width = (H.p * 100).toFixed(2) + '%';
 }
 
 /* ---------- the bars under the resources ---------- */
@@ -239,7 +263,7 @@ function renderDefenseTab(w) {
     if (!o) { if ($(bid)) $(bid).remove(); return; }
     const gid = 'cd-g-' + LINE[id][2]; let g = $(gid); if (!g) { g = document.createElement('div'); g.className = 'bgroup'; g.id = gid; g.innerHTML = '<p class="bgh">' + groups[LINE[id][2]] + '</p><div class="acts"></div>'; make.appendChild(g); }
     const b = ensureBtn(g.querySelector('.acts'), bid, () => cBuy(id)), lv = id === 'armory' ? (C.lv.armory || C.tier.armory > 1 ? C.tier.armory + '/' + C.lv.armory : 0) : C.lv[id];
-    setBtn(b, (id === 'mine' && !C.lv.mine ? 'Iron mine' : LINE[id][0]) + (lv ? ' (' + lv + ')' : ''), LINE[id][1](w, C, L), CB.canBuy(w, C, L, id), { kind: LINE[id][2], cost: o.cost });
+    setBtn(b, (id === 'mine' && !C.lv.mine ? 'Reopen the iron mine' : LINE[id][0]) + (lv ? ' (' + lv + ')' : ''), LINE[id][1](w, C, L), CB.canBuy(w, C, L, id), { kind: LINE[id][2], cost: o.cost });
     hoverTip(b, () => { const ww = W(), CC = cRun(ww); if (!CC) return; const t = cWhatAdds(ww, CC, cLife(), id); if (t) showTextTip(b, 'If you build this', t); });
     if (S.view === 'defense') { L.seenLine = L.seenLine || {}; L.seenLine[id] = true; }
     let d = b.querySelector('.ndot'); const nw = cNew(id); if (nw && !d) { d = document.createElement('i'); d.className = 'ndot'; d.setAttribute('aria-hidden', 'true'); b.appendChild(d); } else if (!nw && d) d.remove(); });

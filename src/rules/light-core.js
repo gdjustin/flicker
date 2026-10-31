@@ -662,6 +662,8 @@ var MCORE = function (VC) {
   function bPhase(s, b) { var e = effMult(s, b).light, hh = famBuff(s, 'hotHearths'); return 1 + D.src.burners * hh * (e / hh - 1); }
   function lightRate(s) { return lightParts(s).reduce(function (a, p) { return a + p[1]; }, 0); }
   // the parts that come from the village tail, for the lab: what the village lines alone would give
+  function startHold(s, spec) { if (!s.m || s.m.hold) return false; s.m.hold = { id: spec.id, p: 0, C: spec.C, minS: spec.minS, maxS: spec.maxS }; return true; }
+  function holdRate(s) { var H = s.m && s.m.hold; return H ? Math.min(1 / H.minS, Math.max(1 / H.maxS, lightRate(s) / H.C)) : 0; }
   function sentRate(s) { return s.m.target ? lightRate(s) * ampMult(s, s.m.target) * (s.m.tiles[s.m.target] ? 1 : masteryMult(s)) : 0; }
 
   // ---------------------------------------------------------------- projects
@@ -742,7 +744,7 @@ var MCORE = function (VC) {
   function burstLight(s) { return D.burst.secs * (s.m.cards.packs ? 2 : 1) * lightRate(s) * (s.m.target ? ampMult(s, s.m.target) : 1); }
   function burstCost(s) { return { wood: D.burst.wood, food: Math.ceil(D.burst.food * Math.pow(D.burst.foodG, burstStep(s))) }; }
   function burstTrip(s) { return Math.round((D.burst.tripBase + D.burst.tripStep * burstStep(s)) * (s.m.cards.waystations ? 0.5 : 1)); }
-  function burstReady(s) { return !!s.cards.stoking && !(s.m.trip > 0); }
+  function burstReady(s) { return !!s.cards.stoking && !(s.m.trip > 0) && !(s.m && s.m.hold); }   // no burst while a hold takes all light
   function burst(s) {
     if (!burstReady(s)) return 0; var c = burstCost(s); if (!VC.canPay(s, c)) return 0;
     var L = burstLight(s), trip = burstTrip(s); for (var k in c) s.res[k] -= c[k]; spend(s, 'burst', c);
@@ -953,7 +955,11 @@ var MCORE = function (VC) {
     if (s.m.trip > 0) s.m.trip = Math.max(0, s.m.trip - dt);
     // light into the target tile
     var L = lightRate(s), sent = 0;
-    if (s.m.target && s.m.tiles[s.m.target]) {   // the rebirth branch: mastery, light into a place already back
+    // a hold (2026-10-31, the combat branch's scripted threat): while one stands, all light goes into it, none to places or the store.
+    // It fills at L / C a second, never faster than minS seconds or slower than maxS in all; nothing in phase 1 sets one.
+    if (s.m.hold) { var HD = s.m.hold, hr0 = Math.min(1 / HD.minS, Math.max(1 / HD.maxS, L / HD.C)); HD.p = Math.min(1, (HD.p || 0) + hr0 * dt); sent = L * dt;
+      if (HD.p >= 1) { ev.push(['holdDone', HD.id]); s.m.hold = null; } }
+    else if (s.m.target && s.m.tiles[s.m.target]) {   // the rebirth branch: mastery, light into a place already back
       var mt = MAP.tiles[MAP.idx[s.m.target]], mc0 = mClears(s, mt.key), tr0 = mTierOf(mc0);
       if (!masteryOn(s) || tr0 >= D.mastery.tiers) { s.m.target = null; afterMastery(s, ev); }
       else {
@@ -1135,7 +1141,7 @@ var MCORE = function (VC) {
   'perks.oldFlames.lines': [['ct_axes', 'ct_mattocks', 'ct_spindles', 'ct_baskets'], ['ctend', 'longsong'], ['clamp', 'cbrazier'], ['eff_firepit', 'eff_limekiln', 'eff_rushlight', 'cuburner', 'eff_cuburner']] });
   function applySet(name) { var o = DIAL_SETS[name] || name; for (var p in o) { var ks = p.split('.'), last = ks.pop(); var host = ks.reduce(function (a, k) { return a && a[k]; }, D); if (host) host[last] = o[p]; } if (VC.LAD && VC.LAD.hearth) { VC.LAD.hearth.max = D.vHearthMax; VC.LAD.hearth.desc = 'All light {pct}% stronger. ' + D.vHearthMax + ' levels in all.'; } refreshCards(); applyDeal(); }
   return {
-    giftsFor: giftsFor, prPerks: prPerks, rbAt: rbAt, wholeShare: wholeShare, becomeWhole: becomeWhole, perkSpentOf: perkSpentOf,
+    startHold: startHold, holdRate: holdRate, giftsFor: giftsFor, prPerks: prPerks, rbAt: rbAt, wholeShare: wholeShare, becomeWhole: becomeWhole, perkSpentOf: perkSpentOf,
     masteryOn: masteryOn, mPointsOf: mPointsOf, masteryMultAt: masteryMultAt, mClears: mClears, mTier: mTier, mTierOf: mTierOf, mTierAt: mTierAt, villageStand: villageStand, doorShelters: doorShelters, mNeed: mNeed, mClearCost: mClearCost, masteryPoints: masteryPoints, masteryMult: masteryMult,
     canMaster: canMaster, regionToMaster: regionToMaster, regionMastery: regionMastery, masterPlace: masterPlace, masterRegion: masterRegion,
     merchantArrive: merchantArrive, merchantHere: merchantHere, merchantLeave: merchantLeave, buyPerkNow: buyPerkNow,

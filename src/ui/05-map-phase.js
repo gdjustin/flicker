@@ -203,7 +203,7 @@ const MT = {   // the map's text, in one place for the text editor
   rbGo: 'Choose what you remember', rbLastGo: 'The final rebirth', rbLater: 'Not yet',
   rbWait: 'The land beyond waits until you are reborn.', rbBtn: 'Be reborn',
   rbPill: 'Next milestone: {n} of {at} lands restored', rbPillReady: 'Ready to be reborn',   // owner, 2026-10-18
-  wholeH: 'Whole', whole1: 'From now on nothing you call back fades: the land stays, and every new place adds to your strength.',   // owner, 2026-10-26
+  wholeH: 'Whole', whole1: 'You are whole, and you will not need to be reborn again. From now on nothing you call back fades: the land stays, and every new place adds to your strength.',   // combat branch (owner, 2026-10-31): says no more rebirths   // owner, 2026-10-26
   whole2: 'You can now attune further to the land you know, and your settlement will still yet grow. Critical new research and new challenges await you.',
   combatH: 'Something has seen your light', combat1: 'Smoke rises past the ford. Not everything you called back is friendly, and not all of this land is yours.',
   combatEnd: 'This is the end of A Glimmer in the Dark\u2019s current content. Please join the {discord} to provide feedback. Far more content (including combat - could you tell?) is coming soon.',   // owner, 2026-10-26
@@ -302,7 +302,7 @@ function showThirty() {
 function mapTick(dt, away) {
   const w = W(), regBefore = MC.regionsDone(w);
   const ev = MC.tick(w, dt, away);
-  combatTick(dt, away);   // combat test: Resolve, iron, the bars (src/ui/07c-combat.js)
+  combatTick(dt, away, ev);   // combat test: Resolve, iron, the bars (src/ui/07c-combat.js)
   for (const e of ev) {
     if (e[0] === 'restored') {
       const t = tileOf(e[1]), m = meta();

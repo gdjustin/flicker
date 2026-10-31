@@ -106,7 +106,7 @@ function showWhole() {
   $('moment-ok').textContent = 'Return'; $('moment').dataset.kind = 'whole'; momentPlain(); $('moment').classList.remove('hidden');
 }
 function showCombatMoment() {
-  if (typeof combatOpen === 'function') { const w = W(); if (w && w.m) { combatOpen(w, false); if (cLife().opened) { showCombatOpen(); return; } } }   // combat test: the moment opens combat (the demo's end card is the public build's)
+  if (typeof combatWake === 'function') { const w = W(); if (w && w.m && !cLife().opened) { combatWake(w); return; } }   // combat test: the land wakes (the demo's end card is the public build's)
   $('moment-h').textContent = MT.combatH; const body = $('moment-body'); body.innerHTML = '';
   [MT.combat1].forEach(x => { const p = document.createElement('p'); p.textContent = x; body.appendChild(p); });
   { const p = document.createElement('p'), parts = MT.combatEnd.split('{discord}'); p.append(parts[0]); const a = document.createElement('a'); a.href = GAME.links.discord || '#'; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Discord'; p.append(a, parts[1] || ''); body.appendChild(p); }

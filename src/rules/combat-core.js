@@ -29,6 +29,10 @@ var CPHASE = function (MC, CM, dialsIn) {
     return {
       seed: 11,
       unlock: { whole: true, places: 130, iron: 2 },   // 2026-10-31: opens when the self is whole (places: the old placeholder, for old labs)
+      // the scripted threat before combat opens (owner, 2026-10-31): the player holds off a wolf pack at the settlement with all their light,
+      // over 5 to 15 minutes by how much light they make (C: light for the whole bar; the lab's check-in bot makes about 5.7e8 a second (7.9e8 during a feast)
+      // at whole, so about 12 minutes). Then the fighting turns up a dormant iron mine and 2 loose iron (unlock.iron).
+      threat: { id: 'wolves', C: 4e11, minS: 300, maxS: 900 },
       keepLight: true,                // a combat rebirth keeps the iron buffs bought for Light (Light no longer resets after whole)
       cp0K: 0.9,                      // the CP base, × the cheapest place's power (owner, 2026-10-18: the first companies win a couple of places only; the cap
                                       // is 0 until the first Barracks or Armory level, then about 13 to 16 shown)

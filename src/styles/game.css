@@ -877,3 +877,7 @@ body.view-defense .col.side { display: none; }
 .act .ndot, .jrow .ndot { position: absolute; right: 0.45rem; top: 0.45rem; width: 7px; height: 7px; border-radius: 50%; background: var(--ember); box-shadow: 0 0 6px 2px var(--ember); animation: glow 1.6s ease-in-out infinite; }
 .act { position: relative; } .jrow { position: relative; }
 .jrow.jglow .jn::after { content: ''; display: inline-block; width: 7px; height: 7px; margin-left: 0.45rem; vertical-align: middle; border-radius: 50%; background: var(--ember); box-shadow: 0 0 6px 2px var(--ember); animation: glow 1.6s ease-in-out infinite; }
+/* the wolf pack (v1u-c4): the light strip turns red while light holds it off */
+#w-vstrip.threat { border-color: #b8484f; box-shadow: inset 4px 0 0 #b8484f; }
+.st-bar.threat i { background: #b8484f; }
+#w-vstrip.threat #vl-name { color: #f1c6c9; }
