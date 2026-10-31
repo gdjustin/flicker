@@ -198,8 +198,8 @@ const MT = {   // the map's text, in one place for the text editor
   rbLastLog: 'The last of you comes back. You are now whole.',
   rbH: 'You feel a bit more whole', rbLastH: 'You are whole',   // owner, 2026-10-26
   rb1: 'The land you called back dissolves, but it has given you back a piece of who you were before. You now know that you will wake again, stronger.',   // owner, 2026-10-18
-  rb1Last: 'This time you do not come apart. Everything you called back stays in place, and now so do you. You sense this is just the beginning.',
-  rbLastWarn: 'WARNING: The land you called back stays, but it isn\u2019t just peaceful fields and meadows that returned...',
+  rb1Last: 'This time you do not come apart. Everything you called back stays in place, and so do you. You sense this is just the beginning.',   // owner, 2026-10-31
+  rbLastWarn: 'You also sense something else. The denizens of the land are stirring. Old threats, newly remembered, are returning...',   // owner, 2026-10-31 (was the WARNING line)
   rbGo: 'Choose what you remember', rbLastGo: 'The final rebirth', rbLater: 'Not yet',
   rbWait: 'The land beyond waits until you are reborn.', rbBtn: 'Be reborn',
   rbPill: 'Next milestone: {n} of {at} lands restored', rbPillReady: 'Ready to be reborn',   // owner, 2026-10-18
@@ -213,9 +213,9 @@ const MT = {   // the map's text, in one place for the text editor
   merchPill: 'A traveler waits', merchSoon: 'The traveler · {t}', merchHere: 'Arriving now',   // r1i
   merchTip: 'Your settlement has attracted the attention of a traveling merchant who deals in heartstones and other rarities.',
   // the modal when Light Attunement is learned (owner's text, 2026-10-26)
-  mastH: 'Attunement', mast1: 'The land you called back is now permanent, as is your physical form. You can now further attune previously-recalled lands to your light.',   // owner, 2026-10-26
-  mast2: 'Pick a place you have called back and select Attune. Your light flows there instead of into new land. You will get much stronger after attuning previous lands 100, 1,000, 10,000 more times.',
-  mast3: 'Every land\u2019s attunement level makes light reaching new land {pct}% stronger, allowing you to recall more and more of the world.', mastOk: 'Press on', merchH: 'The traveler', merchKick: 'A mysterious merchant · he comes every two days and waits for your trade.',
+  mastH: 'Attunement', mast1: 'The land you called back is now permanent, as is your physical form. You can now further attune previously-recalled lands.',   // owner, 2026-10-31
+  mast2: 'Pick a place you have called back and select Attune. Your light flows there instead of into new land. You will get much stronger after attuning previous lands.',
+  mast3: 'Every land\u2019s attunement level makes light reaching new land {pct}% stronger, allowing you to recall more of the world from the void.', mastOk: 'Press on', merchH: 'The traveler', merchKick: 'A mysterious merchant · he comes every two days and waits for your trade.',
   merchSub: 'He wants heartstones. He knows the old gifts. What you buy works at once.', merchGo: 'Bid him farewell',
   glow: 'A glowstone is cut and set by the fire. ({n} now)',
   // v1g: the broken tower, found on the map (owner, 2026-10-13)

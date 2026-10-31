@@ -33,6 +33,7 @@ var CPHASE = function (MC, CM, dialsIn) {
       // over 5 to 15 minutes by how much light they make (C: light for the whole bar; the lab's check-in bot makes about 5.7e8 a second (7.9e8 during a feast)
       // at whole, about 9 minutes; a bot that spends no heartstones at the last rebirth, about 4.6e8: about 11). Then the fighting turns up a dormant iron mine and 2 loose iron (unlock.iron).
       threat: { id: 'wolves', C: 3e11, minS: 300, maxS: 900 },
+      attuneGate: true,               // owner, 2026-10-31: Light Attunement's research opens once the first place is made safe
       live: true,                     // bloodstones bank as they are earned (no combat rebirths after whole)
       keepLight: true,                // a combat rebirth keeps the iron buffs bought for Light (Light no longer resets after whole)
       cp0K: 0.9,                      // the CP base, × the cheapest place's power (owner, 2026-10-18: the first companies win a couple of places only; the cap
@@ -101,6 +102,7 @@ var CPHASE = function (MC, CM, dialsIn) {
   }
   function merge(d, o) { if (!o) return d; Object.keys(o).forEach(function (k) { var v = o[k]; if (v && typeof v === 'object' && !Array.isArray(v) && d[k] && typeof d[k] === 'object' && !Array.isArray(d[k])) d[k] = merge(Object.assign({}, d[k]), v); else d[k] = v; }); return d; }
   var P = merge(defaults(), dialsIn);
+  if (D.mastery) D.mastery.gate = P.attuneGate ? 1 : 0;
   var cp0 = T[0].power * P.cp0K;
 
   // ---------------------------------------------------------------- the map's combat side: rarity tiers for the Bestiary, bloodstones
@@ -200,6 +202,7 @@ var CPHASE = function (MC, CM, dialsIn) {
   }
   // after each tick: Resolve into the bar, then Reserves; iron; hauling to combat's stores; the Red Host's leak while away
   function tick(s, dt, away, C, life) {
+    if (P.attuneGate && s && s.m && !s.m.attuneOk && life && Object.keys(life.ever).length) s.m.attuneOk = true;   // saves from before the gate
     if (!C.open) return;
     var h = dt / 3600; C.hr = s && s.t != null ? s.t / 3600 : C.hr + h;   // combat's clock is the game's
     if (!C.capOpen && s && s.m) { SS = s; topUp(C, life); }
@@ -258,7 +261,7 @@ var CPHASE = function (MC, CM, dialsIn) {
     if (c.trait === 'split' && (C.extra[c.key] || 0) < 2 && r() < 0.25) { C.extra[c.key] = (C.extra[c.key] || 0) + 1; C.traitHits.split = (C.traitHits.split || 0) + 1; }
     var rout = c.trait === 'zeal' && f.ratio >= 1.6; if (rout) { out.rout = true; C.traitHits.zeal = (C.traitHits.zeal || 0) + 1; }
     if (rout || C.bdone[c.key] >= c.nb + (C.extra[c.key] || 0)) {
-      out.cleared = true; C.cleared[c.key] = true; C.clearedN++; C.landN[c.land] = (C.landN[c.land] || 0) + 1; C.clearedT.push([C.hr, c.key]);
+      out.cleared = true; C.cleared[c.key] = true; if (P.attuneGate && s && s.m) s.m.attuneOk = true; C.clearedN++; C.landN[c.land] = (C.landN[c.land] || 0) + 1; C.clearedT.push([C.hr, c.key]);
       if (life.ever[c.key] == null && !C.newly[c.key]) { C.newly[c.key] = true; C.newlyT.push([C.hr, c.bs]); C.made.bs += c.bs; out.bs = c.bs;
         if (P.live) { life.ever[c.key] = C.run; life.bs += c.bs; life.best = Math.max(life.best || 0, C.clearedN); } }
     }

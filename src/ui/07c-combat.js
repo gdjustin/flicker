@@ -15,11 +15,12 @@ function fmtCP(v) { const x = v * CPU; return x < 10 ? fmtW(Math.floor(x * 10) /
 const CT = {   // combat's text, in one place for the text editor (placeholders the owner will rewrite)
   tab: 'Defense',
   // the scripted opening (owner, 2026-10-31; placeholder words): whole → the land wakes → the wolf pack, held off with light → the dormant mine
-  wakeH: 'Something has seen your light', wake1: 'As more of the land comes back, it wakes, and not all of it kindly. Things that slept in the dark are stirring again.',
-  wake2: 'A wolf pack has come down on your settlement. Turn your light on them and drive them off.', wakeGo: 'Turn your light on them',
-  threatLab: 'Your light holds them back', threatName: 'Repelling the wolf pack', threatLeft: 'about {t} left', threatDone: 'The wolf pack is driven off.',
-  openH: 'The pack is driven off', open1: 'Where the wolves made their den, the fighting has torn open an old iron mine, long dormant, its mouth choked with rubble.',
-  open2: 'Loose iron lies about the entrance: two lumps, just enough to get the mine working again.', open3: 'The Defense tab is open: start with the mine.',
+  wakeH: 'Something has seen your light', wake1: 'The land wakes, and not all of it kindly. Things that slept in the void are stirring again.',   // owner, 2026-10-31
+  wake2: 'Shadow-eyed wolves howl from the treeline; your village is under siege. You must use your light to drive them off.', wakeGo: 'Repel the howling wolves',
+  threatLab: 'Your light holds them back', threatName: 'Repelling the wolf pack', threatLeft: 'about {t} left', threatDone: 'The wolves scatter.',
+  openH: 'The wolves scatter', open0: 'You find the remains of an old iron mine, long dormant.',   // owner, 2026-10-31
+  open1: 'Where the wolves made their den, the fighting has torn open an old, long-dormant iron mine. Its mouth is choked with rubble.',
+  open2: 'Stray bits of loose iron lie around the entrance. You think it\u2019s just enough to get the mine working again.', open3: 'The Defense tab is open: start with the mine.',
   mineMsg: 'The old iron mine is open again. Put settlers to work in it (Settlement).', capMsg: 'Your first defenders muster. The battle front is open on the Defense tab, and the map shows what holds each place.', openOk: 'To the defense',
   barCP: 'Combat power', barRes: 'Reserves', resolveIs: 'Resolve: ready in {t}', resolveRate: '+{n} combat power an hour',
   iron: 'Iron', ironRate: '+{n}/h', noMiners: 'no miners',
@@ -104,7 +105,7 @@ function combatSettlersNeedYou(w) { const C = cRun(w); if (!C) return []; const 
   return why; }
 function showCombatOpen() {
   $('moment-h').textContent = CT.openH; const body = $('moment-body'); body.innerHTML = '';
-  [CT.open1, CT.open2, CT.open3].forEach(t => { const p = document.createElement('p'); p.textContent = t; body.appendChild(p); });
+  [CT.open0, CT.open1, CT.open2, CT.open3].forEach(t => { const p = document.createElement('p'); p.textContent = t; body.appendChild(p); });
   $('moment-ok').textContent = CT.openOk; $('moment').dataset.kind = 'combat'; $('moment').classList.remove('hidden');
 }
 

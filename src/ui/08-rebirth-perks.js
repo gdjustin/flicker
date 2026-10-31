@@ -84,6 +84,7 @@ function askRebirth(w, m) {
   const last = m.run >= RB_LAST(), now = m.hsLife, before = now - (w.m.hsNew || 0);
   $('moment-h').textContent = last ? MT.rbLastH : MT.rbH; const body = $('moment-body'); body.innerHTML = '';
   const p1 = document.createElement('p'); p1.textContent = last ? MT.rb1Last : MT.rb1; body.appendChild(p1);
+  if (last) { const pw = document.createElement('p'); pw.textContent = MT.rbLastWarn; body.appendChild(pw); }   // owner, 2026-10-31: always, under the first line
   const bar = document.createElement('div'); bar.className = 'rbwrap'; bar.innerHTML = rbBar(m.run, true, true) + '<p class="rbcap">' + rbPct(m.run, true) + '% of yourself remembered</p>'; body.appendChild(bar);
   const led = document.createElement('div'); led.className = 'ledger';
   const row = (a, b, cls) => { const x = document.createElement('span'), y = document.createElement('span'); x.innerHTML = a; y.innerHTML = b; if (cls) { x.className = cls; y.className = cls; } led.appendChild(x); led.appendChild(y); };
@@ -94,7 +95,6 @@ function askRebirth(w, m) {
   const gl = giftLines(MC.D.rb.packets[m.run - 1]);
   if (gl.length) { const h = document.createElement('p'); h.className = 'rbgh'; h.textContent = 'This rebirth also brings, for every run after it:'; body.appendChild(h);
     const ul = document.createElement('ul'); ul.className = 'rbgifts'; gl.forEach(g => { const li = document.createElement('li'); li.innerHTML = '<b>' + g.name + '</b> <span>' + g.desc + '</span>'; ul.appendChild(li); }); body.appendChild(ul); }
-  else if (last) { const p2 = document.createElement('p'); p2.className = 'sub'; p2.textContent = MT.rbLastWarn; body.appendChild(p2); }
   $('moment-ok').textContent = last ? MT.rbLastGo : MT.rbGo; $('moment').dataset.kind = 'scatter'; $('moment').classList.remove('hidden');
   momentNo(MT.rbLater);   // r1c (owner): forced, but it can be put aside; "Ready to be reborn" brings it back
 }
