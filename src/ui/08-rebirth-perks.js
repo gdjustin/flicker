@@ -193,7 +193,7 @@ function renderPerks() {
   ps.classList.remove('hidden'); const m = meta(), w = W(), P = MV.prest, lv = P.lv, spent = perkSpent(lv), free = m.hsLife - spent;
   const newHs = w && w.m ? (w.m.hsNew || 0) : 0, before = m.hsLife - newHs, sel = MV.perk, RBon = MC.D.rb.on, merch = !!P.merchant, lastRb = RBon && m.run >= RB_LAST();
   const kick = merch ? MT.merchKick : RBon ? (lastRb ? 'The last rebirth' : 'Between runs · rebirth ' + m.run + ' of ' + RB_LAST()) : 'Between runs · run ' + m.run + ' is ending';
-  const sub = merch ? MT.merchSub : 'Run ' + m.run + ' called back ' + (w && w.m ? w.m.restored : 0) + ' places, ' + (w && w.m ? (w.m.newPlaces || 0) : 0) + ' of them new: ' + fmtW(newHs) + ' new heartstones. What you remembered before stays remembered.';
+  const sub = merch ? (typeof cLife === 'function' && cLife().opened ? CT.travMerchSub : MT.merchSub) : 'Run ' + m.run + ' called back ' + (w && w.m ? w.m.restored : 0) + ' places, ' + (w && w.m ? (w.m.newPlaces || 0) : 0) + ' of them new: ' + fmtW(newHs) + ' new heartstones. What you remembered before stays remembered.';
   let h = '<div class="pk-sky"></div><div class="pk-glow"></div><div class="pk"><div class="pk-top"><div><div class="pk-kicker">' + kick + '</div><h1>' + (merch ? MT.merchH : 'What will you remember?') + '</h1>' +
     '<div class="pk-sub">' + sub + '</div></div>' +
     '<button type="button" class="pk-x" data-close="1" aria-label="Close (Esc)">' + pkSvg('x', '#cfc5ae', 22, 2) + '</button></div>';
@@ -238,8 +238,11 @@ function renderPerks() {
     h += '</div></div>';
   }
   h += '</section>';
+  { const cps = P.merchant && typeof combatMerchantSection === 'function' ? combatMerchantSection() : null;   // combat test: his bloodstone stock
+    if (cps) h += cps; else {
   h += '<section class="cur locked"><div class="cur-strip"><span class="cur-name"><span class="hex" style="width:30px;height:27px;background:#26233a">' + pkSvg('lock', '#8a8399', 15) + '</span><span><span class="cz cur-t" style="color:#8f8798">Something dangerous stirs</span><span class="cur-s">Your work is far from finished</span></span></span>' +
     '<span class="cur-mem"></span><span></span><span></span></div></section>';
+    } }
   const hist = m.hist.map(x => 'Run ' + x.run + ': ' + x.tiles + ' places, +' + fmtW(x.hsNew)).concat(w && w.m ? ['Run ' + m.run + ': ' + w.m.restored + ' places, +' + fmtW(newHs)] : []);
   const goTxt = merch ? MT.merchGo : RBon ? (lastRb ? 'Remember all of yourself' : 'Be reborn, and begin run ' + (m.run + 1)) : 'Scatter, and begin run ' + (m.run + 1);
   h += '<div class="pk-foot"><div class="pk-last">' + (merch ? 'His next visit: about two days after you send him on.' : hist.join(' · ') + ' · Close or press Esc to go back to run ' + m.run) + '</div><button type="button" class="pk-return" id="pk-go">' + pkSvg('flame', '#ffb35c', 19, 1.8) + goTxt + '</button></div></div>';

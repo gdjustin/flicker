@@ -15,10 +15,10 @@
 //   - standards and iron buffs send power to Light; bloodstones and perks; combat relics
 // Owner, 2026-10-18: bloodstones are paid like heartstones (by a place's difficulty), with memory's curve for the flat CP bonus;
 // nothing compounds (runaway is worse than slow progress).
-// On the rebirth game (2026-10-31): combat opens once the self is whole (about 130 places, where the demo now ends), and Light no
-// longer resets after that. So a combat rebirth is combat's own: it resets combat's run (iron, the mine, Barracks, Armory, the places
-// made safe, the bar) and nothing of Light's. What combat gave Light stays: standards (already lifetime) and, with keepLight, the iron
-// buffs on Light's fires (Considering: the owner's call).
+// On the rebirth game (2026-10-31): combat opens once the self is whole (about 130 places, where the demo now ends). Decided (owner,
+// 2026-10-31): nothing resets after whole, combat included: there are no combat runs or rebirths. Bloodstones are earned live, as a
+// place is made safe for the first time (live: true), their flat bonus grows at once, and the traveler (every two days) sells the
+// bloodstone perks beside the heartstone ones. newRun is called once; rebirth() and bank() remain only for the old labs (live: false).
 // Every number here is a dial, nothing is decided but what the owner decided.
 var CPHASE = function (MC, CM, dialsIn) {
   'use strict';
@@ -31,8 +31,9 @@ var CPHASE = function (MC, CM, dialsIn) {
       unlock: { whole: true, places: 130, iron: 2 },   // 2026-10-31: opens when the self is whole (places: the old placeholder, for old labs)
       // the scripted threat before combat opens (owner, 2026-10-31): the player holds off a wolf pack at the settlement with all their light,
       // over 5 to 15 minutes by how much light they make (C: light for the whole bar; the lab's check-in bot makes about 5.7e8 a second (7.9e8 during a feast)
-      // at whole, so about 12 minutes). Then the fighting turns up a dormant iron mine and 2 loose iron (unlock.iron).
-      threat: { id: 'wolves', C: 4e11, minS: 300, maxS: 900 },
+      // at whole, about 9 minutes; a bot that spends no heartstones at the last rebirth, about 4.6e8: about 11). Then the fighting turns up a dormant iron mine and 2 loose iron (unlock.iron).
+      threat: { id: 'wolves', C: 3e11, minS: 300, maxS: 900 },
+      live: true,                     // bloodstones bank as they are earned (no combat rebirths after whole)
       keepLight: true,                // a combat rebirth keeps the iron buffs bought for Light (Light no longer resets after whole)
       cp0K: 0.9,                      // the CP base, × the cheapest place's power (owner, 2026-10-18: the first companies win a couple of places only; the cap
                                       // is 0 until the first Barracks or Armory level, then about 13 to 16 shown)
@@ -60,10 +61,9 @@ var CPHASE = function (MC, CM, dialsIn) {
         scouts: { opens: 6, x: 0.08, cost: { iron: 8, stones: 10000 }, g: 1.5 },
         council: { opens: 10, x: 0.12, cost: { iron: 10, fiber: 15000 }, g: 1.5 }
       },
-      // 2026-10-31 (Considering, the owner's call): after whole Light no longer resets and alone gains about +180 places in 30 days, so
-      // combat's gifts to Light shrink: standards +0.4% each (were +2%), and the iron buffs for the fires are off (P.off.oneOffs, below).
-      // Lab (Flicker Lab, run-combat-whole): with +2% standards and the iron buffs kept, Light gains +337 against the +185 to +200 target.
-      standard: { x: 0.004, cost: { wood: 5000, stones: 2000, fiber: 3000 }, g: 1.35, iron: 0 },
+      // 2026-10-31 (owner, Considering): keep standards at +2% each, drop the iron buffs for the fires (P.off.oneOffs, below), and let
+      // Light outpace the old +185 to +200 budget; Light's growth gets tuned later.
+      standard: { x: 0.02, cost: { wood: 5000, stones: 2000, fiber: 3000 }, g: 1.35, iron: 0 },
       oneOffs: [   // iron buffs for Light's fires (owner: inexpensive one-off buys, not keys); the gate is combat places cleared (best ever)
         { id: 'grates', name: 'Iron grates', src: 'burners', x: 3, iron: 10, opens: 8 },
         { id: 'firedogs', name: 'Iron fire-dogs', src: 'keepers', x: 3, iron: 30, opens: 18 },
@@ -259,7 +259,8 @@ var CPHASE = function (MC, CM, dialsIn) {
     var rout = c.trait === 'zeal' && f.ratio >= 1.6; if (rout) { out.rout = true; C.traitHits.zeal = (C.traitHits.zeal || 0) + 1; }
     if (rout || C.bdone[c.key] >= c.nb + (C.extra[c.key] || 0)) {
       out.cleared = true; C.cleared[c.key] = true; C.clearedN++; C.landN[c.land] = (C.landN[c.land] || 0) + 1; C.clearedT.push([C.hr, c.key]);
-      if (life.ever[c.key] == null && !C.newly[c.key]) { C.newly[c.key] = true; C.newlyT.push([C.hr, c.bs]); C.made.bs += c.bs; out.bs = c.bs; }
+      if (life.ever[c.key] == null && !C.newly[c.key]) { C.newly[c.key] = true; C.newlyT.push([C.hr, c.bs]); C.made.bs += c.bs; out.bs = c.bs;
+        if (P.live) { life.ever[c.key] = C.run; life.bs += c.bs; life.best = Math.max(life.best || 0, C.clearedN); } }
     }
     return out;
   }
@@ -362,12 +363,14 @@ var CPHASE = function (MC, CM, dialsIn) {
   function lightStd(life) { return P.off.standards ? 1 : 1 + P.standard.x * life.stdN; }
 
   // ---------------------------------------------------------------- prestige: bloodstones and perks
+  // with no combat rebirths (live), the perks that only work at a run's start or on places made safe in earlier runs do nothing
+  function perkUseful(p) { return !(P.live && (p.effect === 'start' || p.effect === 'paved')); }
   function perkCost(p, n) { return Math.ceil(p.base * Math.pow(p.g, n)); }
   function allocPerks(points) {
     var lv = {}, spent = { enabling: 0, direct: 0, qol: 0 }, left = points, sh = P.perkShares;
     for (var g = 0; g < 3000; g++) {
       var best = null, bsc = Infinity;
-      P.perks.forEach(function (p) { var n = lv[p.id] || 0; if (p.max && n >= p.max) return; var c = perkCost(p, n); if (c > left) return; var s2 = sh[p.kind] || 0; if (s2 <= 0) return; var sc = (spent[p.kind] + c) / s2; if (sc < bsc) { bsc = sc; best = p; } });
+      P.perks.forEach(function (p) { if (!perkUseful(p)) return; var n = lv[p.id] || 0; if (p.max && n >= p.max) return; var c = perkCost(p, n); if (c > left) return; var s2 = sh[p.kind] || 0; if (s2 <= 0) return; var sc = (spent[p.kind] + c) / s2; if (sc < bsc) { bsc = sc; best = p; } });
       if (!best) break;
       var c2 = perkCost(best, lv[best.id] || 0); lv[best.id] = (lv[best.id] || 0) + 1; spent[best.kind] += c2; left -= c2;
     }
@@ -441,6 +444,6 @@ var CPHASE = function (MC, CM, dialsIn) {
     ironH: ironH, landIronH: landIronH, mineSlots: mineSlots, drillSlots: drillSlots, beastStages: beastStages, beastTotal: beastTotal, flatBS: flatBS, lightFlat: lightFlat, lightSrc: lightSrc, lightStd: lightStd, frontier: frontier,
     nextBattle: nextBattle, avatarCd: avatarCd, armPrice: armPrice, have: asPlayer(function (C, k, s) { if (s) SS = s; return have(C, k); }), options: function (s, C, life) { SS = s; return options(s, C, life); }, incomeH: incomeH, snapshot: snapshot, armL: armL, recruitF: recruitF, armF: armF,
     preview: preview, attack: attack, fightable: fightable, avatarReady: avatarReady, raidAt: raidAt, raidCost: raidCost, rallyNow: asPlayer(rallyNow), rallyFood: rallyFood, rallyX: rallyX, canBuy: asPlayer(canBuy), buyLine: asPlayer(buyLine), oneOffsOpen: oneOffsOpen, buyOneOff: buyOneOff,
-    stdOpen: stdOpen, stdCost: stdCost, raiseStd: asPlayer(raiseStd), canStd: asPlayer(canStd), syncJobs: syncJobs, bank: bank, perkSpent: perkSpent, perk: perk, perkLv: perkLv, lightGifts: lightGifts, edgeOf: edgeOf, beastEdge: beastEdge, defOpen: defOpen, ironPerMinerH: ironPerMinerH, healF: healF, scoutF: scoutF, councilF: councilF, hardF: hardF, relicCP: relicCP, cpOf0: function () { return cp0; } };
+    stdOpen: stdOpen, stdCost: stdCost, raiseStd: asPlayer(raiseStd), canStd: asPlayer(canStd), syncJobs: syncJobs, bank: bank, perkSpent: perkSpent, perk: perk, perkLv: perkLv, perkUseful: perkUseful, lightGifts: lightGifts, edgeOf: edgeOf, beastEdge: beastEdge, defOpen: defOpen, ironPerMinerH: ironPerMinerH, healF: healF, scoutF: scoutF, councilF: councilF, hardF: hardF, relicCP: relicCP, cpOf0: function () { return cp0; } };
 };
 if (typeof module !== 'undefined') module.exports = CPHASE;

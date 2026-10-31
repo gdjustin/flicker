@@ -1,8 +1,8 @@
 /* =====================================================================
    COMBAT (phase 2), on the rebirth game (branch combat-r, 2026-10-31; first built on branch combat-test, 2026-10-18)
-   Combat opens once the self is whole ("Something has seen your light"). Light no longer resets after that, so a combat rebirth is
-   combat's own: the Defense tab's "Muster anew" banks bloodstones, lets you choose their perks, and starts combat's run again
-   (iron, the mine, Barracks, Armory, the places made safe). The land, the village and Light are untouched.
+   Combat opens once the self is whole: the land wakes, a wolf pack is held off with light, a dormant mine gives 2 iron.
+   Decided (owner, 2026-10-31): nothing resets after whole, combat included. Bloodstones come in as places are made safe for the
+   first time, their flat bonus grows at once, and the traveler sells the bloodstone perks beside the heartstone ones.
    Rules: src/rules/combat-map.js (the battle module and the 23 families) and src/rules/combat-core.js (the spine), the files the
    Flicker Lab's bot plays. This part shows them and takes clicks. The look follows the previous branch's map combat prototype
    (owner, 2026-10-17): battles live on a place's card (won ones by name, the next with its readouts and Attack, the rest ???),
@@ -31,13 +31,10 @@ const CT = {   // combat's text, in one place for the text editor (placeholders 
   rallyOn: 'Rallying: {t} left', rallyWait: 'Rally again in {t}',
   winMsg: 'Won against {name} ({i} of {n}).', loseMsg: 'Driven back by {name}. Lost {lost} combat power.', clearMsg: '{place} is safe: {bs} bloodstone{s} to remember.', clearOld: '{place} is safe again.',
   relicMsg: 'A relic of battle from {place}: {land}.', raidMsg: 'Raided {place}: +{s} study of the {fam}.', stdMsg: 'A standard rises over {place}.',
-  // a combat rebirth (placeholder words; Light and the land do not reset)
-  againBtn: 'Muster anew', againSub: 'Your defense begins again, stronger: {bs} new bloodstones from {n} places made safe for the first time. The land, the village and your light stay as they are.',
-  againNone: 'Make a place safe for the first time to earn bloodstones; then you can muster anew.',
-  againH: 'Muster anew?', againKick: 'Your defense, run {run}', againGo: 'Muster anew, and begin run {run}',
-  again1: 'Your defenders stand down. The iron, the mine, the Barracks and the Armory are gone, and the places you made safe this run must be made safe again (they fight weaker: veterans remember).',
-  again2: 'What stays: the land you called back, the village, your light, standards raised, iron buffs on the fires, relics of battle and the Bestiary.',
-  againMsg: 'Your defense musters anew: run {run}. Two lumps of iron wait at the old mine.'
+  // the traveler's first visit after combat opens (owner, 2026-10-31; placeholder words)
+  travH: 'The traveler returns', trav1: 'He has heard about the wolves. He weighs your heartstones in his hand, shrugs, and sets them down again.',
+  trav2: 'It is the bloodstones he is after now, the ones your defenders win making places safe for the first time. For those he will teach your defenders what he knows.', travGo: 'See what he offers',
+  travMerchSub: 'He still knows the old gifts, but it is your bloodstones he wants now. What you buy works at once.', travSec: 'For bloodstones', travSub: 'Each place made safe for the first time pays as many bloodstones as its heartstones did. What you buy works at once.'
 };
 const LINE = {   // the combat lines on the Defense tab: name, what it does (fn of w, C, life)
   mine: ['Deepen the iron mine', (w, C, L) => !C.lv.mine ? 'Clear the dormant mine and put it to work. Room for ' + CB.P.mine.slots0 + ' miners, ' + fmtW(CB.ironPerMinerH(C), 2) + ' iron an hour each.' : 'Room for one more miner and each miner digs ×' + CB.P.mine.depthX + ' more. Now ' + CB.mineSlots(C) + ' places, ' + fmtW(CB.ironPerMinerH(C), 2) + ' iron an hour a miner.', 'building'],
@@ -86,6 +83,7 @@ function combatTick(dt, away, ev) {
   if (!L.opened && combatUnlocked(w) && calm && L.threat !== 'on') combatWake(w);   // a save already whole (the whole moment leads here itself)
   if (L.threat === 'on' && !w.m.hold && !L.opened) MC.startHold(w, CB.P.threat);   // a save from before the hold
   if (L.openPending && calm) { L.openPending = false; showCombatOpen(); }
+  combatTravelerCheck(w, calm);
   if (L.opened && !w.c) w.c = CB.newRun(L, (L.runs || 0) + 1);
   const C = cRun(w); if (!C) return;
   if (C.capOpen == null) C.capOpen = CB.cap(C, L) > 0;   // saves from v1s-c1: the cap was already open
@@ -236,20 +234,19 @@ function renderDefenseTab(w) {
   const box = $('v-defense'), C = cRun(w), L = cLife();
   if (!C) { box.innerHTML = '<p class="mmut">Nothing fights back yet.</p>'; return; }
   const open = cCapOpen(C);
-  if (!$('cd-sec-make')) box.innerHTML = '<div class="cdsec" id="cd-sec-again"><div class="acts" id="cd-again"></div></div><div class="cdsec" id="cd-sec-muster"><p class="sech">Your defenders</p><div id="cd-muster"></div></div>' +
+  if (!$('cd-sec-make')) box.innerHTML = '<div class="cdsec" id="cd-sec-muster"><p class="sech">Your defenders</p><div id="cd-muster"></div></div>' +
     '<div class="cdsec" id="cd-sec-make"><div id="cd-make" class="bgroups"></div></div>' +
     '<div class="cdsec" id="cd-sec-front"><p class="sech">The battle front</p><div id="cd-front" class="cfront"></div></div>' +
     '<div class="cdtop"><div class="cdsec" id="cd-sec-light"><p class="sech">For the light</p><div class="acts" id="cd-light"></div></div><div class="cdsec" id="cd-sec-beast"><p class="sech">Bestiary</p><div id="cd-beast"></div></div></div>';
   $('cd-sec-muster').classList.toggle('hidden', !open); $('cd-sec-front').classList.toggle('hidden', !open);
   if (open && S.view === 'defense') L.frontSeen = true;
-  { const nb = cNewBs(w), np = cNewPlaces(w), b = ensureBtn($('cd-again'), 'cd-againb', openAgain);   // a combat rebirth: any time a run has new bloodstones
-    setBtn(b, CT.againBtn + ' (run ' + ((L.runs || 0) + 1) + ')', nb > 0 ? fill2(CT.againSub, { bs: fmtW(nb), n: np }) : CT.againNone, nb > 0, {}); $('cd-sec-again').classList.toggle('hidden', !open); }
   // the muster: the bars, Rally, the avatar
   if (open) { const m = $('cd-muster'), cap = CB.cap(C, L), parts = CB.capParts(C, L), rc = CB.resCap(C, L), drillOn = CB.drillSlots(C) > 0;
     const sig = [fmtCP(C.cp), fmtCP(cap), fmtCP(C.res), fmtCP(rc), C.lv.rally, Math.floor(C.hr * 6), C.rallies, drillOn, C.clearedN].join('|');
     if (m.dataset.s !== sig) { m.dataset.s = sig;
       m.innerHTML = '<p class="cline">Combat power <b>' + fmtCP(C.cp) + '</b> of <b>' + fmtCP(cap) + '</b>' + (rc > 0 ? ' · Reserves <b>' + fmtCP(C.res) + '</b> of ' + fmtCP(rc) : '') + '</p>' +
         '<p class="cline">' + fill2(CT.resolveIs, { t: fmtTime(CB.fillH(C, L) * 3600) }) + (drillOn ? ' (' + (w.jobs.drillmaster || 0) + ' drillmasters; ' + fmtW(CB.drillNeed(C, L), 1) + ' would halve the wait above ' + CB.P.drill.floorH + ' h)' : '') + '</p>' +
+        '<p class="cline">Bloodstones: <b>' + fmtW(L.bs) + '</b>, ' + fmtW(L.bs - CB.perkSpent(L.perks)) + ' unspent (the traveler sells their perks).</p>' +
         '<p class="cline">Your strength comes from: ' + (parts.filter(p => p[1] > 0.004).map(p => p[0].replace(' (recruit)', '').replace(' (arm)', '') + ' ×' + fmtW(Math.pow(10, p[1]), 2)).join(', ') || 'your first companies alone') + '.</p>' +
         (C.clearedN >= CB.P.avatar.opens ? '<p class="cline">' + (CB.avatarReady(C) ? 'You can lead a charge now.' : fill2(CT.leadWait, { t: fmtTime(Math.max(0, C.avatarNext - C.hr) * 3600) })) + '</p>' : '') + '<div class="acts" id="cd-rally"></div>'; }
     if (C.lv.rally) { const rb = ensureBtn($('cd-rally'), 'cd-rallyb', cRally, 'primary');
@@ -306,48 +303,36 @@ function combatRelicsHtml(w) {
   return h + '</div></div>';
 }
 
-/* ---------- a combat rebirth ("Muster anew", placeholder): bloodstones bank, their perks, and combat's run begins again.
-   Light, the land and the village are untouched (the self is whole). Shown on the perk screen's frame, with its own content. ---------- */
-function cNewBs(w) { const C = cRun(w); return C ? C.made.bs : 0; }
-function cNewPlaces(w) { const C = cRun(w); return C ? Object.keys(C.newly).length : 0; }
+/* ---------- bloodstones and their perks: earned live, bought from the traveler (no combat rebirths) ---------- */
 function cFlatFor(bs) { return 1 + CB.P.bs.pct * Math.pow(bs, CB.P.bs.exp); }
-const CPK_UI = { hardened: 'Combat power +' + Math.round(CB.perk('hardened').x * 100) + '% of the base a rank, from the first moment of every run', quick: 'Resolve +' + Math.round(CB.perk('quick').x * 100) + '% a rank',
+const CPK_UI = { hardened: 'Combat power +' + Math.round(CB.perk('hardened').x * 100) + '% of the base a rank', quick: 'Resolve +' + Math.round(CB.perk('quick').x * 100) + '% a rank',
   forgeLore: 'Each Armory tier holds one more level a rank', quarterm: 'Barracks prices climb ' + Math.round(CB.perk('quarterm').x * 100) + '% gentler a rank', drillLore: 'Fewer drillmasters needed for the same drill: ' + Math.round(CB.perk('drillLore').x * 100) + '% fewer a rank',
-  keen: 'Relics of battle turn up ' + Math.round(CB.perk('keen').x * 100) + '% more often a rank', lore: 'Each relic of battle ' + Math.round(CB.perk('lore').x * 100) + '% stronger a rank', standing: 'Runs start with ' + CB.perk('standing').x + ' companies already recruited a rank', veterans: 'Places made safe before fight weaker: ×' + fmtW(CB.P.paved, 1) + ' a run, +' + CB.perk('veterans').x + ' a rank' };
-function openAgain() { const w = W(); if (!cRun(w) || !(cNewBs(w) > 0)) return; const L = cLife(); MV.cprest = { blv: Object.assign({}, L.perks) }; S.inPerks = true; renderAgain(); $('perk-screen').scrollTop = 0; }
-function closeAgain() { MV.cprest = null; S.inPerks = false; $('perk-screen').classList.add('hidden'); save(true); if (S.w) renderWorld(); }
-function renderAgain() {
-  const ps = $('perk-screen'), P = MV.cprest; if (!P) return; ps.classList.remove('hidden');
-  const w = W(), L = cLife(), add = cNewBs(w), pool = L.bs + add, spent = CB.perkSpent(P.blv), free = pool - spent, run = (L.runs || 0) + 1;
-  let h = '<div class="pk-sky"></div><div class="pk"><div class="pk-top"><div><div class="pk-kicker">' + fill2(CT.againKick, { run }) + '</div><h1>' + CT.againH + '</h1>' +
-    '<div class="pk-sub">' + CT.again1 + ' ' + CT.again2 + '</div></div><button type="button" class="pk-x" data-cclose="1" aria-label="Close (Esc)">' + pkSvg('x', '#cfc5ae', 22, 2) + '</button></div>';
-  h += '<section class="cur open"><div class="cur-strip"><span class="cur-name"><span class="hex" style="width:30px;height:27px;background:#b8484f"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6z" fill="none" stroke="#2a1010" stroke-width="2"/></svg></span><span><span class="cz cur-t">Defense</span><span class="cur-s">Bloodstones</span></span></span>' +
-    '<span class="cur-mem"><span class="cur-l">Combat power, from bloodstones</span><span class="memx"><span class="was">×' + fmtW(cFlatFor(L.bs), 2) + '</span><span style="color:#f2b84b">→</span><span class="now">×' + fmtW(cFlatFor(pool), 2) + '</span></span></span>' +
-    '<span class="cur-purse"><svg width="20" height="26" viewBox="0 0 12 16" aria-hidden="true"><path d="M6 0l6 7-6 9-6-9z" fill="#b8484f"></path></svg><span><b>' + fmtW(free) + '</b><span>of ' + fmtW(pool) + ' free</span></span></span><span></span></div>';
-  h += '<div class="cur-body"><div class="cur-bar"><span>' + fmtW(add) + ' new bloodstones from this run: each place made safe for the first time pays as many as its heartstones did.</span><span><button type="button" class="pk-respec" data-brespec="1">Respec (free)</button></span></div><div class="pk-chips">';
-  CB.P.perks.forEach(p => { const n = P.blv[p.id] || 0, max = p.max || 99, done = n >= max, price = done ? 0 : CB.perkCost(p, n), afford = !done && free >= price;
+  keen: 'Relics of battle turn up ' + Math.round(CB.perk('keen').x * 100) + '% more often a rank', lore: 'Each relic of battle ' + Math.round(CB.perk('lore').x * 100) + '% stronger a rank' };
+function combatMerchantSection() {
+  const L = cLife(); if (!L.opened) return null; const spent = CB.perkSpent(L.perks), free = L.bs - spent;
+  let h = '<section class="cur open"><div class="cur-strip"><span class="cur-name"><span class="hex" style="width:30px;height:27px;background:#b8484f"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6z" fill="none" stroke="#2a1010" stroke-width="2"/></svg></span><span><span class="cz cur-t">Defense</span><span class="cur-s">Bloodstones</span></span></span>' +
+    '<span class="cur-mem"><span class="cur-l">Combat power, from bloodstones</span><span class="memx"><span class="now">×' + fmtW(cFlatFor(L.bs), 2) + '</span></span></span>' +
+    '<span class="cur-purse"><svg width="20" height="26" viewBox="0 0 12 16" aria-hidden="true"><path d="M6 0l6 7-6 9-6-9z" fill="#b8484f"></path></svg><span><b>' + fmtW(free) + '</b><span>of ' + fmtW(L.bs) + ' free</span></span></span><span></span></div>';
+  h += '<div class="cur-body"><div class="cur-bar"><span>' + CT.travSub + '</span></div><div class="pk-chips">';
+  CB.P.perks.filter(p => CB.perkUseful(p)).forEach(p => { const n = L.perks[p.id] || 0, max = p.max || 99, done = n >= max, price = done ? 0 : CB.perkCost(p, n), afford = !done && free >= price;
     h += '<button type="button" class="chip" data-bpick="' + p.id + '" title="' + (CPK_UI[p.id] || '') + '" style="color:#f1dede;border:1px solid ' + (n ? '#a5585e' : '#4a2c30') + ';background:' + (n ? '#3a1d22' : '#241417') + '"><span style="flex:1;font-size:12.5px;line-height:1.15">' + p.name + (n ? ' <span style="color:#e6a3a9">' + n + '</span>' : '') + '<br><span style="font-size:11px;color:#bfa7a9">' + (CPK_UI[p.id] || '') + '</span></span>' +
       (done ? '✓' : '<span style="font-size:12.5px;color:' + (afford ? '#ffd0d8' : '#8d7a7c') + '">' + fmtW(price) + '</span>') + '</button>'; });
-  h += '</div></div></section>';
-  h += '<div class="pk-foot"><div class="pk-last">Close or press Esc to go back to your defense</div><button type="button" class="pk-return" id="pk-cgo">' + pkSvg('flame', '#ffb35c', 19, 1.8) + fill2(CT.againGo, { run: run + 1 }) + '</button></div></div>';
-  ps.innerHTML = h;
+  return h + '</div></div></section>';
 }
-function commitAgain() {
-  const w = W(), C = cRun(w), L = cLife(), P = MV.cprest; if (!C || !P) return;
-  CB.bank(C, L); L.perks = Object.assign({}, P.blv);
-  w.jobs.miner = 0; w.jobs.drillmaster = 0;   // the mine is gone: its settlers go free
-  w.c = CB.newRun(L, L.runs + 1); MV.cprest = null; S.inPerks = false; $('perk-screen').classList.add('hidden');
-  cLightApply(w); wsay(fill2(CT.againMsg, { run: L.runs + 1 })); S.view = 'defense'; renderWorld(); save(true);
-}
+// a bloodstone perk bought from the traveler works at once (capture: before the perk screen's own handler)
 $('perk-screen').addEventListener('click', e => {
-  const t = e.target.closest('button'); if (!t || !MV.cprest) return; e.stopImmediatePropagation();
-  const P = MV.cprest, L = cLife(), w = W();
-  if (t.dataset.cclose) { closeAgain(); return; }
-  if (t.id === 'pk-cgo') { commitAgain(); return; }
-  if (t.dataset.brespec) { P.blv = {}; renderAgain(); return; }
-  if (t.dataset.bpick) { const p = CB.perk(t.dataset.bpick), n = P.blv[p.id] || 0, free = L.bs + cNewBs(w) - CB.perkSpent(P.blv); if (n < (p.max || 99) && CB.perkCost(p, n) <= free) P.blv[p.id] = n + 1; renderAgain(); }
+  const t = e.target.closest('button[data-bpick]'); if (!t || !MV.prest || !MV.prest.merchant) return; e.stopImmediatePropagation();
+  const L = cLife(), p = CB.perk(t.dataset.bpick), n = L.perks[p.id] || 0, free = L.bs - CB.perkSpent(L.perks);
+  if (CB.perkUseful(p) && n < (p.max || 99) && CB.perkCost(p, n) <= free) { L.perks[p.id] = n + 1; const w = W(), C = cRun(w); if (C) CB.tick(w, 0, false, C, L); save(true); }
+  renderPerks();
 }, true);
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && MV.cprest) closeAgain(); });
+// the traveler's first visit once combat is open: he wants bloodstones now (owner, 2026-10-31)
+function combatTravelerCheck(w, calm) {
+  const L = cLife(); if (!L.opened || L.travelerMet || !calm || !MC.merchantHere(w)) return;
+  L.travelerMet = true; $('moment-h').textContent = CT.travH; const body = $('moment-body'); body.innerHTML = '';
+  [CT.trav1, CT.trav2].forEach(t => { const p = document.createElement('p'); p.textContent = t; body.appendChild(p); });
+  $('moment-ok').textContent = CT.travGo; $('moment').dataset.kind = 'traveler'; momentPlain(); $('moment').classList.remove('hidden');
+}
 
 /* ---------- light's hover: what combat sends ---------- */
 function combatLightLines(w) { const C = cRun(w); if (!C) return []; const g = CB.lightGifts(C, cLife()), out = [];
