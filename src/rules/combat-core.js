@@ -44,6 +44,7 @@ var CPHASE = function (MC, CM, dialsIn) {
       startCP: 'full',                // owner, 2026-10-31 (later): the bar opens full with the first Barracks ('full'; or × the weakest open battle, as 1.25 was)                  // when the cap first opens, CP starts at this × the weakest open battle (owner, Considering: enough to win one), never over the cap
       strategy: 'full',               // 'full': the bot saves for a full bar (owner); 'odds': it fights with what it has when the odds are good
       fightFloor: 0.5, sureWin: 0.97, oddsFloor: 0.85,
+      fullAt: 0.9,                    // owner, 2026-10-31: the bot starts a battle that isn't easy only with a bar this full (a player keeping losses low)
       share: 0.15,                    // the most of the settlers the bot puts on combat's jobs (miners and drillmasters together)
       // iron: the mine (bought with the starting 2 iron), deepened with wood, stone and copper, never iron
       mine: { price: 2, perMinerH: 0.5, slots0: 2, slotsLv: 1, depthX: 1.08, cost: { stones: 15000, wood: 25000 }, g: 1.4 },
@@ -231,12 +232,14 @@ var CPHASE = function (MC, CM, dialsIn) {
     topUp(C, life);
     for (var k in C.bdone) { var c0 = byKey[k]; if (C.cleared[k] || !(C.bdone[k] > 0)) continue; if ((c0.trait === 'regrow' || c0.trait === 'rot') && C.hr - (C.lastFight[k] || C.hr) >= 8) { C.bdone[k] = Math.max(0, C.bdone[k] - (c0.trait === 'rot' ? 2 : 1)); C.lastFight[k] = C.hr; C.traitHits[c0.trait] = (C.traitHits[c0.trait] || 0) + 1; } }
     // a rally when the next battle needs more than the bar holds and the cooldown is over (the bot rallies once the bar is low, a player would too)
-    for (var guard = 0; guard < 80; guard++) {
-      var full = C.cp >= cap(C, life) * 0.999;
-      if (P.strategy === 'full' && !full) { C.waits.bar++; break; }
+    // owner, 2026-10-31: at a check-in the bot fights every easy battle (a sure win with what the bar holds now), and a harder one
+    // only with the bar at least fullAt full; it stops when neither is left (was: one battle a check-in tick, with a full bar)
+    for (var guard = 0; guard < 600; guard++) {
+      var full = C.cp >= cap(C, life) * (P.fullAt != null ? P.fullAt : 0.999);
       var best = null, bp = -1, nb = null, form = 'steady', S0 = 0;
       frontier(C, s).forEach(function (c) { var b = nextBattle(c, C, life, day), S = C.cp * edgeOf(C, life, c), f = chooseForm(C, life, S, b, c), F = FORM[f][0] * (f === 'overwhelm' ? councilF(C) : 1), p = CM.pwin(S * F, b.D, diceOf(C, c)); if (p > bp) { bp = p; best = c; nb = b; form = f; S0 = S; } });
       if (!best) { C.waits.none++; break; }
+      if (P.strategy === 'full' && !full && bp < P.sureWin) { C.waits.bar++; break; }   // nothing easy left, and the bar not full enough for a harder one
       var useAv = false;
       if (bp < (P.strategy === 'full' ? P.sureWin : P.oddsFloor) && avatarReady(C)) { var pa = CM.pwin(S0 * FORM[form][0] * (1 + P.avatar.edge), nb.D, diceOf(C, best)); if (pa > bp) { bp = pa; useAv = true; } }
       if (bp < (P.strategy === 'full' ? P.fightFloor : P.oddsFloor)) { C.waits.odds++; break; }
