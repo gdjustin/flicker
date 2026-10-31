@@ -21,6 +21,7 @@ function buildTextRegistry() {
   Object.keys(WORLD.text).forEach(k => regText('Village messages', k, 'world.text.' + k, WORLD.text, k));
   UI_DEFS.forEach(d => regText(d[1], d[2], d[0], UI, d[0]));
   Object.keys(MT).forEach(k => regText('Map (phase 1 branch)', k, 'mt.' + k, MT, k));
+  Object.keys(CT).forEach(k => regText('Defense (combat test)', k, 'ct.' + k, CT, k));
 }
 buildTextRegistry();
 const TEXT_BY_KEY = Object.fromEntries(TEXT.map(e => [e.key, e]));

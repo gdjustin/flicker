@@ -108,6 +108,7 @@ function renderMap(w) {
       const r0 = t.region; [['bt', 0, -1], ['bb', 0, 1], ['bl', -1, 0], ['br', 1, 0]].forEach(([b, dx, dy]) => { const n = tileOf((t.x + dx) + ',' + (t.y + dy)); if (!n || n.region !== r0) cls.push(b); });
       if (rel[k]) cls.push('relic'); if (anchors[k]) cls.push(anchors[k] === 'lit' ? 'anchored' : 'anchorplan');
       { const mt = MC.masteryOn(w) ? MC.mTier(w, k) : 0; if (mt) cls.push('m' + Math.min(3, mt)); }   // the rebirth branch: mastery shows on the land
+      combatCellCls(w, k, cls); { const cl = combatCellLabel(w, k); if (cl) lb = cl; }   // combat test: pips and strength
     } else if (t) {
       cls.push('dark'); if (MC.reachable(w, t)) { cls.push('reach', 'scout', 'land-' + LANDC[t.land]); lb = etaShort((MC.tileCost(t, w) - (w.m.got[k] || 0)) / Math.max(1e-9, L0 * MC.ampMult(w, k))); }
       else if (seen[k] || rev[k]) { cls.push('scout', 'far', 'land-' + LANDC[t.land]); lb = etaShort((MC.tileCost(t, w) - (w.m.got[k] || 0)) / Math.max(1e-9, L0 * MC.ampMult(w, k))); }
@@ -175,7 +176,7 @@ function regionRowHtml(w, r, note) {
 }
 function renderPanel(w) {
   const box = $('m-panel'); const k = MV.sel;
-  const sig = JSON.stringify([k, S.debug, MC.scoutDepth(w), w.m.target, (w.m.lineup || []).join(';'), MC.lineupMax(w), w.m.pool >= 1, !!(k && w.m.tiles[k]), w.m.relicT && w.m.relicT[k], (w.m.anchors || []).length, w.m.amps.length, MV.ampDir, MV.ampArm, Math.floor((S.playTime || 0) / 2), w.res.copper > 0 ? Math.floor(Math.log2(w.res.copper + 1)) : 0, k && MC.masteryOn(w) && w.m.tiles[k] ? [MC.mTier(w, k), Math.floor(MC.mClears(w, k) / Math.max(1, MC.mNeed(w, k) / 100)), w.m.mreg, MC.masteryPoints(w)] : 0, !!w.m.rbReady]);
+  const sig = JSON.stringify([k, S.debug, MC.scoutDepth(w), w.m.target, (w.m.lineup || []).join(';'), MC.lineupMax(w), w.m.pool >= 1, !!(k && w.m.tiles[k]), w.m.relicT && w.m.relicT[k], (w.m.anchors || []).length, w.m.amps.length, MV.ampDir, MV.ampArm, Math.floor((S.playTime || 0) / 2), w.res.copper > 0 ? Math.floor(Math.log2(w.res.copper + 1)) : 0, k && MC.masteryOn(w) && w.m.tiles[k] ? [MC.mTier(w, k), Math.floor(MC.mClears(w, k) / Math.max(1, MC.mNeed(w, k) / 100)), w.m.mreg, MC.masteryPoints(w)] : 0, !!w.m.rbReady, combatSig(w, k)]);
   if (box.dataset.s === sig) return; box.dataset.s = sig; box.innerHTML = '';
   const add = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; box.appendChild(e); return e; };
   if (!k) { add('p', 'msec', 'Picked place'); add('p', 'mmut', 'Pick a place on the map. Places beside your land show their land; send your light to one to call it back.'); return; }
@@ -183,6 +184,7 @@ function renderPanel(w) {
   const t = tileOf(k); if (!t) { add('p', 'mptitle', 'Water'); add('p', 'mmut', 'The light slides off it. Its region finishes without it.'); return; }
   const lit = !!w.m.tiles[k], reach = MC.reachable(w, t), r = regionOf(t), rc = regionCount(w, r), far = !lit && !reach && !!(MC.seenTiles(w)[k] || (w.m.revealed || {})[k]);
   if (lit || !(reach || far)) add('p', 'msec', lit ? 'Called back' : 'In the dark');   // r1d (owner): places beside your land or seen from afar need no heading
+  if (lit) combatCard(w, k, box);   // combat test: its battles at the top
   // v1r (owner): a place called back shows its relic at the top of the card
   if (lit) { const has = !!(w.m.relicT && w.m.relicT[k]), rh = add('p', 'mprelic'); rh.innerHTML = relicIconHtml(t.land) + ' '; rh.appendChild(document.createTextNode(relicName(k) + (has ? ' · claimed' : ' · waits: ' + fmtW(MC.relicCost(w, k).copper) + ' copper'))); }
   add('p', 'mptitle', lit || reach || far ? tileName(t) : 'Darkness');

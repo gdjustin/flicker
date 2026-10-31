@@ -140,6 +140,7 @@ function renderRelicsTab(w) {
   }
   h += '</div><div class="rtot"><span>All light from relics: <b>×' + fmtW(MC.relicMult(w), 2) + '</b></span>' + (lore > 1 ? '<span>Relic lore: <b>×' + fmtW(lore, 2) + '</b> on every relic’s light</span>' : '') +
     '<span class="tipme" tabindex="0" data-tip="' + ringTip + '">Ringing relics: <b>' + Object.values(ring).reduce((a, b) => a + b, 0) + '</b></span></div></div>';
+  h += combatRelicsHtml(w);   // combat test: relics of battle
   // regions: the ones you have touched, this run or before
   const m = meta(), regs = MC.REGIONS.map((rg, i) => ({ rg, i, on: regionCount(w, rg), N: rg.tiles.length, best: m.regBest[i] || 0, fin: m.regFin[i] || 0 })).filter(r => r.on || r.best);
   regs.sort((a, b) => (b.on === b.N) - (a.on === a.N) || b.on / b.N - a.on / a.N);
@@ -188,6 +189,7 @@ function renderMapJobs(w) {
       if (d) d.title = idleH ? 'Nothing to carry: put them to other work' : 'A build is waiting for haulers'; }
     row.children[3].textContent = w.jobs[j.id] || 0; row.children[2].disabled = !(w.jobs[j.id] > 0); row.children[4].disabled = VC.jobsTotal(w) >= w.pop;
   });
+  renderCombatJobs(w, jb);
 }
 // r1d: firekeepers need no wood in the village or the map (one rule), so their words are the same everywhere
 function mapJobDesc(j) { return j.desc; }
