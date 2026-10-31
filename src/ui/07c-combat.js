@@ -21,7 +21,8 @@ const CT = {   // combat's text, in one place for the text editor (placeholders 
   openH: 'The wolves scatter', open0: 'You find the remains of an old iron mine, long dormant. Its mouth is choked with rubble.',   // owner, 2026-10-31 (revised)
   open2: 'Stray bits of loose iron lie around the entrance. You think it\u2019s just enough to get the mine working again.', open3: 'The Defense tab is now open: start with the mine; you\u2019ll need iron to arm your settlers.',
   mineMsg: 'The old iron mine is open again. Put settlers to work in it (Settlement).', armoryMsg: 'Your first company stands. The Armory can now be researched.', capMsg: 'Your first defenders muster. The battle front is open on the Defense tab, and the map shows what holds each place.', openOk: 'To the defense',
-  barCP: 'Combat power', barRes: 'Reserves', resolveIs: 'Resolve: ready in {t}', resolveRate: '+{n} combat power an hour',
+  barCP: 'Combat power', barRes: 'Reserves', resolveIs: 'Refills from empty in {t}', resolveFull: 'Full', resolveIn: 'Full in {t}', resolveRate: '+{n} combat power an hour',
+  stdReadyMsg: 'Three places are safe. Your people could raise standards over them: a new research.',
   iron: 'Iron', ironRate: '+{n}/h', noMiners: 'no miners',
   attack: 'Attack', attackSub: 'Commit {n} combat power against their {d}.', leadH: 'Lead the charge', leadSub: 'You join this battle yourself: strength ×{x}. Again in {t}.',
   leadWait: 'You can lead a charge again in {t}.', won: 'won', next: 'Next', unknown: '???',
@@ -83,6 +84,7 @@ function combatTick(dt, away, ev) {
   if (!L.opened && combatUnlocked(w) && calm && L.threat !== 'on') combatWake(w);   // a save already whole (the whole moment leads here itself)
   if (L.threat === 'on' && !w.m.hold && !L.opened) MC.startHold(w, CB.P.threat);   // a save from before the hold
   if (L.openPending && calm) { L.openPending = false; showCombatOpen(); }
+  if (w.m.standardsReady && !L.stdNoted && !w.m.cards.standards) { L.stdNoted = true; wsay(CT.stdReadyMsg); }
   combatTravelerCheck(w, calm);
   if (L.opened && !w.c) w.c = CB.newRun(L, (L.runs || 0) + 1);
   const C = cRun(w); if (!C) return;
@@ -129,7 +131,7 @@ function renderCombatRes(w) {
   if (open) {   // owner: no bars until the first Barracks or Armory; no Reserves until the first Storehouse
     h += '<div class="cbar"><p><span>' + CT.barCP + '</span><b>' + fmtCP(C.cp) + ' / ' + fmtCP(cap) + '</b></p><div class="st-bar"><i style="width:' + pc(C.cp, cap) + '%"></i></div></div>';
     if (rc > 0) h += '<div class="cbar res"><p><span>' + CT.barRes + '</span><b>' + fmtCP(C.res) + ' / ' + fmtCP(rc) + '</b></p><div class="st-bar"><i style="width:' + pc(C.res, rc) + '%"></i></div></div>';
-    h += '<p class="cfill">' + fill2(CT.resolveIs, { t: fmtTime(fill * 3600) }) + (C.hr < C.rallyEnd ? ' · rallying' : '') + '<br><span>' + fill2(CT.resolveRate, { n: fmtCP(rate) }) + '</span></p>';
+    h += '<p class="cfill">' + (C.cp >= cap * 0.999 ? CT.resolveFull : fill2(CT.resolveIn, { t: fmtTime((cap - C.cp) / Math.max(1e-12, rate) * 3600) })) + (C.hr < C.rallyEnd ? ' · rallying' : '') + '<br><span>' + fill2(CT.resolveRate, { n: fmtCP(rate) }) + ' · ' + fill2(CT.resolveIs, { t: fmtTime(fill * 3600) }).toLowerCase() + '</span></p>';
   }
   box.innerHTML = h;
 }
@@ -164,7 +166,7 @@ function combatCard(w, k, box) {
     setBtn(b, CT.attack, fill2(CT.attackSub, { n: fmtCP(C.cp * CMV.frac), d: fmtCP(pv.D) }), C.cp > 1e-9 && !pv.none, {}); b.addEventListener('click', () => cAttack(k));
   } else {
     const acts = add('div', 'mpacts');
-    if (C.newly[k] && !(L.stds || {})[k]) { const sc = CB.stdCost(L), b = document.createElement('button'); b.type = 'button'; b.className = 'act'; acts.appendChild(b);
+    if (CB.stdOK(w) && C.newly[k] && !(L.stds || {})[k]) { const sc = CB.stdCost(L), b = document.createElement('button'); b.type = 'button'; b.className = 'act'; acts.appendChild(b);
       setBtn(b, CT.std, fill2(CT.stdSub, { pct: fmtW(CB.P.standard.x * 100, 1), cost: costList(sc) }), CB.canStd(w, C, L), {}); b.addEventListener('click', () => cStd(k)); }
     const rc = CB.raidCost(C, L), b2 = document.createElement('button'); b2.type = 'button'; b2.className = 'act'; acts.appendChild(b2);
     setBtn(b2, CT.raid, C.res >= rc ? fill2(CT.raidSub, { n: fmtCP(rc), fam: c.famName.toLowerCase(), s: CB.P.raid.study }) + (L.relics[k] ? ' Its relic is already yours.' : '') : fill2(CT.raidNo, { n: fmtCP(rc) }), C.res >= rc, {}); b2.addEventListener('click', () => cRaid(k));
@@ -273,10 +275,10 @@ function renderDefenseTab(w) {
         b.innerHTML = '<span class="cn">' + shortName(tileOf(c.key)) + '</span><span class="cf">' + c.famName + ' · ' + ((C.bdone[c.key] || 0) + 1) + ' of ' + (c.nb + (C.extra[c.key] || 0)) + '</span><span class="cs">' + fmtCP(pv.D) + '</span><span class="cp ' + (pv.sure ? 'ok' : pv.none ? 'bad' : '') + '">' + (pv.sure ? 'sure' : pv.none ? 'too strong' : Math.round(pv.pwin * 100) + '%') + '</span>';
         b.addEventListener('click', () => { MV.sel = c.key; S.view = 'map'; MV.lastMap = 0; renderWorld(); }); f.appendChild(b); }); } }
   // for the light: iron buffs, standards (only once something is in it)
-  { const lb = $('cd-light'), op = CB.oneOffsOpen(C, L), want = new Set(op.map(x => 'cd-o-' + x.id)), std = CB.stdOpen(C, L);
+  { const lb = $('cd-light'), op = CB.oneOffsOpen(C, L), want = new Set(op.map(x => 'cd-o-' + x.id)), std = CB.stdOpen(C, L, w);
     Array.from(lb.querySelectorAll('.act')).forEach(b => { if (b.id && b.id.indexOf('cd-o-') === 0 && !want.has(b.id)) b.remove(); });
     op.forEach(x => { const b = ensureBtn(lb, 'cd-o-' + x.id, () => cOneOff(x.id)); setBtn(b, x.name, 'Iron for the fires: ' + oneOffWhat(x) + (CB.P.keepLight ? '. Kept for good.' : '. This run of your defense only.'), C.iron >= x.iron, { kind: 'upgrade', cost: { iron: x.iron } }); });
-    const sb = $('cd-stdall'); if (std.length) { const b = ensureBtn(lb, 'cd-stdall', () => { const ww = W(); CB.stdOpen(cRun(ww), cLife()).forEach(k => cStd(k)); });
+    const sb = $('cd-stdall'); if (std.length) { const b = ensureBtn(lb, 'cd-stdall', () => { const ww = W(); CB.stdOpen(cRun(ww), cLife(), ww).forEach(k => cStd(k)); });
       setBtn(b, 'Raise standards (' + std.length + ' waiting)', 'Each marks a place made safe: all light +' + fmtW(CB.P.standard.x * 100, 1) + '%, kept for good. ' + cLife().stdN + ' raised so far.', CB.canStd(w, C, L), { kind: 'building', cost: CB.stdCost(L) }); } else if (sb) sb.remove();
     $('cd-sec-light').classList.toggle('hidden', !lb.querySelector('.act')); }   // fixed (v1s-c2): the empty note no longer flips on and off each frame
   // the Bestiary (once a family is studied)
@@ -288,7 +290,7 @@ function renderDefenseTab(w) {
 }
 
 /* ---------- map marks: a bronze pip while a place is being fought, gold once safe; strength on places not yet fought ---------- */
-function combatCellCls(w, k, cls) { const C = cRun(w); if (!cCapOpen(C) || !w.m.tiles[k]) return; if (C.cleared[k]) cls.push('csafe'); else if (C.bdone[k] > 0) cls.push('cfight'); else cls.push('cheld'); }
+function combatCellCls(w, k, cls) { }   // owner, 2026-10-31: no combat dots on the map (the strength label stays)
 function combatCellLabel(w, k) { const C = cRun(w); if (!cCapOpen(C) || !w.m.tiles[k] || C.cleared[k]) return ''; const c = CB.byKey(k); if (!c) return ''; const cap = CB.cap(C, cLife()); if (c.power > cap * 30) return ''; return '⚔' + fmtShortCP(CB.nextBattle(c, C, cLife(), C.hr / 24).D * CPU); }
 function fmtShortCP(v) { return v >= 1e9 ? fmtW(v / 1e9, 1) + 'B' : v >= 1e6 ? fmtW(v / 1e6, 1) + 'M' : v >= 1e3 ? fmtW(v / 1e3, 1) + 'k' : fmtW(v, v < 10 ? 1 : 0); }
 

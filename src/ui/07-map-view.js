@@ -108,7 +108,7 @@ function renderMap(w) {
       const r0 = t.region; [['bt', 0, -1], ['bb', 0, 1], ['bl', -1, 0], ['br', 1, 0]].forEach(([b, dx, dy]) => { const n = tileOf((t.x + dx) + ',' + (t.y + dy)); if (!n || n.region !== r0) cls.push(b); });
       if (rel[k]) cls.push('relic'); if (anchors[k]) cls.push(anchors[k] === 'lit' ? 'anchored' : 'anchorplan');
       { const mt = MC.masteryOn(w) ? MC.mTier(w, k) : 0; if (mt) cls.push('m' + Math.min(3, mt)); }   // the rebirth branch: mastery shows on the land
-      combatCellCls(w, k, cls); { const cl = combatCellLabel(w, k); if (cl) lb = cl; }   // combat test: pips and strength
+      { const cl = combatCellLabel(w, k); if (cl) { lb = cl; cls.push('cl'); } }   // combat test: a place's strength (no dots: owner, 2026-10-31)
     } else if (t) {
       cls.push('dark'); if (MC.reachable(w, t)) { cls.push('reach', 'scout', 'land-' + LANDC[t.land]); lb = etaShort((MC.tileCost(t, w) - (w.m.got[k] || 0)) / Math.max(1e-9, L0 * MC.ampMult(w, k))); }
       else if (seen[k] || rev[k]) { cls.push('scout', 'far', 'land-' + LANDC[t.land]); lb = etaShort((MC.tileCost(t, w) - (w.m.got[k] || 0)) / Math.max(1e-9, L0 * MC.ampMult(w, k))); }

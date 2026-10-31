@@ -33,13 +33,14 @@ var CPHASE = function (MC, CM, dialsIn) {
       // over 5 to 15 minutes by how much light they make (C: light for the whole bar; the lab's check-in bot makes about 5.7e8 a second (7.9e8 during a feast)
       // at whole, about 9 minutes; a bot that spends no heartstones at the last rebirth, about 4.6e8: about 11). Then the fighting turns up a dormant iron mine and 2 loose iron (unlock.iron).
       threat: { id: 'wolves', C: 3e11, minS: 300, maxS: 900 },
+      standardResearch: 3,            // owner, 2026-10-31: raising standards is a research (map research 'standards'), opened by 3 places made safe
       armoryResearch: true,           // owner, 2026-10-31: the Armory opens as a research (map research 'armory') after the first Barracks
       attuneGate: true,               // owner, 2026-10-31: Light Attunement's research opens once the first place is made safe
       live: true,                     // bloodstones bank as they are earned (no combat rebirths after whole)
       keepLight: true,                // a combat rebirth keeps the iron buffs bought for Light (Light no longer resets after whole)
       cp0K: 0.9,                      // the CP base, × the cheapest place's power (owner, 2026-10-18: the first companies win a couple of places only; the cap
                                       // is 0 until the first Barracks or Armory level, then about 13 to 16 shown)
-      startCP: 1.25,                  // when the cap first opens, CP starts at this × the weakest open battle (owner, Considering: enough to win one), never over the cap
+      startCP: 0,                     // owner, 2026-10-31: the bar opens empty with the first Barracks and fills (was 1.25: enough to win one battle)                  // when the cap first opens, CP starts at this × the weakest open battle (owner, Considering: enough to win one), never over the cap
       strategy: 'full',               // 'full': the bot saves for a full bar (owner); 'odds': it fights with what it has when the odds are good
       fightFloor: 0.5, sureWin: 0.97, oddsFloor: 0.85,
       share: 0.15,                    // the most of the settlers the bot puts on combat's jobs (miners and drillmasters together)
@@ -204,6 +205,7 @@ var CPHASE = function (MC, CM, dialsIn) {
   // after each tick: Resolve into the bar, then Reserves; iron; hauling to combat's stores; the Red Host's leak while away
   function tick(s, dt, away, C, life) {
     if (P.attuneGate && s && s.m && !s.m.attuneOk && life && Object.keys(life.ever).length) s.m.attuneOk = true;   // saves from before the gate
+    if (P.standardResearch && s && s.m && !s.m.standardsReady && life && Object.keys(life.ever).length >= P.standardResearch) s.m.standardsReady = true;
     if (!C.open) return;
     var h = dt / 3600; C.hr = s && s.t != null ? s.t / 3600 : C.hr + h;   // combat's clock is the game's
     if (!C.capOpen && s && s.m) { SS = s; topUp(C, life); }
@@ -296,8 +298,9 @@ var CPHASE = function (MC, CM, dialsIn) {
   }
   // standards: raised once a place is cleared the first time ever (lifetime), a hauled step of raw, each adds to Light
   function stdCost(life) { var m = Math.pow(P.standard.g, Math.sqrt(life.stdN)), o = {}; for (var k in P.standard.cost) o[k] = Math.ceil(P.standard.cost[k] * m); if (P.standard.iron) o.iron = P.standard.iron; return o; }
+  function stdOK(s) { return !P.standardResearch || !!(s && s.m && s.m.cards && s.m.cards.standards); }
   function standards(C, life) {
-    if (P.off.standards) return;
+    if (P.off.standards || !stdOK(SS)) return;
     Object.keys(C.newly).forEach(function (k) { if (life.stds[k]) return; var c = stdCost(life); if (!canPay(C, c)) return; pay(C, c, 'standards'); life.stds[k] = true; life.stdN++; });
   }
 
@@ -427,8 +430,8 @@ var CPHASE = function (MC, CM, dialsIn) {
   }
   function oneOffsOpen(C, life) { if (P.off.oneOffs) return []; var best = Math.max(life.best || 0, C.clearedN); return P.oneOffs.filter(function (x) { return !C.oneOffs[x.id] && best >= x.opens; }); }
   function buyOneOff(s, C, life, id) { if (P.off.oneOffs) return false; SS = s; C.ironKeep = 0; var x = null; P.oneOffs.forEach(function (o) { if (o.id === id) x = o; }); if (!x || C.oneOffs[id] || C.iron < x.iron) return false; pay(C, { iron: x.iron }, 'oneOffs'); C.oneOffs[id] = C.hr; if (life.oneOffs) life.oneOffs[id] = C.hr; return true; }
-  function stdOpen(C, life) { return Object.keys(C.newly).filter(function (k) { return !life.stds[k]; }); }
-  function raiseStd(s, C, life, key) { SS = s; if (P.off.standards || !C.newly[key] || life.stds[key]) return false; var c = stdCost(life); if (!canPay(C, c)) return false; pay(C, c, 'standards'); life.stds[key] = true; life.stdN++; return true; }
+  function stdOpen(C, life, s) { if (!stdOK(s || SS)) return []; return Object.keys(C.newly).filter(function (k) { return !life.stds[k]; }); }
+  function raiseStd(s, C, life, key) { SS = s; if (P.off.standards || !stdOK(s) || !C.newly[key] || life.stds[key]) return false; var c = stdCost(life); if (!canPay(C, c)) return false; pay(C, c, 'standards'); life.stds[key] = true; life.stdN++; return true; }
   function canStd(s, C, life) { SS = s; return canPay(C, stdCost(life)); }
   // the game's jobs: miners and drillmasters, up to their places
   function syncJobs(s, C) { C.miners = Math.min(s.jobs.miner || 0, mineSlots(C)); C.drillers = Math.min(s.jobs.drillmaster || 0, drillSlots(C)); }
@@ -449,6 +452,6 @@ var CPHASE = function (MC, CM, dialsIn) {
     ironH: ironH, landIronH: landIronH, mineSlots: mineSlots, drillSlots: drillSlots, beastStages: beastStages, beastTotal: beastTotal, flatBS: flatBS, lightFlat: lightFlat, lightSrc: lightSrc, lightStd: lightStd, frontier: frontier,
     nextBattle: nextBattle, avatarCd: avatarCd, armPrice: armPrice, have: asPlayer(function (C, k, s) { if (s) SS = s; return have(C, k); }), options: function (s, C, life) { SS = s; return options(s, C, life); }, incomeH: incomeH, snapshot: snapshot, armL: armL, recruitF: recruitF, armF: armF,
     preview: preview, attack: attack, fightable: fightable, avatarReady: avatarReady, raidAt: raidAt, raidCost: raidCost, rallyNow: asPlayer(rallyNow), rallyFood: rallyFood, rallyX: rallyX, canBuy: asPlayer(canBuy), buyLine: asPlayer(buyLine), oneOffsOpen: oneOffsOpen, buyOneOff: buyOneOff,
-    stdOpen: stdOpen, stdCost: stdCost, raiseStd: asPlayer(raiseStd), canStd: asPlayer(canStd), syncJobs: syncJobs, bank: bank, perkSpent: perkSpent, perk: perk, perkLv: perkLv, perkUseful: perkUseful, lightGifts: lightGifts, edgeOf: edgeOf, beastEdge: beastEdge, defOpen: defOpen, ironPerMinerH: ironPerMinerH, healF: healF, scoutF: scoutF, councilF: councilF, hardF: hardF, relicCP: relicCP, cpOf0: function () { return cp0; } };
+    stdOpen: stdOpen, stdCost: stdCost, raiseStd: asPlayer(raiseStd), canStd: asPlayer(canStd), syncJobs: syncJobs, bank: bank, perkSpent: perkSpent, perk: perk, perkLv: perkLv, perkUseful: perkUseful, stdOK: stdOK, lightGifts: lightGifts, edgeOf: edgeOf, beastEdge: beastEdge, defOpen: defOpen, ironPerMinerH: ironPerMinerH, healF: healF, scoutF: scoutF, councilF: councilF, hardF: hardF, relicCP: relicCP, cpOf0: function () { return cp0; } };
 };
 if (typeof module !== 'undefined') module.exports = CPHASE;
