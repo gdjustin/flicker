@@ -294,6 +294,8 @@ var MCORE = function (VC) {
   // the combat branch (owner, 2026-10-31): with D.mastery.gate set, Light Attunement waits for the first place made safe (s.m.attuneOk)
   CARDS.push({ id: 'mastery', name: 'Light Attunement', cost: { ideas: 1500 }, at: { fn: function (s) { return !!(D.rb.on && s.m.whole && (!D.mastery.gate || s.m.attuneOk)); } }, desc: 'Pour your light back into previously-recalled land. HINT: This will make you much stronger from here on out....' });   // owner, 2026-10-26
   CARDS.push({ id: 'traveler', name: 'A mysterious traveler', cost: { ideas: 1500 }, at: { fn: function (s) { return !!(D.rb.on && s.m.whole); } }, desc: 'Your settlement has attracted the attention of a traveling merchant who deals in heartstones and other rarities.' });
+  // the combat branch (owner, 2026-10-31): the Armory is a research, opened by the first Barracks (s.m.armoryReady, set by combat-core)
+  CARDS.push({ id: 'armory', name: 'The Armory', cost: { ideas: 1500 }, at: { fn: function (s) { return !!s.m.armoryReady; } }, desc: 'Forge arms for your defenders. Opens the Armory on the Defense tab.' });
   CARDS.push({ id: 'cuburners', name: 'Copper burners', cost: { ideas: 600 }, sys: 'cuburner', at: { copper: true, tiles: 6 }, desc: 'Opens copper burners: copper burned for light.' });
   CARDS.push({ id: 'cbraziers', name: 'Copper braziers', cost: { ideas: 350 }, at: { copper: true, fn: function (s) { return D.cbrazier.on > 0 && (s.lv.brazier || 0) >= VC.LAD.brazier.max; } }, desc: 'Unlocks copper braziers: another way to generate light.' });
   // r1f (owner): a chain of research shows one step at a time; the next appears once the one before is learned

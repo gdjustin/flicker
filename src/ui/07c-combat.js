@@ -18,10 +18,9 @@ const CT = {   // combat's text, in one place for the text editor (placeholders 
   wakeH: 'Something has seen your light', wake1: 'The land wakes, and not all of it kindly. Things that slept in the void are stirring again.',   // owner, 2026-10-31
   wake2: 'Shadow-eyed wolves howl from the treeline; your village is under siege. You must use your light to drive them off.', wakeGo: 'Repel the howling wolves',
   threatLab: 'Your light holds them back', threatName: 'Repelling the wolf pack', threatLeft: 'about {t} left', threatDone: 'The wolves scatter.',
-  openH: 'The wolves scatter', open0: 'You find the remains of an old iron mine, long dormant.',   // owner, 2026-10-31
-  open1: 'Where the wolves made their den, the fighting has torn open an old, long-dormant iron mine. Its mouth is choked with rubble.',
-  open2: 'Stray bits of loose iron lie around the entrance. You think it\u2019s just enough to get the mine working again.', open3: 'The Defense tab is open: start with the mine.',
-  mineMsg: 'The old iron mine is open again. Put settlers to work in it (Settlement).', capMsg: 'Your first defenders muster. The battle front is open on the Defense tab, and the map shows what holds each place.', openOk: 'To the defense',
+  openH: 'The wolves scatter', open0: 'You find the remains of an old iron mine, long dormant. Its mouth is choked with rubble.',   // owner, 2026-10-31 (revised)
+  open2: 'Stray bits of loose iron lie around the entrance. You think it\u2019s just enough to get the mine working again.', open3: 'The Defense tab is now open: start with the mine; you\u2019ll need iron to arm your settlers.',
+  mineMsg: 'The old iron mine is open again. Put settlers to work in it (Settlement).', armoryMsg: 'Your first company stands. The Armory can now be researched.', capMsg: 'Your first defenders muster. The battle front is open on the Defense tab, and the map shows what holds each place.', openOk: 'To the defense',
   barCP: 'Combat power', barRes: 'Reserves', resolveIs: 'Resolve: ready in {t}', resolveRate: '+{n} combat power an hour',
   iron: 'Iron', ironRate: '+{n}/h', noMiners: 'no miners',
   attack: 'Attack', attackSub: 'Commit {n} combat power against their {d}.', leadH: 'Lead the charge', leadSub: 'You join this battle yourself: strength ×{x}. Again in {t}.',
@@ -105,7 +104,7 @@ function combatSettlersNeedYou(w) { const C = cRun(w); if (!C) return []; const 
   return why; }
 function showCombatOpen() {
   $('moment-h').textContent = CT.openH; const body = $('moment-body'); body.innerHTML = '';
-  [CT.open0, CT.open1, CT.open2, CT.open3].forEach(t => { const p = document.createElement('p'); p.textContent = t; body.appendChild(p); });
+  [CT.open0, CT.open2, CT.open3].forEach(t => { const p = document.createElement('p'); p.textContent = t; body.appendChild(p); });
   $('moment-ok').textContent = CT.openOk; $('moment').dataset.kind = 'combat'; $('moment').classList.remove('hidden');
 }
 
@@ -188,7 +187,7 @@ function cAttack(k) {
 function cRaid(k) { const w = W(), C = cRun(w), L = cLife(), c = CB.byKey(k); const r = CB.raidAt(w, C, L, k, cRng()); if (!r) return; sys(fill2(CT.raidMsg, { place: shortName(tileOf(k)), s: r.study, fam: c.famName.toLowerCase() })); if (r.relic) wsay(fill2(CT.relicMsg, { place: shortName(tileOf(k)), land: LANDN[c.land].toLowerCase() })); renderWorld(); }
 function cStd(k) { const w = W(), C = cRun(w), L = cLife(); if (CB.raiseStd(w, C, L, k)) { sys(fill2(CT.stdMsg, { place: shortName(tileOf(k)) })); cLightApply(w); renderWorld(); } }
 function cRally() { const w = W(), C = cRun(w); if (CB.rallyNow(w, C, cLife())) { sys('Your defenders feast. Resolve ×' + fmtW(CB.rallyX(C), 2) + ' for ' + CB.P.rally.hours + ' hours.'); renderWorld(); } }
-function cBuy(id) { const w = W(), C = cRun(w); if (!C) return; hideTip(); const was = cCapOpen(C); if (CB.buyLine(w, C, cLife(), id)) { cMarkBought(id); if (id === 'mine' && C.lv.mine === 1) sys(CT.mineMsg);
+function cBuy(id) { const w = W(), C = cRun(w); if (!C) return; hideTip(); const was = cCapOpen(C); if (CB.buyLine(w, C, cLife(), id)) { cMarkBought(id); if (id === 'mine' && C.lv.mine === 1) sys(CT.mineMsg); if (id === 'barracks' && C.lv.barracks === 1 && !w.m.cards.armory) wsay(CT.armoryMsg);
   if (!was) CB.tick(w, 0, false, C, cLife()); if (!was && cCapOpen(C)) wsay(CT.capMsg); MV.lastMap = 0; renderWorld(); save(true); } }
 function cOneOff(id) { const w = W(), C = cRun(w); if (CB.buyOneOff(w, C, cLife(), id)) { const x = CB.P.oneOffs.find(o => o.id === id); sys(x.name + ' are forged: ' + oneOffWhat(x) + '.'); cLightApply(w); renderWorld(); } }
 function oneOffWhat(x) { return x.src === 'all' ? 'all light ×' + x.x : x.src === 'burners' ? 'what rebuilds add to burners ×' + x.x : 'what fire-tending adds to firekeepers ×' + x.x; }
@@ -228,7 +227,7 @@ function cWhatAdds(w, C, L, id) {   // the hover on a line: what building it add
     if (!cCapOpen(C)) return ['Your defenders muster: combat power opens, up to ' + fmtCP(cap1) + '.', 'The battle front opens: the places you have called back that are still held, and how strong each is.'];
     return ['Combat power up to ' + fmtCP(cap1) + ' (now ' + fmtCP(cap0) + ').'];
   }
-  if (id === 'mine') return C.lv.mine ? ['Room for one more miner (' + (CB.mineSlots(C) + 1) + '), and each digs ×' + CB.P.mine.depthX + ' more.'] : ['A mine with room for ' + CB.P.mine.slots0 + ' miners, ' + fmtW(CB.ironPerMinerH(C), 2) + ' iron an hour each. Put settlers on it in the Settlement.', 'Then: the Barracks and the Armory.'];
+  if (id === 'mine') return C.lv.mine ? ['Room for one more miner (' + (CB.mineSlots(C) + 1) + '), and each digs ×' + CB.P.mine.depthX + ' more.'] : ['A mine with room for ' + CB.P.mine.slots0 + ' miners, ' + fmtW(CB.ironPerMinerH(C), 2) + ' iron an hour each. Put settlers on it in the Settlement.', 'Then: the Barracks.'];
   return null;
 }
 function renderDefenseTab(w) {

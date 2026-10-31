@@ -33,6 +33,7 @@ var CPHASE = function (MC, CM, dialsIn) {
       // over 5 to 15 minutes by how much light they make (C: light for the whole bar; the lab's check-in bot makes about 5.7e8 a second (7.9e8 during a feast)
       // at whole, about 9 minutes; a bot that spends no heartstones at the last rebirth, about 4.6e8: about 11). Then the fighting turns up a dormant iron mine and 2 loose iron (unlock.iron).
       threat: { id: 'wolves', C: 3e11, minS: 300, maxS: 900 },
+      armoryResearch: true,           // owner, 2026-10-31: the Armory opens as a research (map research 'armory') after the first Barracks
       attuneGate: true,               // owner, 2026-10-31: Light Attunement's research opens once the first place is made safe
       live: true,                     // bloodstones bank as they are earned (no combat rebirths after whole)
       keepLight: true,                // a combat rebirth keeps the iron buffs bought for Light (Light no longer resets after whole)
@@ -328,7 +329,8 @@ var CPHASE = function (MC, CM, dialsIn) {
     var o = [], cp = cap(C, life), pop = s.pop;
     if (!C.lv.mine) { o.push({ id: 'mine', cost: { iron: P.mine.price }, gain: 1, w: WEIGHT.iron }); return o; }
     var B = P.barracks; if (!P.off.barracks) o.push({ id: 'barracks', cost: priceOf(B, C.lv.barracks, growthB(life)), gain: L10(recruitAt(C.lv.barracks + 1) / recruitF(C)), w: WEIGHT.cap });
-    if (!P.off.armory) { var ap = armPrice(C, life), A = P.armory, t = C.tier.armory, n = C.lv.armory, g0 = armF(C), g1;
+    if (P.armoryResearch && C.lv.barracks > 0 && s && s.m) s.m.armoryReady = true;
+    if (!P.off.armory && (!P.armoryResearch || (s && s.m && s.m.cards && s.m.cards.armory) || C.lv.armory > 0 || C.tier.armory > 1)) { var ap = armPrice(C, life), A = P.armory, t = C.tier.armory, n = C.lv.armory, g0 = armF(C), g1;
       if (ap.up) { var half = Math.max(1, Math.round(armL(life) / 2)); g1 = (L10(1 + A.a * Math.pow(A.J, t) * half) - L10(g0)) / half; } else g1 = L10(1 + A.a * Math.pow(A.J, t - 1) * (n + 1)) - L10(g0);
       o.push({ id: 'armory', cost: ap.cost, up: ap.up, gain: Math.max(0.002, g1), w: WEIGHT.cap }); }
     if (C.lv.mine) { var w0 = wantSettlers(C, life, pop), i0 = ironH(C, w0.miners), sv = C.lv.mine; C.lv.mine++; var w1 = wantSettlers(C, life, pop), i1 = ironH(C, w1.miners); C.lv.mine = sv;
