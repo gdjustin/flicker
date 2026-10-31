@@ -40,7 +40,7 @@ var CPHASE = function (MC, CM, dialsIn) {
       keepLight: true,                // a combat rebirth keeps the iron buffs bought for Light (Light no longer resets after whole)
       cp0K: 0.9,                      // the CP base, × the cheapest place's power (owner, 2026-10-18: the first companies win a couple of places only; the cap
                                       // is 0 until the first Barracks or Armory level, then about 13 to 16 shown)
-      startCP: 0,                     // owner, 2026-10-31: the bar opens empty with the first Barracks and fills (was 1.25: enough to win one battle)                  // when the cap first opens, CP starts at this × the weakest open battle (owner, Considering: enough to win one), never over the cap
+      startCP: 'full',                // owner, 2026-10-31 (later): the bar opens full with the first Barracks ('full'; or × the weakest open battle, as 1.25 was)                  // when the cap first opens, CP starts at this × the weakest open battle (owner, Considering: enough to win one), never over the cap
       strategy: 'full',               // 'full': the bot saves for a full bar (owner); 'odds': it fights with what it has when the odds are good
       fightFloor: 0.5, sureWin: 0.97, oddsFloor: 0.85,
       share: 0.15,                    // the most of the settlers the bot puts on combat's jobs (miners and drillmasters together)
@@ -131,7 +131,7 @@ var CPHASE = function (MC, CM, dialsIn) {
   // level of either opens the cap (and the CP bar). CP starts low (startCP), not full.
   function openRun(C, life) { C.open = true; C.iron = Math.max(C.iron, P.unlock.iron); C.res = 0; C.cp = 0; C.capOpen = false; }   // the cap opens on the next tick or buy (topUp)
   function companies(C) { return C.lv.barracks + C.lv.armory + (C.tier.armory > 1 ? 1 : 0); }
-  function startCP(C, life) { var f = SS, c = cap(C, life), w = Infinity; if (f) frontier(C, f).forEach(function (t) { var nb = nextBattle(t, C, life, C.hr / 24); w = Math.min(w, nb.D / edgeOf(C, life, t)); }); C.cp = Math.min(c, isFinite(w) ? w * P.startCP : c * 0.5); }
+  function startCP(C, life) { if (P.startCP === 'full') { C.cp = cap(C, life); return; } var f = SS, c = cap(C, life), w = Infinity; if (f) frontier(C, f).forEach(function (t) { var nb = nextBattle(t, C, life, C.hr / 24); w = Math.min(w, nb.D / edgeOf(C, life, t)); }); C.cp = Math.min(c, isFinite(w) ? w * P.startCP : c * 0.5); }
   // the lines that open at places made safe this run (owner, Considering: 3, 6 and 9, like Light's upgrades)
   function opened(C, id) { var o = P[id] && P[id].opens; return o == null || id === 'rally' ? true : C.clearedN >= o; }
   function perk(id) { for (var i = 0; i < P.perks.length; i++) if (P.perks[i].id === id) return P.perks[i]; return null; }
