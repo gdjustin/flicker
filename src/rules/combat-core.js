@@ -56,7 +56,10 @@ var CPHASE = function (MC, CM, dialsIn) {
         scouts: { opens: 6, x: 0.08, cost: { iron: 8, stones: 10000 }, g: 1.5 },
         council: { opens: 10, x: 0.12, cost: { iron: 10, fiber: 15000 }, g: 1.5 }
       },
-      standard: { x: 0.02, cost: { wood: 5000, stones: 2000, fiber: 3000 }, g: 1.35, iron: 0 },
+      // 2026-10-31 (Considering, the owner's call): after whole Light no longer resets and alone gains about +180 places in 30 days, so
+      // combat's gifts to Light shrink: standards +0.4% each (were +2%), and the iron buffs for the fires are off (P.off.oneOffs, below).
+      // Lab (Flicker Lab, run-combat-whole): with +2% standards and the iron buffs kept, Light gains +337 against the +185 to +200 target.
+      standard: { x: 0.004, cost: { wood: 5000, stones: 2000, fiber: 3000 }, g: 1.35, iron: 0 },
       oneOffs: [   // iron buffs for Light's fires (owner: inexpensive one-off buys, not keys); the gate is combat places cleared (best ever)
         { id: 'grates', name: 'Iron grates', src: 'burners', x: 3, iron: 10, opens: 8 },
         { id: 'firedogs', name: 'Iron fire-dogs', src: 'keepers', x: 3, iron: 30, opens: 18 },
@@ -89,7 +92,7 @@ var CPHASE = function (MC, CM, dialsIn) {
       // one store (the game has one): combat buys from the village's stores, but leaves Light this share of what is there
       keep: { wood: 0.5, stones: 0.5, fiber: 0.5, food: 0.5, copper: 0.9 },
       stall: { rule: 'combat', windowH: 8, k: 0.5, minRunH: 12, maxRunD: 8 },   // rule 'combat': rebirth once new bloodstones come slower than half their rate since the first this run (owner: a stall every 1 to 2 days); minRunH: hours of combat in the run
-      off: {}                          // lines switched off, for probes and the 'without' replays: { barracks: 1, drill: 1, ... }
+      off: { oneOffs: 1 }              // lines switched off (2026-10-31: the iron buffs for Light, see standard above), for probes and the 'without' replays: { barracks: 1, drill: 1, ... }
     };
   }
   function merge(d, o) { if (!o) return d; Object.keys(o).forEach(function (k) { var v = o[k]; if (v && typeof v === 'object' && !Array.isArray(v) && d[k] && typeof d[k] === 'object' && !Array.isArray(d[k])) d[k] = merge(Object.assign({}, d[k]), v); else d[k] = v; }); return d; }
@@ -410,8 +413,8 @@ var CPHASE = function (MC, CM, dialsIn) {
     pay(C, x.cost, x.id); if (x.id === 'armory') { if (x.up) { C.tier.armory++; C.lv.armory = 1; } else C.lv.armory++; } else C.lv[x.id]++;
     C.buysT.push([C.hr, x.id]); if (x.id === 'barracks' || x.id === 'armory') topUp(C, life); return true;
   }
-  function oneOffsOpen(C, life) { var best = Math.max(life.best || 0, C.clearedN); return P.oneOffs.filter(function (x) { return !C.oneOffs[x.id] && best >= x.opens; }); }
-  function buyOneOff(s, C, life, id) { SS = s; C.ironKeep = 0; var x = null; P.oneOffs.forEach(function (o) { if (o.id === id) x = o; }); if (!x || C.oneOffs[id] || C.iron < x.iron) return false; pay(C, { iron: x.iron }, 'oneOffs'); C.oneOffs[id] = C.hr; if (life.oneOffs) life.oneOffs[id] = C.hr; return true; }
+  function oneOffsOpen(C, life) { if (P.off.oneOffs) return []; var best = Math.max(life.best || 0, C.clearedN); return P.oneOffs.filter(function (x) { return !C.oneOffs[x.id] && best >= x.opens; }); }
+  function buyOneOff(s, C, life, id) { if (P.off.oneOffs) return false; SS = s; C.ironKeep = 0; var x = null; P.oneOffs.forEach(function (o) { if (o.id === id) x = o; }); if (!x || C.oneOffs[id] || C.iron < x.iron) return false; pay(C, { iron: x.iron }, 'oneOffs'); C.oneOffs[id] = C.hr; if (life.oneOffs) life.oneOffs[id] = C.hr; return true; }
   function stdOpen(C, life) { return Object.keys(C.newly).filter(function (k) { return !life.stds[k]; }); }
   function raiseStd(s, C, life, key) { SS = s; if (P.off.standards || !C.newly[key] || life.stds[key]) return false; var c = stdCost(life); if (!canPay(C, c)) return false; pay(C, c, 'standards'); life.stds[key] = true; life.stdN++; return true; }
   function canStd(s, C, life) { SS = s; return canPay(C, stdCost(life)); }
