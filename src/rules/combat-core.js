@@ -36,7 +36,8 @@ var CPHASE = function (MC, CM, dialsIn) {
       standardResearch: 3,            // owner, 2026-10-31: raising standards is a research (map research 'standards'), opened by 3 places made safe
       armoryResearch: true,           // owner, 2026-10-31: the Armory opens as a research (map research 'armory') after the first Barracks
       attuneGate: true,               // owner, 2026-10-31: Light Attunement's research opens once the first place is made safe
-      live: true,                     // bloodstones bank as they are earned (no combat rebirths after whole)
+      live: true,
+      bankAtTraveler: true,           // owner, 2026-10-31: bloodstones (and, after whole, heartstones) take hold only when the traveler visits: a rebirth's banking without the reset                     // bloodstones bank as they are earned (no combat rebirths after whole)
       keepLight: true,                // a combat rebirth keeps the iron buffs bought for Light (Light no longer resets after whole)
       cp0K: 0.9,                      // the CP base, × the cheapest place's power (owner, 2026-10-18: the first companies win a couple of places only; the cap
                                       // is 0 until the first Barracks or Armory level, then about 13 to 16 shown)
@@ -105,6 +106,7 @@ var CPHASE = function (MC, CM, dialsIn) {
   function merge(d, o) { if (!o) return d; Object.keys(o).forEach(function (k) { var v = o[k]; if (v && typeof v === 'object' && !Array.isArray(v) && d[k] && typeof d[k] === 'object' && !Array.isArray(d[k])) d[k] = merge(Object.assign({}, d[k]), v); else d[k] = v; }); return d; }
   var P = merge(defaults(), dialsIn);
   if (D.mastery) D.mastery.gate = P.attuneGate ? 1 : 0;
+  if (D.merchant) D.merchant.bank = P.bankAtTraveler ? 1 : 0;
   var cp0 = T[0].power * P.cp0K;
 
   // ---------------------------------------------------------------- the map's combat side: rarity tiers for the Bestiary, bloodstones
@@ -266,7 +268,7 @@ var CPHASE = function (MC, CM, dialsIn) {
     if (rout || C.bdone[c.key] >= c.nb + (C.extra[c.key] || 0)) {
       out.cleared = true; C.cleared[c.key] = true; if (P.attuneGate && s && s.m) s.m.attuneOk = true; C.clearedN++; C.landN[c.land] = (C.landN[c.land] || 0) + 1; C.clearedT.push([C.hr, c.key]);
       if (life.ever[c.key] == null && !C.newly[c.key]) { C.newly[c.key] = true; C.newlyT.push([C.hr, c.bs]); C.made.bs += c.bs; out.bs = c.bs;
-        if (P.live) { life.ever[c.key] = C.run; life.bs += c.bs; life.best = Math.max(life.best || 0, C.clearedN); } }
+        if (P.live) { life.ever[c.key] = C.run; if (P.bankAtTraveler) life.bsPending = (life.bsPending || 0) + c.bs; else life.bs += c.bs; life.best = Math.max(life.best || 0, C.clearedN); } }
     }
     return out;
   }
@@ -437,6 +439,8 @@ var CPHASE = function (MC, CM, dialsIn) {
   function syncJobs(s, C) { C.miners = Math.min(s.jobs.miner || 0, mineSlots(C)); C.drillers = Math.min(s.jobs.drillmaster || 0, drillSlots(C)); }
   // banking at a rebirth (the game: the player then chooses perks; the lab's bot allocates them itself)
   function bank(C, life) { var n = 0; Object.keys(C.newly).forEach(function (k) { if (life.ever[k] == null) { life.ever[k] = C.run; life.bs += byKey[k].bs; n += byKey[k].bs; } }); life.best = Math.max(life.best || 0, C.clearedN); life.runs++; return n; }
+  // the traveler's visit: waiting bloodstones take hold (the flat bonus grows) and are his to trade for
+  function bankPending(life) { var n = life.bsPending || 0; life.bs += n; life.bsPending = 0; return n; }
   function perkSpent(lv) { var t = 0; P.perks.forEach(function (p) { for (var i = 0; i < (lv[p.id] || 0); i++) t += perkCost(p, i); }); return t; }
   function lightGifts(C, life) { var ls = lightSrc(C); return { burners: ls.burners, keepers: ls.keepers, all: (ls.all || 1) * lightStd(life) * lightFlat(life), std: lightStd(life), flat: lightFlat(life), buffs: ls.all || 1 }; }
 
@@ -452,6 +456,6 @@ var CPHASE = function (MC, CM, dialsIn) {
     ironH: ironH, landIronH: landIronH, mineSlots: mineSlots, drillSlots: drillSlots, beastStages: beastStages, beastTotal: beastTotal, flatBS: flatBS, lightFlat: lightFlat, lightSrc: lightSrc, lightStd: lightStd, frontier: frontier,
     nextBattle: nextBattle, avatarCd: avatarCd, armPrice: armPrice, have: asPlayer(function (C, k, s) { if (s) SS = s; return have(C, k); }), options: function (s, C, life) { SS = s; return options(s, C, life); }, incomeH: incomeH, snapshot: snapshot, armL: armL, recruitF: recruitF, armF: armF,
     preview: preview, attack: attack, fightable: fightable, avatarReady: avatarReady, raidAt: raidAt, raidCost: raidCost, rallyNow: asPlayer(rallyNow), rallyFood: rallyFood, rallyX: rallyX, canBuy: asPlayer(canBuy), buyLine: asPlayer(buyLine), oneOffsOpen: oneOffsOpen, buyOneOff: buyOneOff,
-    stdOpen: stdOpen, stdCost: stdCost, raiseStd: asPlayer(raiseStd), canStd: asPlayer(canStd), syncJobs: syncJobs, bank: bank, perkSpent: perkSpent, perk: perk, perkLv: perkLv, perkUseful: perkUseful, stdOK: stdOK, lightGifts: lightGifts, edgeOf: edgeOf, beastEdge: beastEdge, defOpen: defOpen, ironPerMinerH: ironPerMinerH, healF: healF, scoutF: scoutF, councilF: councilF, hardF: hardF, relicCP: relicCP, cpOf0: function () { return cp0; } };
+    stdOpen: stdOpen, stdCost: stdCost, raiseStd: asPlayer(raiseStd), canStd: asPlayer(canStd), syncJobs: syncJobs, bank: bank, perkSpent: perkSpent, perk: perk, perkLv: perkLv, perkUseful: perkUseful, stdOK: stdOK, bankPending: bankPending, lightGifts: lightGifts, edgeOf: edgeOf, beastEdge: beastEdge, defOpen: defOpen, ironPerMinerH: ironPerMinerH, healF: healF, scoutF: scoutF, councilF: councilF, hardF: hardF, relicCP: relicCP, cpOf0: function () { return cp0; } };
 };
 if (typeof module !== 'undefined') module.exports = CPHASE;

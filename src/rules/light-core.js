@@ -798,7 +798,8 @@ var MCORE = function (VC) {
     var sg = startSurge(s, t); if (sg) ev.push(['surge', t.key, sg]);
     ev.push(['restored', t.key]);
     // the rebirth branch: once whole, memory grows as new land comes back; before that, the run's milestone holds the land beyond
-    if (s.m.whole && !s.m.known[t.key]) { s.m.known[t.key] = true; s.m.memHS = (s.m.memHS || 0) + hsFor(t.dstep); }
+    // the combat branch (owner, 2026-10-31): with D.merchant.bank on, new heartstones wait for the traveler and take hold when he goes on his way
+    if (s.m.whole && !s.m.known[t.key]) { s.m.known[t.key] = true; if (D.merchant.bank) s.m.hsPending = (s.m.hsPending || 0) + hsFor(t.dstep); else s.m.memHS = (s.m.memHS || 0) + hsFor(t.dstep); }
     if (s.m.rbAt && s.m.restored >= s.m.rbAt && !s.m.rbReady) { s.m.rbReady = s.t || 1e-6; ev.push(['rebirth', s.m.run]); }
   }
 
@@ -873,7 +874,7 @@ var MCORE = function (VC) {
     if (!M.here && now >= M.next) { M.here = true; M.came = now; return true; } return false;
   }
   function merchantHere(s) { return !!(s.m && s.m.merch && s.m.merch.here); }
-  function merchantLeave(s, now) { var M = s.m.merch; if (!M) return false; M.here = false; M.visits = (M.visits || 0) + 1; M.next = now + D.merchant.every; return true; }
+  function merchantLeave(s, now) { var M = s.m.merch; if (!M) return false; M.here = false; if (s.m.hsPending) { s.m.memHS = (s.m.memHS || 0) + s.m.hsPending; s.m.hsPending = 0; } M.visits = (M.visits || 0) + 1; M.next = now + D.merchant.every; return true; }
   // a heartstone perk bought now (from the merchant): it works at once
   function buyPerkNow(s, id, free) {
     var p = D.perks[id]; if (!p || p.kind === 'comfort' || (p.needs && !sysHeld(p.needs, s.m.perks))) return false; var n = perk(s, id); if (n >= perkMax(id)) return false;

@@ -145,7 +145,7 @@ function renderMap(w) {
   const m = meta(), hsNow = m.hsLife;
   { const pl = (n, one, many) => fmtW(n) + ' ' + (n === 1 ? one : many), rd = MC.regionsDone(w), hn = w.m.hsNew || 0;   // v1r (owner): run 1 shows only what run 1 has
     $('m-world').textContent = w.m.whole
-      ? 'Whole · ' + pl(w.m.restored, 'place', 'places') + ' called back · ' + pl(rd, 'region', 'regions') + ' finished · memory ×' + fmtW(MC.memMult(w), 2) + ' (' + fmtW(hsNow) + ' heartstones)' + (MC.masteryOn(w) ? ' · attunement: new land ×' + fmtW(MC.masteryMult(w), 2) : '')
+      ? 'Whole · ' + pl(w.m.restored, 'place', 'places') + ' called back · ' + pl(rd, 'region', 'regions') + ' finished · memory ×' + fmtW(MC.memMult(w), 2) + ' (' + fmtW(w.m.memHS || 0) + ' heartstones' + (w.m.hsPending ? ', ' + fmtW(w.m.hsPending) + ' more waiting for the traveler' : '') + ')' + (MC.masteryOn(w) ? ' · attunement: new land ×' + fmtW(MC.masteryMult(w), 2) : '')
       : MC.D.rb.on && w.m.rbAt && m.run === 1 ? ''   // r1d (owner): run 1 shows no run line; it comes back from run 2
       : MC.D.rb.on && w.m.rbAt ? 'Run ' + m.run + ' of ' + MC.D.rb.last + ' · ' + pl(w.m.restored, 'place', 'places') + ' called back · rebirth at ' + w.m.rbAt + ' · ' + pl(rd, 'region', 'regions') + ' finished · memory ×' + fmtW(MC.memMult(w), 2) + (m.run > 1 ? ' · ' + pl(hn, 'new heartstone', 'new heartstones') + ' this run' : ' · ' + pl(hn, 'heartstone', 'heartstones'))
       : m.run > 1

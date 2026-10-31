@@ -201,7 +201,7 @@ function renderPerks() {
   const lo = P.open !== false;
   h += '<section class="cur' + (lo ? ' open' : '') + '"><button type="button" class="cur-strip" data-toggle="1" aria-expanded="' + lo + '">' +
     '<span class="cur-name"><span class="hex" style="width:30px;height:27px;background:#e0a34a">' + pkSvg('flame', '#2a1d10', 17, 2) + '</span><span><span class="cz cur-t">Light</span><span class="cur-s">Heartstones</span></span></span>' +
-    '<span class="cur-mem"><span class="cur-l">Memory, all light</span><span class="memx"><span class="was">×' + fmtW(memMultFor(before), 2) + '</span><span style="color:#f2b84b">→</span><span class="now">×' + fmtW(memMultFor(m.hsLife), 2) + '</span></span></span>' +
+    '<span class="cur-mem"><span class="cur-l">Memory, all light</span><span class="memx"><span class="was">×' + fmtW(memMultFor(merch && w && w.m && MC.D.merchant.bank ? (w.m.memHS || 0) : before), 2) + '</span><span style="color:#f2b84b">→</span><span class="now">×' + fmtW(memMultFor(merch && w && w.m && MC.D.merchant.bank ? (w.m.memHS || 0) + (w.m.hsPending || 0) : m.hsLife), 2) + '</span></span></span>' +
     '<span class="cur-purse">' + pkHeart(20) + '<span><b>' + fmtW(free) + '</b><span>of ' + fmtW(m.hsLife) + ' free</span></span></span>' +
     '<span class="cur-chev" aria-hidden="true">' + pkSvg(lo ? 'up' : 'down', '#d7b277', 20, 2) + '</span></button>';
   if (lo) {
@@ -311,7 +311,7 @@ function perkTip(el) {
 // the scatter itself: what this run leaves behind for the next, then a fresh run
 function commitScatter() {
   const m = meta(), w = W();
-  if (MV.prest && MV.prest.merchant) { merchantApply(); MC.merchantLeave(w, Date.now() / 1000); MV.prest = null; S.inPerks = false; hidePtip(); $('perk-screen').classList.add('hidden');
+  if (MV.prest && MV.prest.merchant) { merchantApply(); MC.merchantLeave(w, Date.now() / 1000); if (typeof combatMerchantLeave === 'function') combatMerchantLeave(); MV.prest = null; S.inPerks = false; hidePtip(); $('perk-screen').classList.add('hidden');
     sys('The traveler goes on his way. He will be back in about two days.'); renderWorld(); save(true); return; }
   if (MC.D.rb.on && w && w.m && !w.m.rbReady) return;   // the rebirth branch: a rebirth only at its milestone
   if (MC.D.rb.on) { try { localStorage.setItem(SAVE_KEY + '.back', serialize(S)); } catch (e) {} }   // the rebirth branch: Settings can go back to this moment

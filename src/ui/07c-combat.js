@@ -35,7 +35,8 @@ const CT = {   // combat's text, in one place for the text editor (placeholders 
   // the traveler's first visit after combat opens (owner, 2026-10-31; placeholder words)
   travH: 'The traveler returns', trav1: 'He has heard about the wolves. He weighs your heartstones in his hand, shrugs, and sets them down again.',
   trav2: 'It is the bloodstones he is after now, the ones your defenders win making places safe for the first time. For those he will teach your defenders what he knows.', travGo: 'See what he offers',
-  travMerchSub: 'He still knows the old gifts, but it is your bloodstones he wants now. What you buy works at once.', travSec: 'For bloodstones', travSub: 'Each place made safe for the first time pays as many bloodstones as its heartstones did. What you buy works at once.'
+  travMerchSub: 'He still knows the old gifts, but it is your bloodstones he wants now. What you buy works at once; the stones you earned since his last visit take hold when he goes on his way.',
+  bankMsg: '{n} bloodstones take hold as the traveler leaves: combat power ×{x} from bloodstones.', travSec: 'For bloodstones', travSub: 'Each place made safe for the first time pays as many bloodstones as its heartstones did. What you buy works at once.'
 };
 const LINE = {   // the combat lines on the Defense tab: name, what it does (fn of w, C, life)
   mine: ['Deepen the iron mine', (w, C, L) => !C.lv.mine ? 'Clear the dormant mine and put it to work. Room for ' + CB.P.mine.slots0 + ' miners, ' + fmtW(CB.ironPerMinerH(C), 2) + ' iron an hour each.' : 'Room for one more miner and each miner digs ×' + CB.P.mine.depthX + ' more. Now ' + CB.mineSlots(C) + ' places, ' + fmtW(CB.ironPerMinerH(C), 2) + ' iron an hour a miner.', 'building'],
@@ -248,7 +249,7 @@ function renderDefenseTab(w) {
     if (m.dataset.s !== sig) { m.dataset.s = sig;
       m.innerHTML = '<p class="cline">Combat power <b>' + fmtCP(C.cp) + '</b> of <b>' + fmtCP(cap) + '</b>' + (rc > 0 ? ' · Reserves <b>' + fmtCP(C.res) + '</b> of ' + fmtCP(rc) : '') + '</p>' +
         '<p class="cline">' + fill2(CT.resolveIs, { t: fmtTime(CB.fillH(C, L) * 3600) }) + (drillOn ? ' (' + (w.jobs.drillmaster || 0) + ' drillmasters; ' + fmtW(CB.drillNeed(C, L), 1) + ' would halve the wait above ' + CB.P.drill.floorH + ' h)' : '') + '</p>' +
-        '<p class="cline">Bloodstones: <b>' + fmtW(L.bs) + '</b>, ' + fmtW(L.bs - CB.perkSpent(L.perks)) + ' unspent (the traveler sells their perks).</p>' +
+        '<p class="cline">Bloodstones: <b>' + fmtW(L.bs) + '</b> holding (combat power ×' + fmtW(cFlatFor(L.bs), 2) + ')' + (L.bsPending ? ', <b>' + fmtW(L.bsPending) + '</b> more waiting for the traveler' : '') + '; ' + fmtW(L.bs + (L.bsPending || 0) - CB.perkSpent(L.perks)) + ' to spend with him.</p>' +
         '<p class="cline">Your strength comes from: ' + (parts.filter(p => p[1] > 0.004).map(p => p[0].replace(' (recruit)', '').replace(' (arm)', '') + ' ×' + fmtW(Math.pow(10, p[1]), 2)).join(', ') || 'your first companies alone') + '.</p>' +
         (C.clearedN >= CB.P.avatar.opens ? '<p class="cline">' + (CB.avatarReady(C) ? 'You can lead a charge now.' : fill2(CT.leadWait, { t: fmtTime(Math.max(0, C.avatarNext - C.hr) * 3600) })) + '</p>' : '') + '<div class="acts" id="cd-rally"></div>'; }
     if (C.lv.rally) { const rb = ensureBtn($('cd-rally'), 'cd-rallyb', cRally, 'primary');
@@ -311,10 +312,10 @@ const CPK_UI = { hardened: 'Combat power +' + Math.round(CB.perk('hardened').x *
   forgeLore: 'Each Armory tier holds one more level a rank', quarterm: 'Barracks prices climb ' + Math.round(CB.perk('quarterm').x * 100) + '% gentler a rank', drillLore: 'Fewer drillmasters needed for the same drill: ' + Math.round(CB.perk('drillLore').x * 100) + '% fewer a rank',
   keen: 'Relics of battle turn up ' + Math.round(CB.perk('keen').x * 100) + '% more often a rank', lore: 'Each relic of battle ' + Math.round(CB.perk('lore').x * 100) + '% stronger a rank' };
 function combatMerchantSection() {
-  const L = cLife(); if (!L.opened) return null; const spent = CB.perkSpent(L.perks), free = L.bs - spent;
+  const L = cLife(); if (!L.opened) return null; const pool = L.bs + (L.bsPending || 0), spent = CB.perkSpent(L.perks), free = pool - spent;
   let h = '<section class="cur open"><div class="cur-strip"><span class="cur-name"><span class="hex" style="width:30px;height:27px;background:#b8484f"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6z" fill="none" stroke="#2a1010" stroke-width="2"/></svg></span><span><span class="cz cur-t">Defense</span><span class="cur-s">Bloodstones</span></span></span>' +
-    '<span class="cur-mem"><span class="cur-l">Combat power, from bloodstones</span><span class="memx"><span class="now">×' + fmtW(cFlatFor(L.bs), 2) + '</span></span></span>' +
-    '<span class="cur-purse"><svg width="20" height="26" viewBox="0 0 12 16" aria-hidden="true"><path d="M6 0l6 7-6 9-6-9z" fill="#b8484f"></path></svg><span><b>' + fmtW(free) + '</b><span>of ' + fmtW(L.bs) + ' free</span></span></span><span></span></div>';
+    '<span class="cur-mem"><span class="cur-l">Combat power, from bloodstones</span><span class="memx"><span class="was">×' + fmtW(cFlatFor(L.bs), 2) + '</span><span style="color:#f2b84b">→</span><span class="now">×' + fmtW(cFlatFor(pool), 2) + '</span></span></span>' +
+    '<span class="cur-purse"><svg width="20" height="26" viewBox="0 0 12 16" aria-hidden="true"><path d="M6 0l6 7-6 9-6-9z" fill="#b8484f"></path></svg><span><b>' + fmtW(free) + '</b><span>of ' + fmtW(pool) + ' free</span></span></span><span></span></div>';
   h += '<div class="cur-body"><div class="cur-bar"><span>' + CT.travSub + '</span></div><div class="pk-chips">';
   CB.P.perks.filter(p => CB.perkUseful(p)).forEach(p => { const n = L.perks[p.id] || 0, max = p.max || 99, done = n >= max, price = done ? 0 : CB.perkCost(p, n), afford = !done && free >= price;
     h += '<button type="button" class="chip" data-bpick="' + p.id + '" title="' + (CPK_UI[p.id] || '') + '" style="color:#f1dede;border:1px solid ' + (n ? '#a5585e' : '#4a2c30') + ';background:' + (n ? '#3a1d22' : '#241417') + '"><span style="flex:1;font-size:12.5px;line-height:1.15">' + p.name + (n ? ' <span style="color:#e6a3a9">' + n + '</span>' : '') + '<br><span style="font-size:11px;color:#bfa7a9">' + (CPK_UI[p.id] || '') + '</span></span>' +
@@ -324,10 +325,12 @@ function combatMerchantSection() {
 // a bloodstone perk bought from the traveler works at once (capture: before the perk screen's own handler)
 $('perk-screen').addEventListener('click', e => {
   const t = e.target.closest('button[data-bpick]'); if (!t || !MV.prest || !MV.prest.merchant) return; e.stopImmediatePropagation();
-  const L = cLife(), p = CB.perk(t.dataset.bpick), n = L.perks[p.id] || 0, free = L.bs - CB.perkSpent(L.perks);
+  const L = cLife(), p = CB.perk(t.dataset.bpick), n = L.perks[p.id] || 0, free = L.bs + (L.bsPending || 0) - CB.perkSpent(L.perks);
   if (CB.perkUseful(p) && n < (p.max || 99) && CB.perkCost(p, n) <= free) { L.perks[p.id] = n + 1; const w = W(), C = cRun(w); if (C) CB.tick(w, 0, false, C, L); save(true); }
   renderPerks();
 }, true);
+// when he goes on his way, the bloodstones earned since his last visit take hold (owner, 2026-10-31: a rebirth's banking, no reset)
+function combatMerchantLeave() { const L = cLife(); if (!L.opened) return; const n = CB.bankPending(L); const w = W(), C = cRun(w); if (C) CB.tick(w, 0, false, C, L); if (n > 0) wsay(fill2(CT.bankMsg, { n: fmtW(n), x: fmtW(cFlatFor(L.bs), 2) })); }
 // the traveler's first visit once combat is open: he wants bloodstones now (owner, 2026-10-31)
 function combatTravelerCheck(w, calm) {
   const L = cLife(); if (!L.opened || L.travelerMet || !calm || !MC.merchantHere(w)) return;
