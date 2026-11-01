@@ -41,6 +41,7 @@ const CT = {   // combat's text, in one place for the text editor (placeholders 
 };
 const LINE = {   // the combat lines on the Defense tab: name, what it does (fn of w, C, life)
   mine: ['Deepen the iron mine', (w, C, L) => !C.lv.mine ? 'Clear the dormant mine and put it to work. Room for ' + CB.P.mine.slots0 + ' miners, ' + fmtW(CB.ironPerMinerH(C), 2) + ' iron an hour each.' : 'Room for one more miner and each miner digs ×' + CB.P.mine.depthX + ' more. Now ' + CB.mineSlots(C) + ' places, ' + fmtW(CB.ironPerMinerH(C), 2) + ' iron an hour a miner.', 'building'],
+  ironStore: ['Iron store', (w, C, L) => 'Holds more iron: ' + fmtW(CB.P.ironStore.cap0 * Math.pow(CB.P.ironStore.x, C.lv.ironStore + 1)) + ' (now ' + fmtW(CB.ironCap(C)) + '). Iron dug past what you can hold is lost.', 'building'],
   barracks: ['Barracks', (w, C, L) => 'Recruit ' + (C.lv.barracks ? 'another company' : 'your first company') + ': combat power ×' + fmtW(CB.recruitAt(C.lv.barracks + 1) / CB.recruitAt(C.lv.barracks), 2) + (C.lv.barracks ? ' (×' + fmtW(CB.recruitF(C), 2) + ' now).' : '.'), 'building'],
   armory: ['Armory', (w, C, L) => { const A = CB.P.armory, ap = CB.armPrice(C, L); return ap.up ? 'Forge a new tier: each level of the next tier arms ×' + A.J + ' better. The Forge wing takes wood and stone.' : 'Arm your companies better: tier ' + C.tier.armory + ', level ' + C.lv.armory + ' of ' + CB.armL(L) + ' (×' + fmtW(CB.armF(C), 2) + ' combat power now).'; }, 'building'],
   drill: ['Drill yards', (w, C, L) => 'Room for ' + CB.P.drill.slotsLv + ' more drillmasters. Drillmasters cut the time your bar takes to refill (now ' + fmtTime(CB.fillH(C, L) * 3600) + ', never under ' + CB.P.drill.floorH + ' h).', 'building'],
@@ -146,10 +147,10 @@ function renderCombatRes(w) {
   if (!C) { if (box) box.remove(); return; }
   if (!box) { box = document.createElement('div'); box.id = 'c-res'; box.className = 'cres'; $('w-res').after(box); }
   const L = cLife(), cap = CB.cap(C, L), rc = CB.resCap(C, L), fill = CB.fillH(C, L), rate = CB.resolveH(C, L), open = cCapOpen(C);
-  const ir = CB.ironH(C), sig = [open, fmtCP(C.cp), fmtCP(cap), fmtCP(C.res), fmtCP(rc), Math.round(fill * 10), fmtW(C.iron, 1), fmtW(ir, 1), C.lv.mine, C.hr < C.rallyEnd].join('|');
+  const ir = CB.ironH(C), sig = [open, fmtCP(C.cp), fmtCP(cap), fmtCP(C.res), fmtCP(rc), Math.round(fill * 10), fmtW(C.iron, 1), fmtW(ir, 1), C.lv.mine, C.lv.ironStore, C.hr < C.rallyEnd].join('|');
   if (box.dataset.s === sig) return; box.dataset.s = sig;
   const pc = (a, b) => (b > 0 ? Math.min(100, a / b * 100) : 0).toFixed(1);
-  let h = '<div class="rrow"><span class="rn">' + CT.iron + '</span><span class="rv">' + fmtW(Math.floor(C.iron)) + '</span><span class="rr">' + (ir > 0 ? fill2(CT.ironRate, { n: fmtW(ir, ir < 10 ? 1 : 0) }) : C.lv.mine ? CT.noMiners : '') + '</span></div>';
+  let h = '<div class="rrow' + (C.iron >= CB.ironCap(C) - 1e-6 ? ' full' : '') + '"><span class="rn">' + CT.iron + '</span><span class="rv">' + fmtW(Math.floor(C.iron)) + ' <span class="cp">/' + fmtW(CB.ironCap(C)) + '</span></span><span class="rr">' + (ir > 0 ? fill2(CT.ironRate, { n: fmtW(ir, ir < 10 ? 1 : 0) }) : C.lv.mine ? CT.noMiners : '') + '</span></div>';
   if (open) {   // owner: no bars until the first Barracks or Armory; no Reserves until the first Storehouse
     h += '<div class="cbar"><p><span>' + CT.barCP + '</span><b>' + fmtCP(C.cp) + ' / ' + fmtCP(cap) + '</b></p><div class="st-bar"><i style="width:' + pc(C.cp, cap) + '%"></i></div></div>';
     if (rc > 0) h += '<div class="cbar res"><p><span>' + CT.barRes + '</span><b>' + fmtCP(C.res) + ' / ' + fmtCP(rc) + '</b></p><div class="st-bar"><i style="width:' + pc(C.res, rc) + '%"></i></div></div>';
@@ -157,6 +158,8 @@ function renderCombatRes(w) {
   }
   box.innerHTML = h;
 }
+// owner, 2026-11-01: the win chance is always a percent (no 'sure' or 'no'); 100% only when certain
+function cPct(p) { return p >= 1 ? 100 : p <= 0 ? 0 : Math.max(1, Math.min(99, Math.round(p * 100))); }
 function fill2(t, v) { return t.replace(/\{(\w+)\}/g, (_, k) => v[k] != null ? v[k] : ''); }
 
 /* ---------- a place's card: its battles at the top (owner: as the previous branch) ---------- */
@@ -175,7 +178,7 @@ function combatCard(w, k, box) {
   if (!cleared) {
     const pv = CB.preview(w, C, L, k, { frac: CMV.frac, form: CMV.form, avatar: CMV.lead }), pc = Math.round(pv.pwin * 100);
     const r = add('div', 'cread');
-    r.innerHTML = '<span><b>' + fmtCP(pv.S) + '</b> your strength</span><span><b>' + fmtCP(pv.D) + '</b> theirs</span><span class="' + (pv.sure ? 'ok' : pv.none ? 'bad' : '') + '"><b>' + (pv.sure ? 'sure' : pv.none ? 'no' : pc + '%') + '</b> to win</span>' +
+    r.innerHTML = '<span><b>' + fmtCP(pv.S) + '</b> your strength</span><span><b>' + fmtCP(pv.D) + '</b> theirs</span><span class="' + (pv.sure ? 'ok' : pv.none ? 'bad' : '') + '"><b>' + (cPct(pv.pwin) + '%') + '</b> to win</span>' +
       '<span><b>' + fmtCP(pv.lossWin) + '</b> lost if you win · <b>' + fmtCP(pv.lossLose) + '</b> if not</span>';
     const tr = add('p', 'ctrait', CMX.TRAITS[c.trait] + ' ' + capFirst(CMX.DANGER_NAME[c.danger]) + ' danger, ' + CMX.DICE_NAME[c.dice] + ' swings (' + LANDN[c.land].toLowerCase() + ').');
     const seg = add('div', 'cseg'); seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', 'How much to commit');
@@ -294,7 +297,7 @@ function renderDefenseTab(w) {
     if (f.dataset.s !== sig) { f.dataset.s = sig; f.innerHTML = '';
       if (!fr.length) f.innerHTML = '<p class="mmut">Every place you have called back is safe. Call back more.</p>';
       fr.forEach(c => { const pv = CB.preview(w, C, L, c.key, { frac: 1 }), b = document.createElement('button'); b.type = 'button'; b.className = 'crow';
-        b.innerHTML = '<span class="cn">' + shortName(tileOf(c.key)) + '</span><span class="cf">' + c.famName + ' · ' + ((C.bdone[c.key] || 0) + 1) + ' of ' + (c.nb + (C.extra[c.key] || 0)) + '</span><span class="cs">' + fmtCP(pv.D) + '</span><span class="cp ' + (pv.sure ? 'ok' : pv.none ? 'bad' : '') + '">' + (pv.sure ? 'sure' : pv.none ? 'too strong' : Math.round(pv.pwin * 100) + '%') + '</span>';
+        b.innerHTML = '<span class="cn">' + shortName(tileOf(c.key)) + '</span><span class="cf">' + c.famName + ' · ' + ((C.bdone[c.key] || 0) + 1) + ' of ' + (c.nb + (C.extra[c.key] || 0)) + '</span><span class="cs">' + fmtCP(pv.D) + '</span><span class="cp ' + (pv.sure ? 'ok' : pv.none ? 'bad' : '') + '">' + (cPct(pv.pwin) + '%') + '</span>';
         b.addEventListener('click', () => { MV.sel = c.key; S.view = 'map'; MV.lastMap = 0; renderWorld(); }); f.appendChild(b); }); } }
   // for the light: iron buffs, standards (only once something is in it)
   { const lb = $('cd-light'), op = CB.oneOffsOpen(C, L), want = new Set(op.map(x => 'cd-o-' + x.id)), std = CB.stdOpen(C, L, w);

@@ -48,6 +48,8 @@ var CPHASE = function (MC, CM, dialsIn) {
       share: 0.15,                    // the most of the settlers the bot puts on combat's jobs (miners and drillmasters together)
       // iron: the mine (bought with the starting 2 iron), deepened with wood, stone and copper, never iron
       mine: { price: 2, perMinerH: 0.5, slots0: 2, slotsLv: 1, depthX: 1.08, cost: { stones: 15000, wood: 25000 }, g: 1.4 },
+      // owner, 2026-11-01: iron has a cap (100 to start), raised by the Iron store, a storage building priced in stone and wood
+      ironStore: { cap0: 100, x: 1.6, cost: { stones: 20000, wood: 10000 }, g: 1.45 },
       landIron: { open: 4, perH: 1, cap: 1.5, lands: { marsh: 'Bog iron', river: 'River placer', hills: 'Hill ore', mountain: 'Hill ore' } },
       battleIron: 0,                  // owner: combat need not supply iron
       // Recruit: companies (the first cap factor). Arm: equipment (the second). Cap = cp0 × (1 + a n) × (1 + a J^(t-1) n) × the rest
@@ -119,7 +121,7 @@ var CPHASE = function (MC, CM, dialsIn) {
   // ---------------------------------------------------------------- lifetime and the run
   function newLife() { return { opened: false, openDay: null, ever: {}, oneOffs: {}, bs: 0, perks: {}, relics: {}, relicN: 0, relicLand: {}, relicTries: {}, relicFrom: { battle: 0, raid: 0, pity: 0 }, best: 0, beast: {}, stds: {}, stdN: 0, runs: 0 }; }
   function newRun(life, ri) {
-    var C = { open: life.opened, run: ri, cp: 0, res: 0, iron: 0, lv: { mine: 0, barracks: 0, armory: 0, drill: 0, reserves: 0, rally: 0, avatar: 0, healers: 0, scouts: 0, council: 0 }, tier: { armory: 1 },
+    var C = { open: life.opened, run: ri, cp: 0, res: 0, iron: 0, lv: { ironStore: 0, mine: 0, barracks: 0, armory: 0, drill: 0, reserves: 0, rally: 0, avatar: 0, healers: 0, scouts: 0, council: 0 }, tier: { armory: 1 },
       bdone: {}, extra: {}, lastFight: {}, cleared: {}, clearedN: 0, landN: {}, bank: { wood: 0, stones: 0, fiber: 0, food: 0, copper: 0 }, taken: {}, miners: 0, drillers: 0,
       rallyEnd: -1e9, rallyNext: -1e9, avatarNext: -1e9, oneOffs: {}, ironKeep: 0, T0: null, hr: 0, openHr: null,
       made: { iron: 0, ironMine: 0, ironLand: 0, ironBattle: 0, bs: 0, relics: 0, resolve: 0, lost: 0 }, spent: {}, ironOn: {}, rawOn: {}, newly: {}, newlyT: [], clearedT: [], buysT: [],
@@ -159,6 +161,7 @@ var CPHASE = function (MC, CM, dialsIn) {
   function rallyX(C) { return P.rally.x + P.rally.xLv * Math.max(0, C.lv.rally - 1); }
   function resolveH(C, life) { if (!C.open) return 0; var r = cap(C, life) / fillH(C, life) * (1 + perkX(life, 'quick')); if (C.hr < C.rallyEnd) r *= rallyX(C); return r; }
   function resCap(C, life) { return P.off.reserves ? cap(C, life) * P.reserves.bars : C.lv.reserves ? cap(C, life) * (P.reserves.bars + P.reserves.perLv * (C.lv.reserves - 1)) : 0; }   // no Reserves until the first Storehouse (owner)
+  function ironCap(C) { var I = P.ironStore; return I ? I.cap0 * Math.pow(I.x, C.lv.ironStore || 0) : Infinity; }
   function mineSlots(C) { return C.lv.mine ? P.mine.slots0 + P.mine.slotsLv * (C.lv.mine - 1) : 0; }
   function drillSlots(C) { return P.off.drill || !opened(C, 'drill') ? 0 : P.drill.slots0 + P.drill.slotsLv * C.lv.drill; }
   function ironPerMinerH(C) { return P.mine.perMinerH * Math.pow(P.mine.depthX, Math.max(0, C.lv.mine - 1)); }
@@ -214,7 +217,7 @@ var CPHASE = function (MC, CM, dialsIn) {
     if (!C.capOpen && s && s.m) { SS = s; topUp(C, life); }
     var cp = cap(C, life), rc = resCap(C, life), add = resolveH(C, life) * h; C.made.resolve += add;
     var toCP = Math.min(add, Math.max(0, cp - C.cp)); C.cp += toCP; add -= toCP; var toR = Math.min(add, Math.max(0, rc - C.res)); C.res += toR; C.made.lost += add - toR;
-    var mi = C.miners * ironPerMinerH(C) * h, li = landIronH(C).total * h; C.iron += mi + li; C.made.iron += mi + li; C.made.ironMine += mi; C.made.ironLand += li;
+    var mi = C.miners * ironPerMinerH(C) * h, li = landIronH(C).total * h; if (C.iron < ironCap(C)) C.iron = Math.min(ironCap(C), C.iron + mi + li); C.made.iron += mi + li;   // the cap: iron dug past it is lost C.made.ironMine += mi; C.made.ironLand += li;
     if (away) { var open2 = 0; for (var k in C.bdone) if (!C.cleared[k] && C.bdone[k] > 0 && byKey[k].trait === 'raider') open2++; if (open2) { C.res *= 1 - Math.min(0.05, 0.005 * open2) * h; C.traitHits.raider = (C.traitHits.raider || 0) + 1; } }
   }
 
@@ -341,6 +344,10 @@ var CPHASE = function (MC, CM, dialsIn) {
     if (!P.off.armory && (!P.armoryResearch || (s && s.m && s.m.cards && s.m.cards.armory) || C.lv.armory > 0 || C.tier.armory > 1)) { var ap = armPrice(C, life), A = P.armory, t = C.tier.armory, n = C.lv.armory, g0 = armF(C), g1;
       if (ap.up) { var half = Math.max(1, Math.round(armL(life) / 2)); g1 = (L10(1 + A.a * Math.pow(A.J, t) * half) - L10(g0)) / half; } else g1 = L10(1 + A.a * Math.pow(A.J, t - 1) * (n + 1)) - L10(g0);
       o.push({ id: 'armory', cost: ap.cost, up: ap.up, gain: Math.max(0.002, g1), w: WEIGHT.cap }); }
+    if (P.ironStore && C.lv.mine) { var ic = ironCap(C), need = 0; o.forEach(function (x) { if (x.cost && x.cost.iron) need = Math.max(need, x.cost.iron); });
+      P.oneOffs.forEach(function (x) { if (!P.off.oneOffs && !C.oneOffs[x.id]) need = Math.max(need, x.iron); });
+      var ap0 = armPrice(C, life); if (!P.off.armory && ap0.cost.iron) need = Math.max(need, ap0.cost.iron);
+      o.push({ id: 'ironStore', cost: priceOf(P.ironStore, C.lv.ironStore), gain: need >= ic * 0.8 ? 0.2 : 0.001, w: WEIGHT.iron }); }
     if (C.lv.mine) { var w0 = wantSettlers(C, life, pop), i0 = ironH(C, w0.miners), sv = C.lv.mine; C.lv.mine++; var w1 = wantSettlers(C, life, pop), i1 = ironH(C, w1.miners); C.lv.mine = sv;
       o.push({ id: 'mine', cost: priceOf(P.mine, C.lv.mine - 1), gain: L10(i1 / Math.max(1e-9, i0)), w: WEIGHT.iron }); }
     if (!P.off.drill && opened(C, 'drill')) { var wd = wantSettlers(C, life, pop), f0 = fillH(C, life, wd.drillers), sd = C.lv.drill; C.lv.drill++; var wd1 = wantSettlers(C, life, pop), f1 = fillH(C, life, wd1.drillers); C.lv.drill = sd;
@@ -456,7 +463,7 @@ var CPHASE = function (MC, CM, dialsIn) {
 
   return { P: P, defaults: defaults, cp0: cp0, recruitAt: recruitAt, T: T, byKey: function (k) { return byKey[k]; }, famCount: famCount, tierOf: tierOf, newLife: newLife, newRun: newRun, openRun: openRun,
     pre: pre, tick: tick, act: act, rebirth: rebirth, allocPerks: allocPerks, perkCost: perkCost, cap: cap, capParts: capParts, resolveH: resolveH, resCap: resCap, fillH: fillH, drillNeed: drillNeed,
-    ironH: ironH, landIronH: landIronH, mineSlots: mineSlots, drillSlots: drillSlots, beastStages: beastStages, beastTotal: beastTotal, flatBS: flatBS, lightFlat: lightFlat, lightSrc: lightSrc, lightStd: lightStd, frontier: frontier,
+    ironH: ironH, ironCap: ironCap, landIronH: landIronH, mineSlots: mineSlots, drillSlots: drillSlots, beastStages: beastStages, beastTotal: beastTotal, flatBS: flatBS, lightFlat: lightFlat, lightSrc: lightSrc, lightStd: lightStd, frontier: frontier,
     nextBattle: nextBattle, avatarCd: avatarCd, armPrice: armPrice, have: asPlayer(function (C, k, s) { if (s) SS = s; return have(C, k); }), options: function (s, C, life) { SS = s; return options(s, C, life); }, incomeH: incomeH, snapshot: snapshot, armL: armL, recruitF: recruitF, armF: armF,
     preview: preview, attack: attack, fightable: fightable, avatarReady: avatarReady, raidAt: raidAt, raidCost: raidCost, rallyNow: asPlayer(rallyNow), rallyFood: rallyFood, rallyX: rallyX, canBuy: asPlayer(canBuy), buyLine: asPlayer(buyLine), oneOffsOpen: oneOffsOpen, buyOneOff: buyOneOff,
     stdOpen: stdOpen, stdCost: stdCost, raiseStd: asPlayer(raiseStd), canStd: asPlayer(canStd), syncJobs: syncJobs, bank: bank, perkSpent: perkSpent, perk: perk, perkLv: perkLv, perkUseful: perkUseful, stdOK: stdOK, bankPending: bankPending, lightGifts: lightGifts, edgeOf: edgeOf, beastEdge: beastEdge, defOpen: defOpen, ironPerMinerH: ironPerMinerH, healF: healF, scoutF: scoutF, councilF: councilF, hardF: hardF, relicCP: relicCP, cpOf0: function () { return cp0; } };
