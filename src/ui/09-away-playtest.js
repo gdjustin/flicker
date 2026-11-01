@@ -160,7 +160,7 @@ function renderMapPhase(w) {
     b.classList.toggle('hidden', !on); b.classList.toggle('wait', on && !here);
     if (on) { const left = M ? M.next - Date.now() / 1000 : MC.D.merchant.first; const t = here ? MT.merchPill : left <= 0 ? MT.merchHere : fill(MT.merchSoon, { t: fmtTime(left) }); if (b.textContent !== t) b.textContent = t; b.title = MT.merchTip; } }
   $('w-naming').classList.toggle('hidden', !(w.flags.askName && !w.name));
-  renderMapDrawer(w);
+  renderMapDrawer(w); if (view === 'relics') $('w-drawer').classList.add('hidden');   // owner, 2026-11-01: no light or project bars on the Relics tab
 }
 function renderMapSnails(w) {
   let any = false; for (const l of VC.LADDERS) { if (l.group !== 'snails' || !VC.ladderOpen(w, l)) continue; any = true;

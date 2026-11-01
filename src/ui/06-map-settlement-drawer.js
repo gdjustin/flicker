@@ -119,49 +119,69 @@ function relicName(k) { const t = tileOf(k), r = t && regionOf(t); if (!r) retur
 function relicIconHtml(land) { return '<span class="md xs" style="--c:var(--l-' + LANDC[land] + ')" aria-hidden="true">' + LANDG[land] + '</span>'; }
 function relicsNeedYou(w) { const open = relicTiles(w).filter(x => w.res.copper >= x.c); return open.length ? [open.length === 1 ? 'a relic you can claim' : open.length + ' relics you can claim'] : []; }
 function mRelicAll() { const w = W(); let n = 0; for (const x of relicTiles(w)) { if (w.res.copper < MC.relicCost(w, x.k).copper) break; if (MC.buyRelic(w, x.k)) n++; } if (n) { w.stats.buys.length = 0; sys(n + ' relic' + (n === 1 ? ' is' : 's are') + ' claimed.'); renderWorld(); } }
+// v1u-c13 (owner, 2026-11-01): the Relics tab is a trophy case. A summary at the top (each kind's count and what it gives, how it is
+// earned on hover), a compact claim bar, then one shelf for each kind of relic. Later phases add their own shelves (RELIC_SHELVES).
+// Light relics are round and gilded; relics of battle are iron-rimmed shields. Each land keeps its colour and glyph on both.
+const RELIC_LANDS = ['forest', 'meadow', 'hills', 'marsh', 'river', 'mountain', 'water'];
+const RELIC_TIP_LIGHT = 'Every land you call back brings with it a lost relic. Setting it within a copper shrine unlocks its power: a boost to your light, and your raw resources. Setting every relic from a region causes the relics to ring, multiplying their boosts by 3x.';   // owner, 2026-11-01 ('caused' read as 'causes')
+const RELIC_TIP_BATTLE = 'Every land you make safe contains a relic within it. You may find its relic the first time you clear the land, or you may need to raid the land’s scattered enemies to claim it. Each relic increases your troops’ ability to fight in that landscape.';   // owner, 2026-11-01
+function relicMedalSvg(land, size, found) {
+  const g = LANDG[land], c = 'var(--l-' + LANDC[land] + ')';
+  if (!found) return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 84 84" aria-hidden="true"><circle cx="42" cy="42" r="40" fill="#2a231d" stroke="#4a3f35" stroke-width="3"/><text x="42" y="54" text-anchor="middle" font-size="32" fill="#4a3f35">?</text></svg>';
+  return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 84 84" aria-hidden="true"><circle cx="42" cy="42" r="40" fill="#d9a64e"/><circle cx="42" cy="42" r="36" fill="#f3dfae"/><circle cx="42" cy="42" r="32" style="fill:' + c + '"/><circle cx="42" cy="42" r="32" fill="none" stroke="#fff" stroke-opacity="0.18" stroke-width="2"/><text x="42" y="53" text-anchor="middle" font-size="32" fill="#1a1511" class="rglyph">' + g + '</text></svg>';
+}
+function relicShieldSvg(land, size, found) {
+  const g = LANDG[land], c = 'var(--l-' + LANDC[land] + ')', h = Math.round(size * 88 / 84);
+  if (!found) return '<svg width="' + size + '" height="' + h + '" viewBox="0 0 84 88" aria-hidden="true"><path d="M8 6 H76 V38 C76 62 60 76 42 84 C24 76 8 62 8 38 Z" fill="#2a231d" stroke="#4a3f35" stroke-width="3"/><text x="42" y="58" text-anchor="middle" font-size="32" fill="#4a3f35">?</text></svg>';
+  return '<svg width="' + size + '" height="' + h + '" viewBox="0 0 84 88" aria-hidden="true"><path d="M8 6 H76 V38 C76 62 60 76 42 84 C24 76 8 62 8 38 Z" fill="#8d8a86"/><path d="M13 11 H71 V38 C71 59 57 71 42 78 C27 71 13 59 13 38 Z" style="fill:color-mix(in srgb, ' + c + ' 55%, #1a1511)"/><rect x="13" y="11" width="58" height="11" fill="#5f5a55"/><circle cx="22" cy="16.5" r="2.2" fill="#c9c2b8"/><circle cx="42" cy="16.5" r="2.2" fill="#c9c2b8"/><circle cx="62" cy="16.5" r="2.2" fill="#c9c2b8"/><text x="42" y="60" text-anchor="middle" font-size="30" fill="#f1dede" class="rglyph">' + g + '</text></svg>';
+}
+// the shelves, one per kind of relic; a later phase pushes its own { id, title, cls, tip, open(w), items(w) } here
+const RELIC_SHELVES = [
+  { id: 'light', title: 'Light relics', cls: 'light', tip: RELIC_TIP_LIGHT, open: () => true,
+    items(w) { const D = MC.D, LR = D.landRelic, lore = MC.famBuff(w, 'relicLore'), L = w.m.relicLand || {}, ring = {}, back = {};
+      if (w.m.relicT) Object.keys(w.m.relicT).forEach(k => { const t = tileOf(k), rg = regionOf(t); if (D.resonance.on && rg && rg.tiles.every(q => w.m.tiles[q])) ring[t.land] = (ring[t.land] || 0) + 1; });
+      Object.keys(w.m.tiles).forEach(k => { const t = tileOf(k); if (t) back[t.land] = (back[t.land] || 0) + 1; });
+      return RELIC_LANDS.map(land => { const RO = RELIC_OF[land], n = L[land] || 0, rg = ring[land] || 0, wt = n + D.resonance.R * rg;
+        const first = LR.firstOf[land] != null ? LR.firstOf[land] : LR.first, each = LR.eachOf && LR.eachOf[land] != null ? LR.eachOf[land] : LR.each;
+        if (!n) return { land, found: false, name: back[land] ? 'Waiting in a shrine' : 'Not yet found', lines: [back[land] ? 'Claim one: ' + RO[1] + ' +' + Math.round(first * 100) + '%' : 'Call back ' + LANDN[land].toLowerCase()] };
+        return { land, found: true, name: RO[0], n, lines: [capFirst(RO[1]) + ' +' + Math.round((first + each * Math.max(0, wt - 1)) * 100) + '%', 'All light +' + fmtW(LR.light * lore * wt * 100, 1) + '%'].concat(rg ? [rg + ' ringing'] : []) }; }); } },
+  { id: 'battle', title: 'Relics of battle', cls: 'battle', tip: RELIC_TIP_BATTLE, open: () => typeof cLife === 'function' && cLife().opened,
+    items(w) { const L = cLife(), RL = L.relicLand || {}, R = CB.P.relic, per = L.relicN ? (CB.relicCP(L) - 1) / L.relicN : 0;
+      return RELIC_LANDS.map(land => { const n = RL[land] || 0;
+        if (!n) return { land, found: false, name: 'Not yet found', lines: ['Won in battles on ' + LANDN[land].toLowerCase()] };
+        return { land, found: true, name: BATTLE_RELIC_OF[land], n, lines: ['Battles on ' + LANDN[land].toLowerCase() + ' ×' + fmtW(1 + R.landEdge * n, 2), 'Combat power +' + fmtW(per * n * 100, 1) + '%'] }; }); } }
+];
+const BATTLE_RELIC_OF = { forest: 'Thorn-oak buckler', meadow: 'Harvest standard', hills: 'Cairn shield', marsh: 'Bog-iron torc', river: 'Ford-ward', mountain: 'Peak-sworn helm', water: 'Tide charm' };   // placeholder names (owner's naming pass)
 function renderRelicsTab(w) {
-  const box = $('v-relics'), D = MC.D, LR = D.landRelic, lore = MC.famBuff(w, 'relicLore'), res = MC.resonantN ? null : null;
-  const L = w.m.relicLand || {}, ring = {}; if (w.m.relicT) Object.keys(w.m.relicT).forEach(k => { const t = tileOf(k), rg = regionOf(t); if (D.resonance.on && rg && rg.tiles.every(q => w.m.tiles[q])) ring[t.land] = (ring[t.land] || 0) + 1; });
-  const backOf = {}; Object.keys(w.m.tiles).forEach(k => { const t = tileOf(k); if (t) backOf[t.land] = (backOf[t.land] || 0) + 1; });
-  const open = relicTiles(w), rr = MC.perk(w, 'relicsRemembered');
-  const ringTip = 'Finish a region and its relics ring: each counts ' + (1 + D.resonance.R) + ' times.';   // v1r (owner): the old intro, now a hover
-  let h = '<div class="rclaim"><p class="sech">Relics to claim' + (rr ? ' <span style="font-style:normal;color:var(--form)">· relics you claimed in an earlier run cost half</span>' : '') + '</p><div class="acts" id="rel-acts"></div></div>';
-  h += '<div class="rel"><div><p class="sech">Light relics collected</p><div class="rgrid">';
-  let wTot = 0;
-  for (const land of ['forest', 'hills', 'marsh', 'river', 'meadow', 'mountain', 'water']) {
-    const RO = RELIC_OF[land], n = L[land] || 0, rg = ring[land] || 0, wt = n + D.resonance.R * rg, back = backOf[land] || 0; wTot += wt;
-    const first = LR.firstOf[land] != null ? LR.firstOf[land] : LR.first, each = LR.eachOf && LR.eachOf[land] != null ? LR.eachOf[land] : LR.each;
-    const resPct = n ? Math.round((first + each * Math.max(0, wt - 1)) * 100) : 0;
-    h += '<div class="rcard' + (n || back ? '' : ' unfound') + '"><span class="md' + (n ? '' : ' no') + '" style="--c:var(--l-' + LANDC[land] + ')">' + LANDG[land] + '</span>' +
-      '<p class="rn">' + RO[0] + (n ? ' ×' + n : '') + '</p>' +
-      (n ? '<p class="rx">' + capFirst(RO[1]) + ' +' + resPct + '%</p><p class="rx2">All light +' + fmtW(LR.light * lore * wt * 100, 1) + '%</p>'
-        : back ? '<p class="rx">First claimed: ' + RO[1] + ' +' + Math.round(first * 100) + '%</p>' : '<p class="rx">' + LANDN[land] + ': none called back yet</p>') +
-      (rg ? '<p class="rw" style="color:var(--form)">' + rg + ' ringing (region finished)</p>' : '') + '</div>';
-  }
-  h += '</div><div class="rtot"><span>All light from relics: <b>×' + fmtW(MC.relicMult(w), 2) + '</b></span>' + (lore > 1 ? '<span>Relic lore: <b>×' + fmtW(lore, 2) + '</b> on every relic’s light</span>' : '') +
-    '<span class="tipme" tabindex="0" data-tip="' + ringTip + '">Ringing relics: <b>' + Object.values(ring).reduce((a, b) => a + b, 0) + '</b></span></div></div>';
-  h += combatRelicsHtml(w);   // combat test: relics of battle
-  // regions: the ones you have touched, this run or before
-  const m = meta(), regs = MC.REGIONS.map((rg, i) => ({ rg, i, on: regionCount(w, rg), N: rg.tiles.length, best: m.regBest[i] || 0, fin: m.regFin[i] || 0 })).filter(r => r.on || r.best);
-  regs.sort((a, b) => (b.on === b.N) - (a.on === a.N) || b.on / b.N - a.on / a.N);
-  h += '<div class="relregs"><p class="sech"><span class="tipme" tabindex="0" data-tip="' + ringTip + '">Regions</span></p><div class="mregions">';
-  for (const r of regs) { const fin = r.on === r.N;   // r1d (owner): the same row as the map's region list
-    const past = r.fin && r.fin < m.run ? 'finished in run ' + r.fin + (fin ? ' too' : '') : r.best && !fin ? 'best: ' + r.best + ' of ' + r.N + ', in an earlier run' : '';
-    h += regionRowHtml(w, r.rg, fin ? '' : past ? capFirst(past) + '.' : ''); }   // r1k (owner): a finished region carries no note
-  if (!regs.length) h += '<p class="note" style="color:var(--ash);font-style:italic">Call back a place and its region appears here.</p>';
-  h += '</div></div></div>';
+  const box = $('v-relics'), open = relicTiles(w), rr = MC.perk(w, 'relicsRemembered'), shelves = RELIC_SHELVES.filter(sh => sh.open(w));
+  const lightN = Object.values(w.m.relicLand || {}).reduce((a, b) => a + b, 0), battle = shelves.some(sh => sh.id === 'battle'), bL = battle ? cLife() : null;
+  let h = '<section class="rsum" aria-label="Your relics">' +
+    '<div class="rsc light rtip" tabindex="0" data-tiph="Light relics" data-tip="' + RELIC_TIP_LIGHT + '">' + relicMedalSvg('meadow', 40, true) + '<span><b>' + fmtW(lightN) + '</b><span>light relics</span></span></div>' +
+    (battle ? '<div class="rsc battle rtip" tabindex="0" data-tiph="Relics of battle" data-tip="' + RELIC_TIP_BATTLE + '">' + relicShieldSvg('meadow', 38, true) + '<span><b>' + fmtW(bL.relicN) + '</b><span>relics of battle</span></span></div>' : '') +
+    '<div class="rsc"><span><span>All light from relics</span><b class="lt">×' + fmtW(MC.relicMult(w), 2) + '</b></span></div>' +
+    (battle ? '<div class="rsc"><span><span>Combat power from relics</span><b class="bt">×' + fmtW(CB.relicCP(bL), 2) + '</b></span></div>' : '') + '</section>';
+  // the claim bar: how many wait and the cheapest; claim all (the perk) and a list to choose from
+  if (open.length) { const chosen = MV.relChoose != null ? MV.relChoose : !(rr >= 2);
+    h += '<section class="rclaimbar" aria-label="Relics waiting"><span>' + open.length + ' light relic' + (open.length === 1 ? ' waits' : 's wait') + ' to be claimed <span class="sub">· the cheapest ' + fmtC(open[0].c) + ' copper' + (rr ? ' · relics you claimed in an earlier run cost half' : '') + '</span></span>' +
+      '<span class="rcb-acts" id="rel-bar"></span></section><div class="acts rclaimlist' + (chosen ? '' : ' hidden') + '" id="rel-acts"></div>'; }
+  for (const sh of shelves) {
+    h += '<section class="rshelf ' + sh.cls + '" aria-label="' + sh.title + '"><h2 class="rtip" tabindex="0" data-tiph="' + sh.title + '" data-tip="' + sh.tip + '">' + sh.title.toUpperCase() + '</h2><div class="rrow7">';
+    for (const it of sh.items(w)) h += '<div class="rtro' + (it.found ? '' : ' no') + '">' + (sh.cls === 'battle' ? relicShieldSvg(it.land, 62, it.found) : relicMedalSvg(it.land, 64, it.found)) +
+      '<p class="rn">' + it.name + (it.n ? ' <span class="rk">×' + it.n + '</span>' : '') + '</p>' + it.lines.map((l, i) => '<p class="' + (i ? 'rx2' : 'rx') + '">' + l + '</p>').join('') + '</div>';
+    h += '</div></section>'; }
   if (box.dataset.sig !== h) { box.dataset.sig = h; box.innerHTML = h;
-    box.querySelectorAll('[data-tip]').forEach(e => { ['mouseenter', 'focus'].forEach(ev => e.addEventListener(ev, () => showTextTip(e, e.textContent.replace(/:.*$/, ''), [e.dataset.tip]))); ['mouseleave', 'blur'].forEach(ev => e.addEventListener(ev, hideTip)); }); }
-  const acts = $('rel-acts'), shown = open.slice(0, 6).map(x => x.k);
-  Array.from(acts.children).forEach(b => { if (b.dataset.k && !shown.includes(b.dataset.k)) b.remove(); if (b.id === 'w-rel-all' && !(rr >= 2)) b.remove(); });
+    box.querySelectorAll('[data-tip]').forEach(e => { ['mouseenter', 'focus'].forEach(ev => e.addEventListener(ev, () => showTextTip(e, e.dataset.tiph || '', [e.dataset.tip]))); ['mouseleave', 'blur'].forEach(ev => e.addEventListener(ev, hideTip)); }); }
+  if (!open.length) return;
+  const bar = $('rel-bar'), acts = $('rel-acts'), shown = open.slice(0, 6).map(x => x.k);
+  { const chosen = MV.relChoose != null ? MV.relChoose : !(rr >= 2), tb = ensureBtn(bar, 'w-rel-choose', () => { MV.relChoose = !(MV.relChoose != null ? MV.relChoose : !(rr >= 2)); renderRelicsTab(W()); }, 'slim'); tb.textContent = chosen ? 'Hide the list' : 'Choose…'; }
+  Array.from(acts.children).forEach(b => { if (b.dataset.k && !shown.includes(b.dataset.k)) b.remove(); });
+  { const ab = $('w-rel-all'); if (ab && !(rr >= 2 && open.length > 1)) ab.remove(); }
   // r1c fix (owner's playtest): the button's price is what this click spends (as many as you can afford, cheapest first), not the cheapest one alone
-  if (rr >= 2 && open.length > 1) { const tot = open.reduce((a, x) => a + x.c, 0), b = ensureBtn(acts, 'w-rel-all', () => mRelicAll(), 'relic');
+  if (rr >= 2 && open.length > 1) { const tot = open.reduce((a, x) => a + x.c, 0), b = ensureBtn(bar, 'w-rel-all', () => mRelicAll(), 'primary');
     let k = 0, spend = 0; for (const x of open) { if (spend + x.c > w.res.copper) break; spend += x.c; k++; }
-    setBtn(b, 'Claim every relic you can', open.length + ' waiting; ' + fmtC(tot) + ' copper for all of them. ' + (k === open.length ? 'You can claim them all.' : k ? 'You can claim the ' + k + ' cheapest now.' : 'Cheapest first.'), k > 0, { cost: { copper: k ? spend : open[0].c } }); }
+    setBtn(b, 'Claim all you can', (k === open.length ? 'All ' + open.length : k ? 'The ' + k + ' cheapest' : 'None yet') + ' · ' + fmtC(k ? spend : tot) + ' copper', k > 0, {}); }
   for (const x of open.slice(0, 6)) { const t = tileOf(x.k), b = ensureBtn(acts, 'w-rel-' + x.k.replace(/[^\w]/g, '_'), () => mRelic(x.k), 'relic'); b.dataset.k = x.k;
     setBtn(b, relicName(x.k), capFirst(relicGain(w, x.k)) + '. ' + LANDN[t.land] + '.' + (rr && w.m.relicKnown && w.m.relicKnown[x.k] ? ' Remembered: half price.' : ''), VC.canPay(w, { copper: x.c }), { cost: { copper: x.c } }); relicIconOn(b, t.land); }
-  if (!open.length && !acts.children.length) acts.innerHTML = '<p class="note" style="color:var(--ash);font-style:italic;margin:0">No relics waiting. Each place you call back brings one.</p>';
-  else { const pn = acts.querySelector('p.note'); if (pn && open.length) pn.remove(); }
 }
 // put the land's small medallion in front of a relic button's title (once)
 function relicIconOn(b, land) { const bt = b.querySelector('.bt'); if (bt && !bt.querySelector('.md')) bt.insertAdjacentHTML('afterbegin', relicIconHtml(land) + ' '); }
