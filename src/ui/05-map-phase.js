@@ -216,7 +216,7 @@ const MT = {   // the map's text, in one place for the text editor
   mastH: 'Attunement', mast1: 'The land you called back is now permanent, as is your physical form. You can now further attune previously-recalled lands.',   // owner, 2026-10-31
   mast2: 'Pick a place you have called back and select Attune. Your light flows there instead of into new land. You will get much stronger after attuning previous lands.',
   mast3: 'Every land\u2019s attunement level makes light reaching new land {pct}% stronger, allowing you to recall more of the world from the void.', mastOk: 'Press on', merchH: 'The traveler', merchKick: 'A mysterious merchant · he comes every two days and waits for your trade.',
-  merchSub: 'He wants heartstones. He knows the old gifts. What you buy works at once; the heartstones you earned since his last visit take hold when he goes on his way.',   // combat branch: see CT.travMerchSub once combat is open merchGo: 'Bid him farewell',
+  merchSub: 'He wants heartstones. He knows the old gifts. What you buy works at once; the heartstones you earned since his last visit take hold when he goes on his way.', merchGo: 'Return',   // owner, 2026-11-01: was 'Bid him farewell' (lost to a mid-line comment in v1u-c11); combat branch: see CT.travMerchSub once combat is open
   glow: 'A glowstone is cut and set by the fire. ({n} now)',
   // v1g: the broken tower, found on the map (owner, 2026-10-13)
   ruinGlimpse: 'Something tall stands here, too straight to be a hill.',   // owner, 2026-10-27

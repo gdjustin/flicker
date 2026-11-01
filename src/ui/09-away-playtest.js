@@ -152,7 +152,7 @@ function renderMapPhase(w) {
   else if (view === 'defense') renderDefenseTab(w);
   else { const now = Date.now(); if (now - MV.lastMap > 250) { MV.lastMap = now; renderMap(w); } }
   relicMomentCheck(w);   // r1d: the first relic's moment
-  renderCombatRes(w);
+  renderCombatRes(w); renderRallyPill(w);
   // the rebirth branch: a rebirth reached while away (or before a reload) asks once the player is back and nothing else is open
   if (MC.D.rb.on && w.m.rbReady && !MV.rbAsked && !S.inPerks && $('away').classList.contains('hidden') && $('moment').classList.contains('hidden')) { MV.rbAsked = true; setTimeout(askScatter, 300); }
   { const showP = MC.D.rb.on ? !!(w.m.rbAt || w.m.rbReady) : canScatter(w); $('w-scatter').classList.toggle('hidden', !showP); if (showP) scatterPill(w); }

@@ -514,7 +514,7 @@ footer .speed button.on { color: var(--ember); text-decoration: none; }
 #st-carry { min-width: 12.5rem; }
 #st-carry small { white-space: nowrap; }
 /* v24: snails sit apart */
-.rrow.snail { margin-top: 1.6rem; }
+.rrow.snail { margin-top: 0; }   /* owner, 2026-11-01: snails sit right under ideas */
 .rrow.snail .rn, .rrow.snail .rv, .rrow.snail .rr { color: var(--form); }
 /* v24: a job to try first */
 .jrow.hint .jn { position: relative; }
@@ -831,7 +831,7 @@ body.view-map #v-map .mwrap { flex: 1 1 auto; min-height: 16rem; }
 .mzoom button:hover:not(:disabled) { border-color: var(--ember); } .mzoom button:disabled { opacity: 0.4; cursor: default; }
 
 /* ---------- combat test (branch combat-test, 2026-10-18; carried to combat-r 2026-10-31): the bars, a place's battles, the Defense tab, map pips ---------- */
-.cres { margin-top: 0.5rem; padding-top: 0.35rem; border-top: 1px solid var(--line); display: grid; gap: 0.35rem; }
+.cres { margin-top: 0.9rem; padding-top: 0; display: grid; gap: 0.35rem; }
 .cres .cbar p { margin: 0; display: flex; justify-content: space-between; font-size: 0.82rem; } .cres .cbar p b { font-weight: 600; font-variant-numeric: tabular-nums; }
 .cres .cbar .st-bar { margin-top: 0.15rem; height: 8px; } .cres .cbar.res .st-bar i { background: color-mix(in srgb, var(--form) 70%, var(--ash)); }
 .cres .cbar:not(.res) .st-bar i { background: #b8484f; }

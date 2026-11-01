@@ -29,7 +29,8 @@ const CT = {   // combat's text, in one place for the text editor (placeholders 
   raid: 'Raid it', raidSub: 'Spend {n} of your Reserves: study of the {fam} (+{s}) and a chance at its relic.', raidNo: 'Needs {n} Reserves.',
   std: 'Raise a standard', stdSub: 'Marks it as made safe: all light +{pct}%. Costs {cost}.',
   rally: 'Rally', rallySub: 'A feast for your defenders: Resolve ×{x} for {h} hours. Costs {food} food. Then {cd} hours before the next.',
-  rallyOn: 'Rallying: {t} left', rallyWait: 'Rally again in {t}',
+  rallyOn: 'Rallying: {t} left', rallyWait: 'Rally again in {t}', rallyPill: 'Rally · {food} food', rallyPillOn: 'Rallying · {t}', rallyPillWait: 'Rally in {t}',
+  raidH: 'Raids', raid1: 'You can now spend Reserves to raid a land you have made safe, for study of its foes and a chance to claim its relic of battle.', raidOk: 'Understood',   // owner's copy said 'bonus resources': raids give none yet (flagged)
   winMsg: 'Won against {name} ({i} of {n}).', loseMsg: 'Driven back by {name}. Lost {lost} combat power.', clearMsg: '{place} is safe: {bs} bloodstone{s} to remember.', clearOld: '{place} is safe again.',
   relicMsg: 'A relic of battle from {place}: {land}.', raidMsg: 'Raided {place}: +{s} study of the {fam}.', stdMsg: 'A standard rises over {place}.',
   // the traveler's first visit after combat opens (owner, 2026-10-31; placeholder words)
@@ -87,6 +88,7 @@ function combatTick(dt, away, ev) {
   if (L.openPending && calm) { L.openPending = false; showCombatOpen(); }
   if (w.m.standardsReady && !L.stdNoted && !w.m.cards.standards) { L.stdNoted = true; wsay(CT.stdReadyMsg); }
   combatTravelerCheck(w, calm);
+  combatRaidCheck(w, calm);
   if (L.opened && !w.c) w.c = CB.newRun(L, (L.runs || 0) + 1);
   const C = cRun(w); if (!C) return;
   if (C.capOpen == null) C.capOpen = CB.cap(C, L) > 0;   // saves from v1s-c1: the cap was already open
@@ -119,6 +121,25 @@ function combatStrip(w, L) {
   $('vl-left').textContent = fill2(CT.threatLeft, { t: fmtTime((1 - H.p) / Math.max(1e-9, MC.holdRate(w))) }); $('vl-bar').style.width = (H.p * 100).toFixed(2) + '%';
 }
 
+/* ---------- Rally as a pill beside the feast (owner, 2026-11-01) ---------- */
+function renderRallyPill(w) {
+  let pill = $('w-rally'); const C = cRun(w);
+  if (!C || !C.lv.rally) { if (pill) pill.classList.add('hidden'); return; }
+  if (!pill) { pill = document.createElement('span'); pill.id = 'w-rally'; pill.className = 'feastpill rallypill'; pill.innerHTML = '<button type="button" id="rl-btn"></button><i class="fbar" aria-hidden="true"><i id="rl-bar"></i></i>'; $('w-feast').after(pill); $('rl-btn').addEventListener('click', cRally); }
+  pill.classList.remove('hidden'); const on = C.hr < C.rallyEnd, wait = !on && C.hr < C.rallyNext, b = $('rl-btn'); pill.classList.toggle('on', on);
+  const t = on ? fill2(CT.rallyPillOn, { t: fmtTime((C.rallyEnd - C.hr) * 3600) }) : wait ? fill2(CT.rallyPillWait, { t: fmtTime((C.rallyNext - C.hr) * 3600) }) : fill2(CT.rallyPill, { food: fmtC(CB.rallyFood(w)) });
+  if (b.textContent !== t) b.textContent = t; b.disabled = on || wait || CB.have(C, 'food', w) < CB.rallyFood(w);
+  b.title = fill2(CT.rallySub, { x: fmtW(CB.rallyX(C), 2), h: CB.P.rally.hours, food: fmtC(CB.rallyFood(w)), cd: CB.P.rally.cooldownH });
+  $('rl-bar').style.width = on ? ((C.rallyEnd - C.hr) / CB.P.rally.hours * 100).toFixed(1) + '%' : '0%';
+}
+// the first Storehouse opens raids: a short moment says so (owner, 2026-11-01)
+function combatRaidCheck(w, calm) {
+  const C = cRun(w), L = cLife(); if (!C || !C.lv.reserves || L.raidsTold || !calm) return;
+  L.raidsTold = true; $('moment-h').textContent = CT.raidH; const body = $('moment-body'); body.innerHTML = '';
+  const p = document.createElement('p'); p.textContent = CT.raid1; body.appendChild(p);
+  $('moment-ok').textContent = CT.raidOk; $('moment').dataset.kind = ''; momentPlain(); $('moment').classList.remove('hidden');
+}
+
 /* ---------- the bars under the resources ---------- */
 function renderCombatRes(w) {
   let box = $('c-res'); const C = cRun(w);
@@ -139,7 +160,7 @@ function renderCombatRes(w) {
 function fill2(t, v) { return t.replace(/\{(\w+)\}/g, (_, k) => v[k] != null ? v[k] : ''); }
 
 /* ---------- a place's card: its battles at the top (owner: as the previous branch) ---------- */
-function combatSig(w, k) { const C = cRun(w); if (!C || !k) return ''; return [C.bdone[k] || 0, !!C.cleared[k], fmtCP(C.cp), fmtCP(C.res), CMV.frac, CMV.form, CMV.lead, CB.avatarReady(C), (cLife().stds || {})[k] ? 1 : 0, C.lv.council].join(':'); }
+function combatSig(w, k) { const C = cRun(w); if (!C || !k) return ''; return [C.bdone[k] || 0, !!C.cleared[k], fmtCP(C.cp), fmtCP(C.res), CMV.frac, CMV.form, CMV.lead, CB.avatarReady(C), (cLife().stds || {})[k] ? 1 : 0, C.lv.council, C.lv.reserves > 0, CB.stdOK(w)].join(':'); }
 function combatCard(w, k, box) {
   const C = cRun(w), c = CB.byKey(k); if (!cCapOpen(C) || !c || !w.m.tiles[k]) return; const L = cLife();
   const sec = document.createElement('div'); sec.className = 'cbattle'; box.appendChild(sec);
@@ -156,24 +177,24 @@ function combatCard(w, k, box) {
     const r = add('div', 'cread');
     r.innerHTML = '<span><b>' + fmtCP(pv.S) + '</b> your strength</span><span><b>' + fmtCP(pv.D) + '</b> theirs</span><span class="' + (pv.sure ? 'ok' : pv.none ? 'bad' : '') + '"><b>' + (pv.sure ? 'sure' : pv.none ? 'no' : pc + '%') + '</b> to win</span>' +
       '<span><b>' + fmtCP(pv.lossWin) + '</b> lost if you win · <b>' + fmtCP(pv.lossLose) + '</b> if not</span>';
-    const tr = add('p', 'ctrait', CMX.TRAITS[c.trait] + ' ' + CMX.DANGER_NAME[c.danger] + ' danger, ' + CMX.DICE_NAME[c.dice] + ' swings (' + LANDN[c.land].toLowerCase() + ').');
+    const tr = add('p', 'ctrait', CMX.TRAITS[c.trait] + ' ' + capFirst(CMX.DANGER_NAME[c.danger]) + ' danger, ' + CMX.DICE_NAME[c.dice] + ' swings (' + LANDN[c.land].toLowerCase() + ').');
     const seg = add('div', 'cseg'); seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', 'How much to commit');
     [[1, 'All'], [0.75, '¾'], [0.5, '½'], [0.25, '¼']].forEach(([f, lab]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = lab; b.setAttribute('aria-pressed', CMV.frac === f ? 'true' : 'false'); b.addEventListener('click', () => { CMV.frac = f; renderWorld(); }); seg.appendChild(b); });
     if (C.lv.council) { const fs = add('div', 'cseg'); fs.setAttribute('aria-label', 'Formation');
       [['overwhelm', 'Overwhelm'], ['steady', 'Steady'], ['cautious', 'Carefully']].forEach(([f, lab]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = lab; b.setAttribute('aria-pressed', CMV.form === f ? 'true' : 'false'); b.addEventListener('click', () => { CMV.form = f; renderWorld(); }); fs.appendChild(b); }); }
     if (CB.avatarReady(C)) { const lb = add('label', 'clead'); const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = CMV.lead; cb.addEventListener('change', () => { CMV.lead = cb.checked; renderWorld(); }); lb.append(cb, ' ' + fill2(CT.leadSub, { x: fmtW(1 + CB.P.avatar.edge, 1), t: fmtTime(CB.avatarCd(C) * 3600) }).replace(/^You join/, CT.leadH + ': you join')); }
-    else add('p', 'mmut', fill2(CT.leadWait, { t: fmtTime(Math.max(0, C.avatarNext - C.hr) * 3600) }));
+    else if (C.clearedN >= CB.P.avatar.opens && C.avatarNext > C.hr) add('p', 'mmut', fill2(CT.leadWait, { t: fmtTime(Math.max(0, C.avatarNext - C.hr) * 3600) }));   // owner, 2026-11-01: no '0s' before the blade is open
     const acts = add('div', 'mpacts'), b = document.createElement('button'); b.type = 'button'; b.className = 'act primary'; acts.appendChild(b);
     setBtn(b, CT.attack, fill2(CT.attackSub, { n: fmtCP(C.cp * CMV.frac), d: fmtCP(pv.D) }), C.cp > 1e-9 && !pv.none, {}); b.addEventListener('click', () => cAttack(k));
   } else {
     const acts = add('div', 'mpacts');
     if (CB.stdOK(w) && C.newly[k] && !(L.stds || {})[k]) { const sc = CB.stdCost(L), b = document.createElement('button'); b.type = 'button'; b.className = 'act'; acts.appendChild(b);
       setBtn(b, CT.std, fill2(CT.stdSub, { pct: fmtW(CB.P.standard.x * 100, 1), cost: costList(sc) }), CB.canStd(w, C, L), {}); b.addEventListener('click', () => cStd(k)); }
-    const rc = CB.raidCost(C, L), b2 = document.createElement('button'); b2.type = 'button'; b2.className = 'act'; acts.appendChild(b2);
-    setBtn(b2, CT.raid, C.res >= rc ? fill2(CT.raidSub, { n: fmtCP(rc), fam: c.famName.toLowerCase(), s: CB.P.raid.study }) + (L.relics[k] ? ' Its relic is already yours.' : '') : fill2(CT.raidNo, { n: fmtCP(rc) }), C.res >= rc, {}); b2.addEventListener('click', () => cRaid(k));
+    if (C.lv.reserves > 0) { const rc = CB.raidCost(C, L), b2 = document.createElement('button'); b2.type = 'button'; b2.className = 'act'; acts.appendChild(b2);   // owner, 2026-11-01: raids wait for Reserves
+    setBtn(b2, CT.raid, C.res >= rc ? fill2(CT.raidSub, { n: fmtCP(rc), fam: c.famName.toLowerCase(), s: CB.P.raid.study }) + (L.relics[k] ? ' Its relic is already yours.' : '') : fill2(CT.raidNo, { n: fmtCP(rc) }), C.res >= rc, {}); b2.addEventListener('click', () => cRaid(k)); }
   }
   if (L.relics[k]) add('p', 'mmut', 'Its relic of battle is yours (' + LANDN[L.relics[k]].toLowerCase() + ').');
-  else if (L.ever[k] == null) add('p', 'mmut', 'Its first battles may turn up a relic of battle (raids too).');
+  else if (L.ever[k] == null) add('p', 'mmut', 'Its first battles may turn up a relic of battle' + (C.lv.reserves > 0 ? ' (raids too).' : '.'));
   if (L.ever[k] == null) add('p', 'mmut', 'Made safe for the first time: ' + fmtW(c.bs) + ' bloodstone' + (c.bs === 1 ? '' : 's') + '.'); else if (!cleared) add('p', 'mmut', 'Made safe before: it fights weaker now (veterans remember).');
 }
 
@@ -252,7 +273,7 @@ function renderDefenseTab(w) {
         '<p class="cline">Bloodstones: <b>' + fmtW(L.bs) + '</b> holding (combat power ×' + fmtW(cFlatFor(L.bs), 2) + ')' + (L.bsPending ? ', <b>' + fmtW(L.bsPending) + '</b> more waiting for the traveler' : '') + '; ' + fmtW(L.bs + (L.bsPending || 0) - CB.perkSpent(L.perks)) + ' to spend with him.</p>' +
         '<p class="cline">Your strength comes from: ' + (parts.filter(p => p[1] > 0.004).map(p => p[0].replace(' (recruit)', '').replace(' (arm)', '') + ' ×' + fmtW(Math.pow(10, p[1]), 2)).join(', ') || 'your first companies alone') + '.</p>' +
         (C.clearedN >= CB.P.avatar.opens ? '<p class="cline">' + (CB.avatarReady(C) ? 'You can lead a charge now.' : fill2(CT.leadWait, { t: fmtTime(Math.max(0, C.avatarNext - C.hr) * 3600) })) + '</p>' : '') + '<div class="acts" id="cd-rally"></div>'; }
-    if (C.lv.rally) { const rb = ensureBtn($('cd-rally'), 'cd-rallyb', cRally, 'primary');
+    if (false) { const rb = ensureBtn($('cd-rally'), 'cd-rallyb', cRally, 'primary');   // owner, 2026-11-01: Rally is a pill beside the feast (renderRallyPill)
       if (C.hr < C.rallyEnd) setBtn(rb, CT.rally, fill2(CT.rallyOn, { t: fmtTime((C.rallyEnd - C.hr) * 3600) }), false, {});
       else if (C.hr < C.rallyNext) setBtn(rb, CT.rally, fill2(CT.rallyWait, { t: fmtTime((C.rallyNext - C.hr) * 3600) }), false, {});
       else setBtn(rb, CT.rally, fill2(CT.rallySub, { x: fmtW(CB.rallyX(C), 2), h: CB.P.rally.hours, food: fmtC(CB.rallyFood(w)), cd: CB.P.rally.cooldownH }), CB.have(C, 'food', w) >= CB.rallyFood(w), {}); } }
@@ -300,7 +321,7 @@ function combatRelicsHtml(w) {
   const L = cLife(); if (!L.opened) return '';
   const lands = Object.keys(L.relicLand || {}).filter(k => L.relicLand[k] > 0), R = CB.P.relic;
   let h = '<div class="rel"><div><p class="sech">Relics of battle</p>';
-  if (!L.relicN) h += '<p class="mmut">A place’s first battles may turn up a relic of battle (raids too). Each adds ' + fmtW(R.cp * 100, 1) + '% to combat power, and makes your defenders ×' + fmtW(1 + R.landEdge, 1) + ' in battles on its land.</p>';
+  if (!L.relicN) h += '<p class="mmut">A place’s first battles may turn up a relic of battle (later, raids too). Each adds ' + fmtW(R.cp * 100, 1) + '% to combat power, and makes your defenders ×' + fmtW(1 + R.landEdge, 1) + ' in battles on its land.</p>';
   else { h += '<div class="rgrid">' + lands.map(land => '<div class="rcard"><span class="md" style="--c:var(--l-' + LANDC[land] + ')">' + LANDG[land] + '</span><p class="rn">' + LANDN[land] + ' ×' + L.relicLand[land] + '</p><p class="rx">Battles on ' + LANDN[land].toLowerCase() + ' ×' + fmtW(1 + R.landEdge * L.relicLand[land], 2) + '</p></div>').join('') + '</div>' +
     '<div class="rtot"><span>Combat power from relics of battle: <b>×' + fmtW(CB.relicCP(L), 2) + '</b></span><span>' + L.relicN + ' found, kept for good</span></div>'; }
   return h + '</div></div>';
