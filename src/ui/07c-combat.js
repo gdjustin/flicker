@@ -269,63 +269,7 @@ function cWhatAdds(w, C, L, id) {   // the hover on a line: what building it add
   if (id === 'mine') return C.lv.mine ? ['Room for one more miner (' + (CB.mineSlots(C) + 1) + '), and each digs ×' + CB.P.mine.depthX + ' more.'] : ['A mine with room for ' + CB.P.mine.slots0 + ' miners, ' + fmtW(CB.ironPerMinerH(C), 2) + ' iron an hour each. Put settlers on it in the Settlement.', 'Then: the Barracks.'];
   return null;
 }
-function renderDefenseTab(w) {
-  const box = $('v-defense'), C = cRun(w), L = cLife();
-  if (!C) { box.innerHTML = '<p class="mmut">Nothing fights back yet.</p>'; return; }
-  const open = cCapOpen(C);
-  if (!$('cd-sec-make')) box.innerHTML = '<div class="cdsec" id="cd-sec-muster"><p class="sech">Your defenders</p><div id="cd-muster"></div></div>' +
-    '<div class="cdsec" id="cd-sec-make"><div id="cd-make" class="bgroups"></div></div>' +
-    '<div class="cdsec" id="cd-sec-front"><p class="sech">The battle front</p><div id="cd-front" class="cfront"></div></div>' +
-    '<div class="cdtop"><div class="cdsec" id="cd-sec-light"><p class="sech">For the light</p><div class="acts" id="cd-light"></div></div><div class="cdsec" id="cd-sec-beast"><p class="sech">Bestiary</p><div id="cd-beast"></div></div></div>';
-  $('cd-sec-muster').classList.toggle('hidden', !open); $('cd-sec-front').classList.toggle('hidden', !open);
-  if (open && S.view === 'defense') L.frontSeen = true;
-  // the muster: the bars, Rally, the avatar
-  if (open) { const m = $('cd-muster'), cap = CB.cap(C, L), parts = CB.capParts(C, L), rc = CB.resCap(C, L), drillOn = CB.drillSlots(C) > 0;
-    const sig = [fmtCP(C.cp), fmtCP(cap), fmtCP(C.res), fmtCP(rc), C.lv.rally, Math.floor(C.hr * 6), C.rallies, drillOn, C.clearedN].join('|');
-    if (m.dataset.s !== sig) { m.dataset.s = sig;
-      m.innerHTML = '<p class="cline">Combat power <b>' + fmtCP(C.cp) + '</b> of <b>' + fmtCP(cap) + '</b>' + (rc > 0 ? ' · Reserves <b>' + fmtCP(C.res) + '</b> of ' + fmtCP(rc) : '') + '</p>' +
-        '<p class="cline">' + fill2(CT.resolveIs, { t: fmtTime(CB.fillH(C, L) * 3600) }) + (drillOn ? ' (' + (w.jobs.drillmaster || 0) + ' drillmasters; ' + fmtW(CB.drillNeed(C, L), 1) + ' would halve the wait above ' + CB.P.drill.floorH + ' h)' : '') + '</p>' +
-        '<p class="cline">Bloodstones: <b>' + fmtW(L.bs) + '</b> holding (combat power ×' + fmtW(cFlatFor(L.bs), 2) + ')' + (L.bsPending ? ', <b>' + fmtW(L.bsPending) + '</b> more waiting for the traveler' : '') + '; ' + fmtW(L.bs + (L.bsPending || 0) - CB.perkSpent(L.perks)) + ' to spend with him.</p>' +
-        '<p class="cline">Your strength comes from: ' + (parts.filter(p => p[1] > 0.004).map(p => p[0].replace(' (recruit)', '').replace(' (arm)', '') + ' ×' + fmtW(Math.pow(10, p[1]), 2)).join(', ') || 'your first companies alone') + '.</p>' +
-        (C.clearedN >= CB.P.avatar.opens ? '<p class="cline">' + (CB.avatarReady(C) ? 'You can lead a charge now.' : fill2(CT.leadWait, { t: fmtTime(Math.max(0, C.avatarNext - C.hr) * 3600) })) + '</p>' : '') + '<div class="acts" id="cd-rally"></div>'; }
-    if (false) { const rb = ensureBtn($('cd-rally'), 'cd-rallyb', cRally, 'primary');   // owner, 2026-11-01: Rally is a pill beside the feast (renderRallyPill)
-      if (C.hr < C.rallyEnd) setBtn(rb, CT.rally, fill2(CT.rallyOn, { t: fmtTime((C.rallyEnd - C.hr) * 3600) }), false, {});
-      else if (C.hr < C.rallyNext) setBtn(rb, CT.rally, fill2(CT.rallyWait, { t: fmtTime((C.rallyNext - C.hr) * 3600) }), false, {});
-      else setBtn(rb, CT.rally, fill2(CT.rallySub, { x: fmtW(CB.rallyX(C), 2), h: CB.P.rally.hours, food: fmtC(CB.rallyFood(w)), cd: CB.P.rally.cooldownH }), CB.have(C, 'food', w) >= CB.rallyFood(w), {}); } }
-  // buildings and lines: only what is open (the mine first; then the Barracks and the Armory; the rest at their milestones)
-  const opts = CB.options(w, C, L), byId = {}; opts.forEach(o => { byId[o.id] = o; });
-  const groups = { building: 'Buildings', upgrade: 'Upgrades' }, make = $('cd-make');
-  Object.keys(LINE).forEach(id => { const o = byId[id], bid = 'cd-b-' + id;
-    if (!o) { if ($(bid)) $(bid).remove(); return; }
-    const gid = 'cd-g-' + LINE[id][2]; let g = $(gid); if (!g) { g = document.createElement('div'); g.className = 'bgroup'; g.id = gid; g.innerHTML = '<p class="bgh">' + groups[LINE[id][2]] + '</p><div class="acts"></div>'; make.appendChild(g); }
-    const b = ensureBtn(g.querySelector('.acts'), bid, () => cBuy(id)), lv = id === 'armory' ? (C.lv.armory || C.tier.armory > 1 ? C.tier.armory + '/' + C.lv.armory : 0) : C.lv[id];
-    setBtn(b, (id === 'mine' && !C.lv.mine ? 'Reopen the iron mine' : LINE[id][0]) + (lv ? ' (' + lv + ')' : ''), LINE[id][1](w, C, L), CB.canBuy(w, C, L, id), { kind: LINE[id][2], cost: o.cost });
-    hoverTip(b, () => { const ww = W(), CC = cRun(ww); if (!CC) return; const t = cWhatAdds(ww, CC, cLife(), id); if (t) showTextTip(b, 'If you build this', t); });
-    if (S.view === 'defense') { L.seenLine = L.seenLine || {}; L.seenLine[id] = true; }
-    let d = b.querySelector('.ndot'); const nw = cNew(id); if (nw && !d) { d = document.createElement('i'); d.className = 'ndot'; d.setAttribute('aria-hidden', 'true'); b.appendChild(d); } else if (!nw && d) d.remove(); });
-  ['building', 'upgrade'].forEach(k => { const g = $('cd-g-' + k); if (g && !g.querySelector('.act')) g.remove(); });
-  // the battle front: places called back that are not yet safe, the weakest first, under the buildings (owner)
-  if (open) { const fr = CB.frontier(C, w).slice(0, 10), f = $('cd-front'), sig = fr.map(c => c.key + ':' + (C.bdone[c.key] || 0)).join(',') + '|' + fmtCP(C.cp);
-    if (f.dataset.s !== sig) { f.dataset.s = sig; f.innerHTML = '';
-      if (!fr.length) f.innerHTML = '<p class="mmut">Every place you have called back is safe. Call back more.</p>';
-      fr.forEach(c => { const pv = CB.preview(w, C, L, c.key, { frac: 1 }), b = document.createElement('button'); b.type = 'button'; b.className = 'crow';
-        b.innerHTML = '<span class="cn">' + shortName(tileOf(c.key)) + '</span><span class="cf">' + c.famName + ' · ' + ((C.bdone[c.key] || 0) + 1) + ' of ' + (c.nb + (C.extra[c.key] || 0)) + '</span><span class="cs">' + fmtCP(pv.D) + '</span><span class="cp ' + (pv.sure ? 'ok' : pv.none ? 'bad' : '') + '">' + (cPct(pv.pwin) + '%') + '</span>';
-        b.addEventListener('click', () => { MV.sel = c.key; S.view = 'map'; MV.lastMap = 0; renderWorld(); }); f.appendChild(b); }); } }
-  // for the light: iron buffs, standards (only once something is in it)
-  { const lb = $('cd-light'), op = CB.oneOffsOpen(C, L), want = new Set(op.map(x => 'cd-o-' + x.id)), std = CB.stdOpen(C, L, w);
-    Array.from(lb.querySelectorAll('.act')).forEach(b => { if (b.id && b.id.indexOf('cd-o-') === 0 && !want.has(b.id)) b.remove(); });
-    op.forEach(x => { const b = ensureBtn(lb, 'cd-o-' + x.id, () => cOneOff(x.id)); setBtn(b, x.name, 'Iron for the fires: ' + oneOffWhat(x) + (CB.P.keepLight ? '. Kept for good.' : '. This run of your defense only.'), C.iron >= x.iron, { kind: 'upgrade', cost: { iron: x.iron } }); });
-    const toQ = std.filter(k => !stdQueued(w, k)), sb = $('cd-stdall'), pb = $('cd-stdpause'), nw = stdWaiting(w);
-    if (toQ.length) { const b = ensureBtn(lb, 'cd-stdall', cStdAll); setBtn(b, fill2(CT.stdAll, { n: toQ.length }), fill2(CT.stdAllSub, { pct: fmtW(CB.P.standard.x * 100, 1), raised: cLife().stdN || 0 }), true, { kind: 'building', cost: CB.stdCost(L) }); } else if (sb) sb.remove();
-    if (nw) { const b = ensureBtn(lb, 'cd-stdpause', cStdPause); setBtn(b, CT.stdPause, fill2(CT.stdPauseSub, { n: nw }), true, {}); } else if (pb) pb.remove();
-    $('cd-sec-light').classList.toggle('hidden', !lb.querySelector('.act')); }   // fixed (v1s-c2): the empty note no longer flips on and off each frame
-  // the Bestiary (once a family is studied)
-  { const bx = $('cd-beast'), fams = Object.keys(CB.famCount).filter(f => (L.beast[f] || 0) > 0).sort((a, b) => (L.beast[b] || 0) - (L.beast[a] || 0)), sig = 'b|' + fams.map(f => f + L.beast[f]).join(',');
-    $('cd-sec-beast').classList.toggle('hidden', !fams.length);
-    if (bx.dataset.s !== sig) { bx.dataset.s = sig;
-      bx.innerHTML = fams.length ? '<table class="cbeast"><thead><tr><th>Family</th><th>How common</th><th>Studied</th><th>Stage</th><th>Edge</th></tr></thead><tbody>' + fams.map(f => { const st = CB.beastStages(L, f); let th = CB.P.bestiary.first[CB.tierOf(f)]; for (let i = 0; i < st; i++) th *= CB.P.bestiary.g;
-        return '<tr><td>' + FAMN[f] + '</td><td>' + CB.tierOf(f) + '</td><td>' + fmtW(L.beast[f]) + ' / ' + fmtW(Math.ceil(th)) + '</td><td>' + st + '</td><td>×' + fmtW(CB.beastEdge(L, f), 2) + '</td></tr>'; }).join('') + '</tbody></table><p class="mmut">Each battle won and each raid teaches you more of a family. Each stage is ×' + fmtW(1 + CB.P.bestiary.edge, 1) + ' in its battles, for good. Healers, scouts and the council table open as stages add up (' + CB.beastTotal(L) + ' so far).</p>' : ''; } }
-}
+// renderDefenseTab: the one-page Defense tab lives in 07d-defense.js (owner, 2026-11-01)
 
 /* ---------- map marks: a bronze pip while a place is being fought, gold once safe; strength on places not yet fought ---------- */
 function combatCellCls(w, k, cls) { }   // owner, 2026-10-31: no combat dots on the map (the strength label stays)

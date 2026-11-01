@@ -371,6 +371,8 @@ var CPHASE = function (MC, CM, dialsIn) {
       var best = null, bs = 0;
       options(s, C, life).forEach(function (x) {
         if (!canPay(C, x.cost)) return;
+        // v1u-c17: the bot builds an Iron store only when what it wants to buy needs more iron than the store holds (it was buying them with spare stone and wood)
+        if (x.id === 'ironStore' && x.gain < 0.01) return;
         var hrs = 0; for (var k in x.cost) hrs = Math.max(hrs, x.cost[k] / incomeH(s, C, life, k));
         var sc = x.w * x.gain / Math.max(0.1, hrs); if (sc > bs) { bs = sc; best = x; }
       });
