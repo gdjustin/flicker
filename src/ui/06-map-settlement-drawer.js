@@ -121,10 +121,10 @@ function relicsNeedYou(w) { const open = relicTiles(w).filter(x => w.res.copper 
 function mRelicAll() { const w = W(); let n = 0; for (const x of relicTiles(w)) { if (w.res.copper < MC.relicCost(w, x.k).copper) break; if (MC.buyRelic(w, x.k)) n++; } if (n) { w.stats.buys.length = 0; sys(n + ' relic' + (n === 1 ? ' is' : 's are') + ' claimed.'); renderWorld(); } }
 // v1u-c13 (owner, 2026-11-01): the Relics tab is a trophy case. A summary at the top (each kind's count and what it gives, how it is
 // earned on hover), a compact claim bar, then one shelf for each kind of relic. Later phases add their own shelves (RELIC_SHELVES).
-// Light relics are round and gilded; relics of battle are iron-rimmed shields. Each land keeps its colour and glyph on both.
+// Light relics are round and gilded; battle relics are iron-rimmed shields. Each land keeps its colour and glyph on both.
 const RELIC_LANDS = ['forest', 'meadow', 'hills', 'marsh', 'river', 'mountain', 'water'];
 const RELIC_TIP_LIGHT = 'Every land you call back brings with it a lost relic. Setting it within a copper shrine unlocks its power: a boost to your light, and your raw resources. Setting every relic from a region causes the relics to ring, multiplying their boosts by 3x.';   // owner, 2026-11-01 ('caused' read as 'causes')
-const RELIC_TIP_BATTLE = 'Every land you make safe contains a relic within it. You may find its relic the first time you clear the land, or you may need to raid the land’s scattered enemies to claim it. Each relic increases your troops’ ability to fight in that landscape.';   // owner, 2026-11-01
+const RELIC_TIP_BATTLE = 'Every land you make safe contains a relic within it. You may find its relic the first time you clear the land, or you may need to raid the land’s scattered enemies to claim it. Each relic improves your troops’ overall combat power, as well as their ability to fight in that landscape.';   // owner, 2026-11-01 (revised)
 function relicMedalSvg(land, size, found) {
   const g = LANDG[land], c = 'var(--l-' + LANDC[land] + ')';
   if (!found) return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 84 84" aria-hidden="true"><circle cx="42" cy="42" r="40" fill="#2a231d" stroke="#4a3f35" stroke-width="3"/><text x="42" y="54" text-anchor="middle" font-size="32" fill="#4a3f35">?</text></svg>';
@@ -145,7 +145,7 @@ const RELIC_SHELVES = [
         const first = LR.firstOf[land] != null ? LR.firstOf[land] : LR.first, each = LR.eachOf && LR.eachOf[land] != null ? LR.eachOf[land] : LR.each;
         if (!n) return { land, found: false, name: back[land] ? 'Waiting in a shrine' : 'Not yet found', lines: [back[land] ? 'Claim one: ' + RO[1] + ' +' + Math.round(first * 100) + '%' : 'Call back ' + LANDN[land].toLowerCase()] };
         return { land, found: true, name: RO[0], n, lines: [capFirst(RO[1]) + ' +' + Math.round((first + each * Math.max(0, wt - 1)) * 100) + '%', 'All light +' + fmtW(LR.light * lore * wt * 100, 1) + '%'].concat(rg ? [rg + ' ringing'] : []) }; }); } },
-  { id: 'battle', title: 'Relics of battle', cls: 'battle', tip: RELIC_TIP_BATTLE, open: () => typeof cLife === 'function' && cLife().opened,
+  { id: 'battle', title: 'Battle relics', cls: 'battle', tip: RELIC_TIP_BATTLE, open: () => typeof cLife === 'function' && cLife().opened,
     items(w) { const L = cLife(), RL = L.relicLand || {}, R = CB.P.relic, per = L.relicN ? (CB.relicCP(L) - 1) / L.relicN : 0;
       return RELIC_LANDS.map(land => { const n = RL[land] || 0;
         if (!n) return { land, found: false, name: 'Not yet found', lines: ['Won in battles on ' + LANDN[land].toLowerCase()] };
@@ -157,7 +157,7 @@ function renderRelicsTab(w) {
   const lightN = Object.values(w.m.relicLand || {}).reduce((a, b) => a + b, 0), battle = shelves.some(sh => sh.id === 'battle'), bL = battle ? cLife() : null;
   let h = '<section class="rsum" aria-label="Your relics">' +
     '<div class="rsc light rtip" tabindex="0" data-tiph="Light relics" data-tip="' + RELIC_TIP_LIGHT + '">' + relicMedalSvg('meadow', 40, true) + '<span><b>' + fmtW(lightN) + '</b><span>light relics</span></span></div>' +
-    (battle ? '<div class="rsc battle rtip" tabindex="0" data-tiph="Relics of battle" data-tip="' + RELIC_TIP_BATTLE + '">' + relicShieldSvg('meadow', 38, true) + '<span><b>' + fmtW(bL.relicN) + '</b><span>relics of battle</span></span></div>' : '') +
+    (battle ? '<div class="rsc battle rtip" tabindex="0" data-tiph="Battle relics" data-tip="' + RELIC_TIP_BATTLE + '">' + relicShieldSvg('meadow', 38, true) + '<span><b>' + fmtW(bL.relicN) + '</b><span>battle relics</span></span></div>' : '') +
     '<div class="rsc"><span><span>All light from relics</span><b class="lt">×' + fmtW(MC.relicMult(w), 2) + '</b></span></div>' +
     (battle ? '<div class="rsc"><span><span>Combat power from relics</span><b class="bt">×' + fmtW(CB.relicCP(bL), 2) + '</b></span></div>' : '') + '</section>';
   // the claim bar: how many wait and the cheapest; claim all (the perk) and a list to choose from

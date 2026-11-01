@@ -30,9 +30,9 @@ const CT = {   // combat's text, in one place for the text editor (placeholders 
   std: 'Raise a standard', stdSub: 'Marks it as made safe: all light +{pct}%. Costs {cost}.',
   rally: 'Rally', rallySub: 'A feast for your defenders: Resolve ×{x} for {h} hours. Costs {food} food. Then {cd} hours before the next.',
   rallyOn: 'Rallying: {t} left', rallyWait: 'Rally again in {t}', rallyPill: 'Rally · {food} food', rallyPillOn: 'Rallying · {t}', rallyPillWait: 'Rally in {t}',
-  raidH: 'Raids', raid1: 'You can now spend Reserves to raid a land you have made safe, for study of its foes and a chance to claim its relic of battle.', raidOk: 'Understood',   // owner's copy said 'bonus resources': raids give none yet (flagged)
+  raidH: 'Raids', raid1: 'You can now spend Reserves to raid a land you have made safe, for study of its foes and a chance to claim its battle relic.', raidOk: 'Understood',   // owner's copy said 'bonus resources': raids give none yet (flagged)
   winMsg: 'Won against {name} ({i} of {n}).', loseMsg: 'Driven back by {name}. Lost {lost} combat power.', clearMsg: '{place} is safe: {bs} bloodstone{s} to remember.', clearOld: '{place} is safe again.',
-  relicMsg: 'A relic of battle from {place}: {land}.', raidMsg: 'Raided {place}: +{s} study of the {fam}.', stdMsg: 'A standard rises over {place}.',
+  relicMsg: 'A battle relic from {place}: {land}.', raidMsg: 'Raided {place}: +{s} study of the {fam}.', stdMsg: 'A standard rises over {place}.',
   // the traveler's first visit after combat opens (owner, 2026-10-31; placeholder words)
   travH: 'The traveler returns', trav1: 'He has heard about the wolves. He weighs your heartstones in his hand, shrugs, and sets them down again.',
   trav2: 'It is the bloodstones he is after now, the ones your defenders win making places safe for the first time. For those he will teach your defenders what he knows.', travGo: 'See what he offers',
@@ -193,8 +193,8 @@ function combatCard(w, k, box) {
     if (C.lv.reserves > 0) { const rc = CB.raidCost(C, L), b2 = document.createElement('button'); b2.type = 'button'; b2.className = 'act'; acts.appendChild(b2);   // owner, 2026-11-01: raids wait for Reserves
     setBtn(b2, CT.raid, C.res >= rc ? fill2(CT.raidSub, { n: fmtCP(rc), fam: c.famName.toLowerCase(), s: CB.P.raid.study }) + (L.relics[k] ? ' Its relic is already yours.' : '') : fill2(CT.raidNo, { n: fmtCP(rc) }), C.res >= rc, {}); b2.addEventListener('click', () => cRaid(k)); }
   }
-  if (L.relics[k]) add('p', 'mmut', 'Its relic of battle is yours (' + LANDN[L.relics[k]].toLowerCase() + ').');
-  else if (L.ever[k] == null) add('p', 'mmut', 'Its first battles may turn up a relic of battle' + (C.lv.reserves > 0 ? ' (raids too).' : '.'));
+  if (L.relics[k]) add('p', 'mmut', 'Its battle relic is yours (' + LANDN[L.relics[k]].toLowerCase() + ').');
+  else if (L.ever[k] == null) add('p', 'mmut', 'Its first battles may turn up a battle relic' + (C.lv.reserves > 0 ? ' (raids too).' : '.'));
   if (L.ever[k] == null) add('p', 'mmut', 'Made safe for the first time: ' + fmtW(c.bs) + ' bloodstone' + (c.bs === 1 ? '' : 's') + '.'); else if (!cleared) add('p', 'mmut', 'Made safe before: it fights weaker now (veterans remember).');
 }
 
@@ -316,14 +316,14 @@ function combatCellCls(w, k, cls) { }   // owner, 2026-10-31: no combat dots on 
 function combatCellLabel(w, k) { const C = cRun(w); if (!cCapOpen(C) || !w.m.tiles[k] || C.cleared[k]) return ''; const c = CB.byKey(k); if (!c) return ''; const cap = CB.cap(C, cLife()); if (c.power > cap * 30) return ''; return '⚔' + fmtShortCP(CB.nextBattle(c, C, cLife(), C.hr / 24).D * CPU); }
 function fmtShortCP(v) { return v >= 1e9 ? fmtW(v / 1e9, 1) + 'B' : v >= 1e6 ? fmtW(v / 1e6, 1) + 'M' : v >= 1e3 ? fmtW(v / 1e3, 1) + 'k' : fmtW(v, v < 10 ? 1 : 0); }
 
-/* ---------- the Relics tab: relics of battle (a chance on a place's first battles and on raids; kept for good) ---------- */
+/* ---------- the Relics tab: battle relics (a chance on a place's first battles and on raids; kept for good) ---------- */
 function combatRelicsHtml(w) {
   const L = cLife(); if (!L.opened) return '';
   const lands = Object.keys(L.relicLand || {}).filter(k => L.relicLand[k] > 0), R = CB.P.relic;
-  let h = '<div class="rel"><div><p class="sech">Relics of battle</p>';
-  if (!L.relicN) h += '<p class="mmut">A place’s first battles may turn up a relic of battle (later, raids too). Each adds ' + fmtW(R.cp * 100, 1) + '% to combat power, and makes your defenders ×' + fmtW(1 + R.landEdge, 1) + ' in battles on its land.</p>';
+  let h = '<div class="rel"><div><p class="sech">Battle relics</p>';
+  if (!L.relicN) h += '<p class="mmut">A place’s first battles may turn up a battle relic (later, raids too). Each adds ' + fmtW(R.cp * 100, 1) + '% to combat power, and makes your defenders ×' + fmtW(1 + R.landEdge, 1) + ' in battles on its land.</p>';
   else { h += '<div class="rgrid">' + lands.map(land => '<div class="rcard"><span class="md" style="--c:var(--l-' + LANDC[land] + ')">' + LANDG[land] + '</span><p class="rn">' + LANDN[land] + ' ×' + L.relicLand[land] + '</p><p class="rx">Battles on ' + LANDN[land].toLowerCase() + ' ×' + fmtW(1 + R.landEdge * L.relicLand[land], 2) + '</p></div>').join('') + '</div>' +
-    '<div class="rtot"><span>Combat power from relics of battle: <b>×' + fmtW(CB.relicCP(L), 2) + '</b></span><span>' + L.relicN + ' found, kept for good</span></div>'; }
+    '<div class="rtot"><span>Combat power from battle relics: <b>×' + fmtW(CB.relicCP(L), 2) + '</b></span><span>' + L.relicN + ' found, kept for good</span></div>'; }
   return h + '</div></div>';
 }
 
@@ -331,7 +331,7 @@ function combatRelicsHtml(w) {
 function cFlatFor(bs) { return 1 + CB.P.bs.pct * Math.pow(bs, CB.P.bs.exp); }
 const CPK_UI = { hardened: 'Combat power +' + Math.round(CB.perk('hardened').x * 100) + '% of the base a rank', quick: 'Resolve +' + Math.round(CB.perk('quick').x * 100) + '% a rank',
   forgeLore: 'Each Armory tier holds one more level a rank', quarterm: 'Barracks prices climb ' + Math.round(CB.perk('quarterm').x * 100) + '% gentler a rank', drillLore: 'Fewer drillmasters needed for the same drill: ' + Math.round(CB.perk('drillLore').x * 100) + '% fewer a rank',
-  keen: 'Relics of battle turn up ' + Math.round(CB.perk('keen').x * 100) + '% more often a rank', lore: 'Each relic of battle ' + Math.round(CB.perk('lore').x * 100) + '% stronger a rank' };
+  keen: 'Battle relics turn up ' + Math.round(CB.perk('keen').x * 100) + '% more often a rank', lore: 'Each battle relic ' + Math.round(CB.perk('lore').x * 100) + '% stronger a rank' };
 function combatMerchantSection() {
   const L = cLife(); if (!L.opened) return null; const pool = L.bs + (L.bsPending || 0), spent = CB.perkSpent(L.perks), free = pool - spent;
   let h = '<section class="cur open"><div class="cur-strip"><span class="cur-name"><span class="hex" style="width:30px;height:27px;background:#b8484f"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6z" fill="none" stroke="#2a1010" stroke-width="2"/></svg></span><span><span class="cz cur-t">Defense</span><span class="cur-s">Bloodstones</span></span></span>' +
