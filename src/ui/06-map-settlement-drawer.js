@@ -286,15 +286,18 @@ function renderMapDrawer(w) {
   const pd = MC.projDef(w, w.m.proj.id), st = pd.stages[w.m.proj.stage], nd = MC.projNeeds(w), fr = mProjFrac(w);
   $('vp-lab').textContent = 'Building'; $('vp-name').textContent = pname(w, w.m.proj.id);
   const nxs = pd.stages[w.m.proj.stage + 1], n = pd.stages.length;
-  $('vp-step').textContent = tx('vp.step', { k: w.m.proj.stage + 1, n, name: stageName(pd, w.m.proj.stage) }) + (nxs ? ' \u00b7 ' + tx('vw.nextstage', { name: stageName(pd, w.m.proj.stage + 1), list: costList(nxs.cost) }) : '') + (w.m.queue.length ? ' \u00b7 then ' + w.m.queue.map(id => pname(w, id)).slice(0, 3).join(', ') : '');
+  $('vp-step').textContent = tx('vp.step', { k: w.m.proj.stage + 1, n, name: stageName(pd, w.m.proj.stage) }) + (nxs ? ' \u00b7 ' + tx('vw.nextstage', { name: stageName(pd, w.m.proj.stage + 1), list: costList(nxs.cost) }) : '') + (w.m.queue.length ? ' \u00b7 then ' + queueSummary(w) : '');
   { const tr = $('vp-track'); tr.style.setProperty('--segs', n); tr.classList.toggle('one', n === 1); }
   $('vp-pct').textContent = Math.floor(fr * 100) + '% built'; $('vp-bar').style.width = (fr * 100).toFixed(1) + '%';
   const left = Object.keys(nd).reduce((a, k) => a + nd[k], 0); const noH = !(w.jobs.hauler > 0); $('vp-left').textContent = noH ? tx('vp.nohaul') : 'about ' + fmtTime(left / Math.max(1e-9, MC.haulRate(w))) + ' left on this stage';
   $('vp-left').classList.toggle('nohaul', noH); $('w-pstrip').classList.toggle('nohaul', noH);
   const items = Object.keys(st.cost).filter(k => nd[k] > 1e-6).map(k => resName(k) + ' ' + fmtW(st.cost[k] - nd[k]) + ' / ' + fmtW(st.cost[k]));
   const dl = $('vp-draw'), sig = items.join('|'); if (dl.dataset.s !== sig) { dl.dataset.s = sig; dl.innerHTML = ''; items.forEach(x => { const sp = document.createElement('span'); sp.textContent = x; dl.appendChild(sp); }); }
-  if (w.m.queue.length) { const q = w.m.queue[0], b = ensureBtn(act, 'vp-first', () => mFirst(q), 'slim'); setBtn(b, 'Build ' + pname(w, q) + ' first', '', true, {}); } else { const fb = $('vp-first'); if (fb) fb.remove(); }
+  if (w.m.queue.length) { const q = w.m.queue[0], isStd = String(q).indexOf('std:') === 0, b = ensureBtn(act, 'vp-first', () => isStd ? cStdFirst() : mFirst(q), 'slim'); setBtn(b, isStd ? 'Haul the standards first' : 'Build ' + pname(w, q) + ' first', '', true, {}); } else { const fb = $('vp-first'); if (fb) fb.remove(); }
 }
+// the queue in a line: up to three names, and standards counted together (owner, 2026-11-01: 'X standards are waiting to be hauled next')
+function queueSummary(w) { const std = w.m.queue.filter(id => String(id).indexOf('std:') === 0).length, rest = w.m.queue.filter(id => String(id).indexOf('std:') !== 0).map(id => pname(w, id));
+  const parts = rest.slice(0, 3).concat(rest.length > 3 ? [(rest.length - 3) + ' more'] : []); if (std) parts.push(std + ' standard' + (std === 1 ? '' : 's') + ' waiting to be hauled'); return parts.join(', '); }
 // a stage's name and needs, for the strip, its preview of the next stage, and the hover
 function stageName(pd, i) { const st = pd.stages[i]; return (st && st.name) || 'Stage ' + (i + 1); }
 function costList(c) { return Object.keys(c).map(k => fmtW(c[k]) + ' ' + resName(k).toLowerCase()).join(', '); }

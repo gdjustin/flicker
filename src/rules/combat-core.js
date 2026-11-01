@@ -70,7 +70,8 @@ var CPHASE = function (MC, CM, dialsIn) {
       },
       // 2026-10-31 (owner, Considering): keep standards at +2% each, drop the iron buffs for the fires (P.off.oneOffs, below), and let
       // Light outpace the old +185 to +200 budget; Light's growth gets tuned later.
-      standard: { x: 0.02, cost: { wood: 5000, stones: 2000, fiber: 3000 }, g: 1.35, iron: 0 },
+      // owner, 2026-11-01: fiber-heavy (wood's and fiber's prices swapped), twice the first price, the same climb; a hauled project in the game
+      standard: { x: 0.02, cost: { fiber: 10000, stones: 4000, wood: 6000 }, g: 1.35, iron: 0 },
       oneOffs: [   // iron buffs for Light's fires (owner: inexpensive one-off buys, not keys); the gate is combat places cleared (best ever)
         { id: 'grates', name: 'Iron grates', src: 'burners', x: 3, iron: 10, opens: 8 },
         { id: 'firedogs', name: 'Iron fire-dogs', src: 'keepers', x: 3, iron: 30, opens: 18 },
@@ -162,6 +163,8 @@ var CPHASE = function (MC, CM, dialsIn) {
   function resolveH(C, life) { if (!C.open) return 0; var r = cap(C, life) / fillH(C, life) * (1 + perkX(life, 'quick')); if (C.hr < C.rallyEnd) r *= rallyX(C); return r; }
   function resCap(C, life) { return P.off.reserves ? cap(C, life) * P.reserves.bars : C.lv.reserves ? cap(C, life) * (P.reserves.bars + P.reserves.perLv * (C.lv.reserves - 1)) : 0; }   // no Reserves until the first Storehouse (owner)
   function ironCap(C) { var I = P.ironStore; return I ? I.cap0 * Math.pow(I.x, C.lv.ironStore || 0) : Infinity; }
+  // v1u-c16 fix (owner's playtest): saves from before a line existed lack its level; fill them in, and mend what the NaN price broke
+  function fixRun(C) { var d = newRun(newLife(), 1).lv; for (var k in d) if (!(C.lv[k] >= 0)) C.lv[k] = 0; if (!(C.iron >= 0)) C.iron = 0; return C; }
   function mineSlots(C) { return C.lv.mine ? P.mine.slots0 + P.mine.slotsLv * (C.lv.mine - 1) : 0; }
   function drillSlots(C) { return P.off.drill || !opened(C, 'drill') ? 0 : P.drill.slots0 + P.drill.slotsLv * C.lv.drill; }
   function ironPerMinerH(C) { return P.mine.perMinerH * Math.pow(P.mine.depthX, Math.max(0, C.lv.mine - 1)); }
@@ -318,7 +321,7 @@ var CPHASE = function (MC, CM, dialsIn) {
   var FULL = false;
   function asPlayer(f) { return function () { FULL = true; try { return f.apply(null, arguments); } finally { FULL = false; } }; }
   function have(C, k) { if (k === 'iron') return Math.max(0, C.iron - C.ironKeep); var s = SS; return s ? Math.max(0, (s.res[k] || 0) * (FULL ? 1 : 1 - (P.keep[k] != null ? P.keep[k] : 0.5))) : 0; }
-  function canPay(C, cost) { for (var k in cost) if (cost[k] > have(C, k)) return false; return true; }
+  function canPay(C, cost) { for (var k in cost) if (!(cost[k] >= 0) || !isFinite(cost[k]) || cost[k] > have(C, k)) return false; return true; }   // v1u-c16: a price that isn't a number is never payable
   function pay(C, cost, line) { for (var k in cost) { if (k === 'iron') { C.iron -= cost[k]; C.ironOn[line] = (C.ironOn[line] || 0) + cost[k]; } else { SS.res[k] -= cost[k]; C.rawOn[line] = (C.rawOn[line] || 0) + cost[k]; } C.spent[k] = (C.spent[k] || 0) + cost[k]; } }
   function priceOf(spec, n, growth) { var o = {}, m = Math.pow(growth || spec.g, n); for (var k in spec.cost) o[k] = Math.ceil(spec.cost[k] * m); return o; }
   function growthB(life) { var g = P.barracks.g; return 1 + (g - 1) * Math.pow(1 - perk('quarterm').x, perkLv(life, 'quarterm')); }
@@ -466,6 +469,6 @@ var CPHASE = function (MC, CM, dialsIn) {
     ironH: ironH, ironCap: ironCap, landIronH: landIronH, mineSlots: mineSlots, drillSlots: drillSlots, beastStages: beastStages, beastTotal: beastTotal, flatBS: flatBS, lightFlat: lightFlat, lightSrc: lightSrc, lightStd: lightStd, frontier: frontier,
     nextBattle: nextBattle, avatarCd: avatarCd, armPrice: armPrice, have: asPlayer(function (C, k, s) { if (s) SS = s; return have(C, k); }), options: function (s, C, life) { SS = s; return options(s, C, life); }, incomeH: incomeH, snapshot: snapshot, armL: armL, recruitF: recruitF, armF: armF,
     preview: preview, attack: attack, fightable: fightable, avatarReady: avatarReady, raidAt: raidAt, raidCost: raidCost, rallyNow: asPlayer(rallyNow), rallyFood: rallyFood, rallyX: rallyX, canBuy: asPlayer(canBuy), buyLine: asPlayer(buyLine), oneOffsOpen: oneOffsOpen, buyOneOff: buyOneOff,
-    stdOpen: stdOpen, stdCost: stdCost, raiseStd: asPlayer(raiseStd), canStd: asPlayer(canStd), syncJobs: syncJobs, bank: bank, perkSpent: perkSpent, perk: perk, perkLv: perkLv, perkUseful: perkUseful, stdOK: stdOK, bankPending: bankPending, lightGifts: lightGifts, edgeOf: edgeOf, beastEdge: beastEdge, defOpen: defOpen, ironPerMinerH: ironPerMinerH, healF: healF, scoutF: scoutF, councilF: councilF, hardF: hardF, relicCP: relicCP, cpOf0: function () { return cp0; } };
+    stdOpen: stdOpen, stdCost: stdCost, raiseStd: asPlayer(raiseStd), canStd: asPlayer(canStd), syncJobs: syncJobs, bank: bank, perkSpent: perkSpent, perk: perk, perkLv: perkLv, perkUseful: perkUseful, stdOK: stdOK, bankPending: bankPending, fixRun: fixRun, lightGifts: lightGifts, edgeOf: edgeOf, beastEdge: beastEdge, defOpen: defOpen, ironPerMinerH: ironPerMinerH, healF: healF, scoutF: scoutF, councilF: councilF, hardF: hardF, relicCP: relicCP, cpOf0: function () { return cp0; } };
 };
 if (typeof module !== 'undefined') module.exports = CPHASE;

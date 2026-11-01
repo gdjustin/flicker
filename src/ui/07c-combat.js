@@ -27,7 +27,8 @@ const CT = {   // combat's text, in one place for the text editor (placeholders 
   attack: 'Attack', attackSub: 'Commit {n} combat power against their {d}.', leadH: 'Lead the charge', leadSub: 'You join this battle yourself: strength ×{x}. Again in {t}.',
   leadWait: 'You can lead a charge again in {t}.', won: 'won', next: 'Next', unknown: '???',
   raid: 'Raid it', raidSub: 'Spend {n} of your Reserves: study of the {fam} (+{s}) and a chance at its relic.', raidNo: 'Needs {n} Reserves.',
-  std: 'Raise a standard', stdSub: 'Marks it as made safe: all light +{pct}%. Costs {cost}.',
+  std: 'Raise a standard', stdSub: 'Haulers carry it out: all light +{pct}% once it stands. Costs {cost}.', stdQueued: 'Waiting for the haulers', stdQueuedSub: 'In the hauling queue: {n} standards waiting.',
+  stdAll: 'Raise standards ({n} to raise)', stdAllSub: 'Queue them all for the haulers. Each one: all light +{pct}%, kept for good. {raised} raised so far.', stdPause: 'Take the standards off the queue', stdPauseSub: '{n} waiting. They keep what was carried; queue them again any time.',
   rally: 'Rally', rallySub: 'A feast for your defenders: Resolve ×{x} for {h} hours. Costs {food} food. Then {cd} hours before the next.',
   rallyOn: 'Rallying: {t} left', rallyWait: 'Rally again in {t}', rallyPill: 'Rally · {food} food', rallyPillOn: 'Rallying · {t}', rallyPillWait: 'Rally in {t}',
   raidH: 'Raids', raid1: 'You can now spend Reserves to raid a land you have made safe, for study of its foes and a chance to claim its battle relic.', raidOk: 'Understood',   // owner's copy said 'bonus resources': raids give none yet (flagged)
@@ -93,6 +94,7 @@ function combatTick(dt, away, ev) {
   if (L.opened && !w.c) w.c = CB.newRun(L, (L.runs || 0) + 1);
   const C = cRun(w); if (!C) return;
   if (C.capOpen == null) C.capOpen = CB.cap(C, L) > 0;   // saves from v1s-c1: the cap was already open
+  CB.fixRun(C); ['wood', 'stones', 'fiber', 'food', 'copper'].forEach(k => { if (!(w.res[k] >= 0)) w.res[k] = 0; });   // v1u-c16: mend the Iron store's NaN price (owner's playtest)
   CB.syncJobs(w, C); CB.tick(w, dt, away, C, L); cLightApply(w);
 }
 // the cap is open once the first Barracks or Armory level stands (owner, 2026-10-18: combat power, the battle front and the map's marks wait for it)
@@ -181,8 +183,7 @@ function combatCard(w, k, box) {
     r.innerHTML = '<span><b>' + fmtCP(pv.S) + '</b> your strength</span><span><b>' + fmtCP(pv.D) + '</b> theirs</span><span class="' + (pv.sure ? 'ok' : pv.none ? 'bad' : '') + '"><b>' + (cPct(pv.pwin) + '%') + '</b> to win</span>' +
       '<span><b>' + fmtCP(pv.lossWin) + '</b> lost if you win · <b>' + fmtCP(pv.lossLose) + '</b> if not</span>';
     const tr = add('p', 'ctrait', CMX.TRAITS[c.trait] + ' ' + capFirst(CMX.DANGER_NAME[c.danger]) + ' danger, ' + CMX.DICE_NAME[c.dice] + ' swings (' + LANDN[c.land].toLowerCase() + ').');
-    const seg = add('div', 'cseg'); seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', 'How much to commit');
-    [[1, 'All'], [0.75, '¾'], [0.5, '½'], [0.25, '¼']].forEach(([f, lab]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = lab; b.setAttribute('aria-pressed', CMV.frac === f ? 'true' : 'false'); b.addEventListener('click', () => { CMV.frac = f; renderWorld(); }); seg.appendChild(b); });
+    CMV.frac = 1;   // owner, 2026-11-01: the Send choice is gone (always all). Considering: 5 to 60 seconds of marching, shown with moving dots; partial sends could come back with it
     if (C.lv.council) { const fs = add('div', 'cseg'); fs.setAttribute('aria-label', 'Formation');
       [['overwhelm', 'Overwhelm'], ['steady', 'Steady'], ['cautious', 'Carefully']].forEach(([f, lab]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = lab; b.setAttribute('aria-pressed', CMV.form === f ? 'true' : 'false'); b.addEventListener('click', () => { CMV.form = f; renderWorld(); }); fs.appendChild(b); }); }
     if (CB.avatarReady(C)) { const lb = add('label', 'clead'); const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = CMV.lead; cb.addEventListener('change', () => { CMV.lead = cb.checked; renderWorld(); }); lb.append(cb, ' ' + fill2(CT.leadSub, { x: fmtW(1 + CB.P.avatar.edge, 1), t: fmtTime(CB.avatarCd(C) * 3600) }).replace(/^You join/, CT.leadH + ': you join')); }
@@ -191,8 +192,8 @@ function combatCard(w, k, box) {
     setBtn(b, CT.attack, fill2(CT.attackSub, { n: fmtCP(C.cp * CMV.frac), d: fmtCP(pv.D) }), C.cp > 1e-9 && !pv.none, {}); b.addEventListener('click', () => cAttack(k));
   } else {
     const acts = add('div', 'mpacts');
-    if (CB.stdOK(w) && C.newly[k] && !(L.stds || {})[k]) { const sc = CB.stdCost(L), b = document.createElement('button'); b.type = 'button'; b.className = 'act'; acts.appendChild(b);
-      setBtn(b, CT.std, fill2(CT.stdSub, { pct: fmtW(CB.P.standard.x * 100, 1), cost: costList(sc) }), CB.canStd(w, C, L), {}); b.addEventListener('click', () => cStd(k)); }
+    if (CB.stdOK(w) && C.newly[k] && !(L.stds || {})[k]) { const sc = CB.stdCost(L), q = stdQueued(w, k), b = document.createElement('button'); b.type = 'button'; b.className = 'act'; acts.appendChild(b);
+      if (q) setBtn(b, CT.stdQueued, fill2(CT.stdQueuedSub, { n: stdWaiting(w) }), false, {}); else { setBtn(b, CT.std, fill2(CT.stdSub, { pct: fmtW(CB.P.standard.x * 100, 1), cost: costList(sc) }), true, {}); b.addEventListener('click', () => cStd(k)); } }
     if (C.lv.reserves > 0) { const rc = CB.raidCost(C, L), b2 = document.createElement('button'); b2.type = 'button'; b2.className = 'act'; acts.appendChild(b2);   // owner, 2026-11-01: raids wait for Reserves
     setBtn(b2, CT.raid, C.res >= rc ? fill2(CT.raidSub, { n: fmtCP(rc), fam: c.famName.toLowerCase(), s: CB.P.raid.study }) + (L.relics[k] ? ' Its relic is already yours.' : '') : fill2(CT.raidNo, { n: fmtCP(rc) }), C.res >= rc, {}); b2.addEventListener('click', () => cRaid(k)); }
   }
@@ -212,7 +213,18 @@ function cAttack(k) {
   CMV.lead = false; MV.lastMap = 0; renderWorld(); save(true);
 }
 function cRaid(k) { const w = W(), C = cRun(w), L = cLife(), c = CB.byKey(k); const r = CB.raidAt(w, C, L, k, cRng()); if (!r) return; sys(fill2(CT.raidMsg, { place: shortName(tileOf(k)), s: r.study, fam: c.famName.toLowerCase() })); if (r.relic) wsay(fill2(CT.relicMsg, { place: shortName(tileOf(k)), land: LANDN[c.land].toLowerCase() })); renderWorld(); }
-function cStd(k) { const w = W(), C = cRun(w), L = cLife(); if (CB.raiseStd(w, C, L, k)) { sys(fill2(CT.stdMsg, { place: shortName(tileOf(k)) })); cLightApply(w); renderWorld(); } }
+// owner, 2026-11-01: standards are hauled projects ('std:<place>'), all queued at once if you like; the price is the next standard's when its hauling starts
+MC.addProjKind('std:', (s, key) => { const t = tileOf(key); return { id: 'std:' + key, name: 'A standard over ' + (t ? shortName(t).replace(/^The /, 'the ') : key), kind: 'small', stages: [{ name: 'The standard', cost: CB.stdCost(cLife()) }], gives: 'All light +' + fmtW(CB.P.standard.x * 100, 1) + '% for each standard raised.' }; },
+  (s, key) => { const L = cLife(); L.stds = L.stds || {}; if (L.stds[key]) return; L.stds[key] = true; L.stdN = (L.stdN || 0) + 1; cLightApply(s); });
+function stdQueued(w, k) { const id = 'std:' + k; return (w.m.proj && w.m.proj.id === id) || w.m.queue.indexOf(id) >= 0; }
+function stdWaiting(w) { return w.m.queue.filter(id => id.indexOf('std:') === 0).length + (w.m.proj && w.m.proj.id.indexOf('std:') === 0 ? 1 : 0); }
+function cStd(k) { const w = W(), C = cRun(w), L = cLife(); if (!CB.stdOK(w) || !C.newly[k] || (L.stds || {})[k] || stdQueued(w, k)) return; delete w.m.done['std:' + k]; MC.startProject(w, 'std:' + k); renderWorld(); }
+function cStdAll() { const w = W(), C = cRun(w), L = cLife(); let n = 0; CB.stdOpen(C, L, w).forEach(k => { if (!stdQueued(w, k)) { cStd(k); n++; } }); if (n) sys(n + ' standard' + (n === 1 ? '' : 's') + ' wait for the haulers.'); renderWorld(); }
+// owner, 2026-11-01: 'first' on a standard brings all the waiting standards forward; what was being hauled waits behind them with what it has
+function cStdFirst() { const w = W(), isS = id => String(id).indexOf('std:') === 0, stds = w.m.queue.filter(isS); if (!stds.length) return;
+  const first = stds.shift(), was = w.m.proj && w.m.proj.id; w.m.queue = stds.concat(w.m.queue.filter(id => !isS(id))); MC.startProject(w, first, true);
+  if (was && w.m.queue[0] === was) { w.m.queue.shift(); w.m.queue.splice(stds.length, 0, was); } renderWorld(); }
+function cStdPause() { const w = W(), n = MC.unqueueKind(w, 'std:'); if (n) sys(n + ' standard' + (n === 1 ? '' : 's') + ' taken off the queue.'); renderWorld(); }
 function cRally() { const w = W(), C = cRun(w); if (CB.rallyNow(w, C, cLife())) { sys('Your defenders feast. Resolve ×' + fmtW(CB.rallyX(C), 2) + ' for ' + CB.P.rally.hours + ' hours.'); renderWorld(); } }
 function cBuy(id) { const w = W(), C = cRun(w); if (!C) return; hideTip(); const was = cCapOpen(C); if (CB.buyLine(w, C, cLife(), id)) { cMarkBought(id); if (id === 'mine' && C.lv.mine === 1) sys(CT.mineMsg); if (id === 'barracks' && C.lv.barracks === 1 && !w.m.cards.armory) wsay(CT.armoryMsg);
   if (!was) CB.tick(w, 0, false, C, cLife()); if (!was && cCapOpen(C)) wsay(CT.capMsg); MV.lastMap = 0; renderWorld(); save(true); } }
@@ -303,8 +315,9 @@ function renderDefenseTab(w) {
   { const lb = $('cd-light'), op = CB.oneOffsOpen(C, L), want = new Set(op.map(x => 'cd-o-' + x.id)), std = CB.stdOpen(C, L, w);
     Array.from(lb.querySelectorAll('.act')).forEach(b => { if (b.id && b.id.indexOf('cd-o-') === 0 && !want.has(b.id)) b.remove(); });
     op.forEach(x => { const b = ensureBtn(lb, 'cd-o-' + x.id, () => cOneOff(x.id)); setBtn(b, x.name, 'Iron for the fires: ' + oneOffWhat(x) + (CB.P.keepLight ? '. Kept for good.' : '. This run of your defense only.'), C.iron >= x.iron, { kind: 'upgrade', cost: { iron: x.iron } }); });
-    const sb = $('cd-stdall'); if (std.length) { const b = ensureBtn(lb, 'cd-stdall', () => { const ww = W(); CB.stdOpen(cRun(ww), cLife(), ww).forEach(k => cStd(k)); });
-      setBtn(b, 'Raise standards (' + std.length + ' waiting)', 'Each marks a place made safe: all light +' + fmtW(CB.P.standard.x * 100, 1) + '%, kept for good. ' + cLife().stdN + ' raised so far.', CB.canStd(w, C, L), { kind: 'building', cost: CB.stdCost(L) }); } else if (sb) sb.remove();
+    const toQ = std.filter(k => !stdQueued(w, k)), sb = $('cd-stdall'), pb = $('cd-stdpause'), nw = stdWaiting(w);
+    if (toQ.length) { const b = ensureBtn(lb, 'cd-stdall', cStdAll); setBtn(b, fill2(CT.stdAll, { n: toQ.length }), fill2(CT.stdAllSub, { pct: fmtW(CB.P.standard.x * 100, 1), raised: cLife().stdN || 0 }), true, { kind: 'building', cost: CB.stdCost(L) }); } else if (sb) sb.remove();
+    if (nw) { const b = ensureBtn(lb, 'cd-stdpause', cStdPause); setBtn(b, CT.stdPause, fill2(CT.stdPauseSub, { n: nw }), true, {}); } else if (pb) pb.remove();
     $('cd-sec-light').classList.toggle('hidden', !lb.querySelector('.act')); }   // fixed (v1s-c2): the empty note no longer flips on and off each frame
   // the Bestiary (once a family is studied)
   { const bx = $('cd-beast'), fams = Object.keys(CB.famCount).filter(f => (L.beast[f] || 0) > 0).sort((a, b) => (L.beast[b] || 0) - (L.beast[a] || 0)), sig = 'b|' + fams.map(f => f + L.beast[f]).join(',');
@@ -316,7 +329,9 @@ function renderDefenseTab(w) {
 
 /* ---------- map marks: a bronze pip while a place is being fought, gold once safe; strength on places not yet fought ---------- */
 function combatCellCls(w, k, cls) { }   // owner, 2026-10-31: no combat dots on the map (the strength label stays)
-function combatCellLabel(w, k) { const C = cRun(w); if (!cCapOpen(C) || !w.m.tiles[k] || C.cleared[k]) return ''; const c = CB.byKey(k); if (!c) return ''; const cap = CB.cap(C, cLife()); if (c.power > cap * 30) return ''; return '⚔' + fmtShortCP(CB.nextBattle(c, C, cLife(), C.hr / 24).D * CPU); }
+function combatHorizon(w, C) { const sig = C.clearedN + '|' + Object.keys(w.m.tiles).length + '|' + Math.floor(C.hr); if (CMV.hz && CMV.hz.sig === sig) return CMV.hz.set; const set = {}; CB.frontier(C, w).forEach(c => { set[c.key] = true; }); CMV.hz = { sig, set }; return set; }
+// owner, 2026-11-01: only the horizon's places show their strength
+function combatCellLabel(w, k) { const C = cRun(w); if (!cCapOpen(C) || !w.m.tiles[k] || C.cleared[k]) return ''; const c = CB.byKey(k); if (!c) return ''; if (!combatHorizon(w, C)[k]) return '';  return '⚔' + fmtShortCP(CB.nextBattle(c, C, cLife(), C.hr / 24).D * CPU); }
 function fmtShortCP(v) { return v >= 1e9 ? fmtW(v / 1e9, 1) + 'B' : v >= 1e6 ? fmtW(v / 1e6, 1) + 'M' : v >= 1e3 ? fmtW(v / 1e3, 1) + 'k' : fmtW(v, v < 10 ? 1 : 0); }
 
 /* ---------- the Relics tab: battle relics (a chance on a place's first battles and on raids; kept for good) ---------- */

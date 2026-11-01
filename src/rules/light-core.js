@@ -336,7 +336,13 @@ var MCORE = function (VC) {
     c2.fiber = Math.ceil(1000 * m); c2.wood = Math.ceil(D.anchor.cost.wood * m * 0.5);
     return P('anchor:' + key, 'Light Anchor: ' + (t.name || t.land) + ' (' + key + ')', 'big', [{ name: 'The standing stone', cost: c1 }, { name: 'The binding', cost: c2 }], 'Calls its land\u2019s light back into the great fire.');
   }
-  function projDef(s, id) { if (PROJ[id]) return PROJ[id]; if (id.indexOf('amp') === 0) return ampProject(+id.slice(3)); if (/^beacon\d+$/.test(id)) return beaconProject(+id.slice(6), s); if (id.indexOf('anchor:') === 0) return anchorProject(id.slice(7)); return null; }
+  function projDef(s, id) { if (PROJ[id]) return PROJ[id]; if (id.indexOf('amp') === 0) return ampProject(+id.slice(3)); if (/^beacon\d+$/.test(id)) return beaconProject(+id.slice(6), s); if (id.indexOf('anchor:') === 0) return anchorProject(id.slice(7)); for (var ei = 0; ei < EXTP.length; ei++) if (id.indexOf(EXTP[ei].prefix) === 0) return EXTP[ei].def(s, id.slice(EXTP[ei].prefix.length)); return null; }
+  // other phases' hauled projects (the combat branch, 2026-11-01: standards, 'std:<place>'): a prefix, a definition and what finishing does
+  var EXTP = [];
+  function addProjKind(prefix, def, finish) { EXTP = EXTP.filter(function (x) { return x.prefix !== prefix; }); EXTP.push({ prefix: prefix, def: def, finish: finish }); }
+  // take every queued project of a kind off the queue; the running one pauses with what it has (owner: pause standards for a beacon stage)
+  function unqueueKind(s, prefix) { var n = 0; s.m.queue = s.m.queue.filter(function (id) { var hit = id.indexOf(prefix) === 0; if (hit) n++; return !hit; });
+    if (s.m.proj && s.m.proj.id.indexOf(prefix) === 0) { s.m.paused = s.m.paused || {}; s.m.paused[s.m.proj.id] = s.m.proj; n++; nextProject(s); } return n; }
 
   // ---------------------------------------------------------------- phase-1 ladders
   // tiered (Trimps equipment prestige): levels reset at each tier; tier t's first level costs tp^(t-1) more
@@ -704,6 +710,7 @@ var MCORE = function (VC) {
     if (id.indexOf('amp') === 0) { var an = +id.slice(3), a = s.m.amps.find(function (x) { return !x.story && x.n === an; }); if (a) a.lit = true; }   // v1r: by the tower's own build number (the mended tower sits first in the list)
     if (id.indexOf('anchor:') === 0) { var key = id.slice(7), a = (s.m.anchors || []).find(function (x) { return x.key === key; }); if (a) { a.lit = true; var land = MAP.tiles[MAP.idx[key]].land; s.m.relicsSet = s.m.relicsSet || {}; s.m.relicsSet[land] = (s.m.relicsSet[land] || 0) + 1;
       if (tileRelicMode() && s.m.relicT && s.m.relicT[key]) { s.m.relicAnch = (s.m.relicAnch || 0) + 1; s.m.relicAnchLand = s.m.relicAnchLand || {}; s.m.relicAnchLand[land] = (s.m.relicAnchLand[land] || 0) + 1; } } }
+    for (var ei = 0; ei < EXTP.length; ei++) if (id.indexOf(EXTP[ei].prefix) === 0 && EXTP[ei].finish) EXTP[ei].finish(s, id.slice(EXTP[ei].prefix.length));
     if (id === 'repair') { var t = MAP.tiles.find(function (x) { return x.tag === 'amp'; }); s.m.amps.unshift({ x: t.x, y: t.y, dir: [1, 0], lit: true, story: true }); }
   }
   // click to finish (owner): amplifiers wait for the player to be there
@@ -1158,7 +1165,7 @@ var MCORE = function (VC) {
     tierUp: tierUp, tierUpAvail: tierUpAvail, tierUpCost: tierUpCost, mlv: mlv, mtier: mtier,
     cap: cap, room: room, jobMake: jobMake, copperMake: copperMake, smeltMult: smeltMult, burnDemand: burnDemand, burnShare: burnShare, lightParts: lightParts, lightRate: lightRate, sentRate: sentRate,
     phaseMult: phaseMult, nearTiles: nearTiles, sysOpen: sysOpen, sysHeld: sysHeld, unlockPerkOf: unlockPerkOf, relicMult: relicMult, tendMult: tendMult, effMult: effMult, tileMult: tileMult, toolMult: toolMult,
-    projNeeds: projNeeds, projDef: projDef, startProject: startProject, prioritize: prioritize, clickFinish: clickFinish, setTarget: setTarget, cheapestTarget: cheapestTarget, poolCap: poolCap, scoutDepth: scoutDepth, seenTiles: seenTiles, burst: burst, burstLight: burstLight, burstCost: burstCost, burstTrip: burstTrip, burstReady: burstReady, lineupMax: lineupMax, lineupOk: lineupOk, lineupAdd: lineupAdd, lineupRemove: lineupRemove, nextTarget: nextTarget, lineupAuto: lineupAuto,
+    projNeeds: projNeeds, projDef: projDef, startProject: startProject, prioritize: prioritize, addProjKind: addProjKind, unqueueKind: unqueueKind, nextProject: nextProject, clickFinish: clickFinish, setTarget: setTarget, cheapestTarget: cheapestTarget, poolCap: poolCap, scoutDepth: scoutDepth, seenTiles: seenTiles, burst: burst, burstLight: burstLight, burstCost: burstCost, burstTrip: burstTrip, burstReady: burstReady, lineupMax: lineupMax, lineupOk: lineupOk, lineupAdd: lineupAdd, lineupRemove: lineupRemove, nextTarget: nextTarget, lineupAuto: lineupAuto,
     repairAmps: repairAmps, stewardsOn: stewardsOn, gather: gather, gatherAmount: gatherAmount, landScale: landScale, resonantN: function (s) { return resonant(s).n; }, rebuildNo: rebuildNo, rebuildTo: rebuildTo, litBurners: litBurners, surgeOf: surgeOf, surgeLeft: surgeLeft, eatRate: eatRate, ruinKey: ruinKey, repairOpen: repairOpen, repairStarted: repairStarted, repairAmp: repairAmp, boostOf: boostOf, landRelicBoost: landRelicBoost, smeltFuel: smeltFuel, haulRate: haulRate, buyRelic: buyRelic, relicCost: relicCost, relicsOpen: relicsOpen, planAmp: planAmp, jobOpen: jobOpen, setJob: setJob, landCount: landCount, hungry: hungry, autoStore: autoStore,
     beaconLv: beaconLv, sinkOf: sinkOf, beaconStepOf: beaconStepOf, beaconEveryOf: beaconEveryOf, coneOf: coneOf, glowMult: glowMult, anchorLight: anchorLight, academyOn: academyOn, planAnchor: planAnchor, relicFree: relicFree, relicFreeKey: relicFreeKey, relicRaw: relicRaw, anchorFocus: anchorFocus, focusMode: focusMode, RELIC_RAW: RELIC_RAW, rawPerk: rawPerk, REGIONS: REGIONS, regionsDone: regionsDone, regionMult: regionMult, directMult: directMult, perk: perk, perkCost: perkCost, cardCost: cardCost, beaconMaxOf: beaconMaxOf, ampMaxOf: ampMaxOf, heartstones: heartstones, hsFor: hsFor, memMult: memMult, refreshCards: refreshCards
   };
