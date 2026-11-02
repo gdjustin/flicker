@@ -36,12 +36,17 @@ const FSYM = (() => {
 // the rim tells the kind of foe: beasts, uncanny things, outlaws; the four great threats wear a doubled gold rim
 const FKIND = {}; [['beast', 'wolves boars bears spiders bats serpents harpies wyverns'], ['uncanny', 'hags thorns oozes bog trolls dead wisps golems'], ['outlaw', 'bandits goblins keep'], ['great', 'redhost choir rot thinning']].forEach(([k, ids]) => ids.split(' ').forEach(f => { FKIND[f] = k; }));
 const FRIM = { beast: ['#2b2118', '#b08a5a', '#5c4a35'], uncanny: ['#221d2b', '#9a88c4', '#4d4466'], outlaw: ['#2b1a1c', '#c45a60', '#5e2a2e'], great: ['#2a1414', '#d9a64e', '#d9a64e'] };
-function famBadge(f, px) {
+function famBadge(f, px, tip) {
   const k = FRIM[FKIND[f] || 'beast'], small = px < 22;
-  return '<svg class="fbadge" width="' + px + '" height="' + px + '" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="' + k[0] + '" stroke="' + k[1] + '" stroke-width="' + (small ? 2.4 : 1.6) + '"></circle>' +
+  return (tip ? '<span class="fbw" data-fam="' + f + '">' : '') + '<svg class="fbadge" width="' + px + '" height="' + px + '" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="' + k[0] + '" stroke="' + k[1] + '" stroke-width="' + (small ? 2.4 : 1.6) + '"></circle>' +
     (small ? '' : '<circle cx="16" cy="16" r="12.6" fill="none" stroke="' + k[2] + '" stroke-width="0.8"></circle>') +
-    '<path d="' + (FSYM[f] || '') + '" transform="translate(6.4 6.4) scale(0.8)" fill="none" stroke="#f1e4d6" stroke-width="' + (small ? 2.7 : 2) + '" stroke-linecap="round" stroke-linejoin="round"' + (f === 'thinning' ? ' stroke-dasharray="3 2.2"' : '') + '></path></svg>';
+    '<path d="' + (FSYM[f] || '') + '" transform="translate(6.4 6.4) scale(0.8)" fill="none" stroke="#f1e4d6" stroke-width="' + (small ? 2.7 : 2) + '" stroke-linecap="round" stroke-linejoin="round"' + (f === 'thinning' ? ' stroke-dasharray="3 2.2"' : '') + '></path></svg>' + (tip ? '</span>' : '');
 }
+// owner, 2026-11-01: hovering an enemy's symbol (anywhere but the map) shows what that enemy is like
+function famTip(f) { const L = cLife(), fm = CMX.families().find(x => x.id === f); if (!fm) return []; const out = [fm.traitText, capFirst(CMX.DANGER_NAME[fm.danger]) + ' danger. ' + capFirst(CB.tierOf(f)) + '.'];
+  const lands = Object.keys(fm.lands || {}).sort((a, b) => fm.lands[b] - fm.lands[a]).slice(0, 2).map(l => LANDP[l] || LANDN[l].toLowerCase()); if (lands.length) out.push('Found most in ' + lands.join(' and ') + '.');
+  if (fm.names && fm.names.length > 1) out.push('From ' + fm.names[0].replace(/^A /, 'a ') + ' to ' + fm.names[fm.names.length - 1].replace(/^The /, 'the ') + '.');
+  const n = L.beast[f] || 0; out.push(n ? { cls: 'tg', t: 'Bestiary: stage ' + CB.beastStages(L, f) + ', ×' + fmtW(CB.beastEdge(L, f), 2) + ' against them.' } : { cls: 'tg', t: 'Not met yet.' }); return out; }
 // a place's name: its own if it has one, else its land and region
 function dPlace(t) { if (!t) return ''; if (t.name) return t.name; const r = MC.MAP.regions[t.region]; return LANDN[t.land] + (r ? ', ' + r.name : ''); }
 function dOdds(pv) { return !pv ? 'bad' : pv.sure ? 'ok' : pv.none ? 'bad' : 'mid'; }
@@ -52,9 +57,21 @@ function dPick(k) { CMV.dsel = k; hideTip(); renderWorld(); }
 // owner, 2026-11-01: "Fight them all" fights every battle on the horizon that is 100% to win, weakest first, steady and with everything you have
 function cFightEasy() {
   const w = W(), C = cRun(w); if (!C) return; const L = cLife(), form = CMV.form, lead = CMV.lead; CMV.form = 'steady'; CMV.lead = false; let n = 0;
-  for (let g = 0; g < 80; g++) { const c = CB.frontier(C, w).map(x => ({ x, pv: CB.preview(w, C, L, x.key, { frac: 1 }) })).filter(o => o.pv && o.pv.sure).sort((a, b) => a.pv.D - b.pv.D).map(o => o.x).find(x => { const pv = CB.preview(w, C, L, x.key, { frac: 1 }); return pv && pv.sure; }); if (!c) break; cAttack(c.key); n++; }
+  for (let g = 0; g < 80; g++) { const c = combatHorizonList(w, C).map(x => ({ x, pv: CB.preview(w, C, L, x.key, { frac: 1 }) })).filter(o => o.pv && o.pv.sure).sort((a, b) => a.pv.D - b.pv.D).map(o => o.x).find(x => { const pv = CB.preview(w, C, L, x.key, { frac: 1 }); return pv && pv.sure; }); if (!c) break; cAttack(c.key); n++; }
   CMV.form = form; CMV.lead = lead; if (n > 1) sys(n + ' easy battles fought.');
 }
+// the battle front's map zooms (+ and −, from the whole land to close up) and scrolls; drag it with the mouse (touch scrolls natively)
+function dZoom(f) { const mb = $('cd-mapbox'); if (!mb) return; const z0 = CMV.dzoom || 1, z1 = Math.max(1, Math.min(64 / Math.max(10, CMV.dfit || 20), z0 * f)); if (z1 === z0) return;
+  const cx = (mb.scrollLeft + mb.clientWidth / 2) / Math.max(1, mb.scrollWidth), cy = (mb.scrollTop + mb.clientHeight / 2) / Math.max(1, mb.scrollHeight);
+  CMV.dzoom = z1; renderDefenseTab(W()); mb.scrollLeft = cx * mb.scrollWidth - mb.clientWidth / 2; mb.scrollTop = cy * mb.scrollHeight - mb.clientHeight / 2; }
+function dPan(v) { let d = null;
+  v.addEventListener('pointerdown', e => { if (e.button !== 0 || e.pointerType !== 'mouse') return; d = { x: e.clientX, y: e.clientY, l: v.scrollLeft, t: v.scrollTop, moved: false, id: e.pointerId }; });
+  v.addEventListener('pointermove', e => { if (!d) return; const dx = e.clientX - d.x, dy = e.clientY - d.y;
+    if (!d.moved && Math.abs(dx) + Math.abs(dy) > 5) { d.moved = true; v.classList.add('drag'); try { v.setPointerCapture(d.id); } catch (er) {} }
+    if (d.moved) { v.scrollLeft = d.l - dx; v.scrollTop = d.t - dy; } });
+  const end = () => { if (!d) return; if (d.moved) { CMV.dragEnd = Date.now(); v.classList.remove('drag'); } d = null; };
+  v.addEventListener('pointerup', end); v.addEventListener('pointercancel', end);
+  v.addEventListener('click', e => { if (CMV.dragEnd && Date.now() - CMV.dragEnd < 250) { e.stopPropagation(); e.preventDefault(); } }, true); }
 const DGROUPS = [['recruit', 'Recruit', 'how many defend', ['barracks']], ['arm', 'Arm', 'how well armed', ['armory', 'avatar']], ['train', 'Train', 'how fast the bar refills', ['drill', 'rally']],
   ['supply', 'Supply', 'iron and stores', ['mine', 'ironStore', 'reserves']], ['support', 'Support', 'opened by the Bestiary', ['healers', 'scouts', 'council']], ['light', 'For the light', 'kept for good', []]];
 
@@ -65,7 +82,8 @@ function renderDefenseTab(w) {
   if (!box.dataset.built) { box.dataset.built = '1';
     box.innerHTML = '<div class="cdsec" id="cd-sec-muster"><div id="cd-muster"></div></div>' +
       '<section class="cdsec" id="cd-sec-front" aria-labelledby="cd-h-front"><h2 class="dsh" id="cd-h-front">The battle front</h2><div class="dfront">' +
-        '<div class="dmapcol"><div class="dmapbox"><div class="dmap" id="cd-map" role="group" aria-label="The land you have called back, as your defenders see it"></div></div><div class="dlegend" id="cd-legend"></div></div>' +
+        '<div class="dmapcol"><div class="dmapwrap"><div class="dmapbox" id="cd-mapbox"><div class="dmap" id="cd-map" role="group" aria-label="The land you have called back, as your defenders see it"></div></div>' +
+        '<div class="mzoom dzoom"><button type="button" id="cd-zin" aria-label="Zoom in">+</button><button type="button" id="cd-zout" aria-label="Zoom out">−</button></div></div></div>' +
         '<div class="dlistcol"><div id="cd-easy"></div><p class="sech" id="cd-hzh">On the horizon: the next battles, weakest first</p><div class="dlist" id="cd-front" role="list"></div></div>' +
         '<div class="dcardcol" id="cd-card"></div></div></section>' +
       '<section class="cdsec" id="cd-sec-make" aria-labelledby="cd-h-make"><h2 class="dsh" id="cd-h-make">Buildings</h2><div class="dchain" id="cd-chain"></div><div class="dgroups" id="cd-make">' +
@@ -73,30 +91,31 @@ function renderDefenseTab(w) {
       '<section class="cdsec" id="cd-sec-beast" aria-labelledby="cd-h-beast"><h2 class="dsh" id="cd-h-beast">Bestiary</h2><p class="mmut dbnote" id="cd-beastn"></p><div class="dbeasts" id="cd-beast"></div></section>';
     $('cd-map').addEventListener('click', e => { const b = e.target.closest('[data-k]'); if (b) dPick(b.dataset.k); });
     $('cd-front').addEventListener('click', e => { const b = e.target.closest('[data-k]'); if (b) dPick(b.dataset.k); });
+    $('cd-zin').addEventListener('click', () => dZoom(1.25)); $('cd-zout').addEventListener('click', () => dZoom(0.8)); dPan($('cd-mapbox'));
+    box.addEventListener('mouseover', e => { const el = e.target.closest('[data-fam]'); if (!el || el === CMV.tipEl) return; CMV.tipEl = el; showTextTip(el, FAMN[el.dataset.fam], famTip(el.dataset.fam)); });
+    box.addEventListener('mouseout', e => { const el = e.target.closest('[data-fam]'); if (el && !el.contains(e.relatedTarget)) { CMV.tipEl = null; hideTip(); } });
   }
   $('cd-sec-muster').classList.toggle('hidden', !open); $('cd-sec-front').classList.toggle('hidden', !open);
   if (open && S.view === 'defense') L.frontSeen = true;
-  const fr = open ? CB.frontier(C, w) : [], pvs = {}; fr.forEach(c => { pvs[c.key] = CB.preview(w, C, L, c.key, { frac: 1 }); });
-  // the list goes by the strength of each place's next battle, weakest first
-  fr.sort((a, b) => pvs[a.key].D - pvs[b.key].D);
+  // the horizon: the 10 next battles, weakest next battle first
+  const fr = open ? combatHorizonList(w, C) : [], pvs = {}; fr.forEach(c => { pvs[c.key] = CB.preview(w, C, L, c.key, { frac: 1 }); });
   const sel = open ? dSel(w, C, fr) : null;
 
   // your defenders: the bar, Reserves, iron; then how fast it fills, bloodstones and the charge
-  if (open) { const m = $('cd-muster'), cap = CB.cap(C, L), rc = CB.resCap(C, L), drillOn = CB.drillSlots(C) > 0, fh = CB.fillH(C, L), ic = CB.ironCap(C), ih = CB.ironH(C);
-    const sig = [fmtCP(C.cp), fmtCP(cap), fmtCP(C.res), fmtCP(rc), Math.floor(C.hr * 6), C.rallies, drillOn, C.clearedN, fmtW(C.iron, 1), fmtW(ic), fmtW(ih, 1), L.bs, L.bsPending, CB.avatarReady(C)].join('|');
+  if (open) { const m = $('cd-muster'), cap = CB.cap(C, L), rc = CB.resCap(C, L), drillOn = CB.drillSlots(C) > 0, fh = CB.fillH(C, L);
+    const sig = [fmtCP(C.cp), fmtCP(cap), fmtCP(C.res), fmtCP(rc), Math.floor(C.hr * 6), C.rallies, drillOn, C.clearedN, L.bs, L.bsPending].join('|');
     if (m.dataset.s !== sig) { m.dataset.s = sig;
-      const bar = (lab, now, of, side, cls) => '<div class="dbar"><div class="dbl"><span>' + lab + ' <b>' + fmtCP(now) + '</b> of ' + fmtCP(of) + '</span><span class="mmut">' + side + '</span></div><div class="dtrack ' + cls + '"><i style="width:' + (of > 0 ? Math.min(100, now / of * 100) : 0).toFixed(1) + '%"></i></div></div>';
+      const bar = (lab, now, of, side, cls) => '<div class="dbar"><div class="dbl"><span>' + lab + ' <b>' + fmtCP(now) + '</b> of ' + fmtCP(of) + '</span>' + (side ? '<span class="mmut">' + side + '</span>' : '') + '</div><div class="dtrack ' + cls + '"><i style="width:' + (of > 0 ? Math.min(100, now / of * 100) : 0).toFixed(1) + '%"></i></div></div>';
       const left = cap > 0 && C.cp < cap ? 'full in ' + fmtTime(Math.max(0, (cap - C.cp) / Math.max(1e-12, CB.resolveH(C, L))) * 3600) : 'full';
-      m.innerHTML = '<div class="dstrip">' + bar('Combat power', C.cp, cap, left, 'cp') + (rc > 0 ? bar('Reserves', C.res, rc, 'tops up the bar', 'res') : '<div></div>') +
-        '<span class="diron">Iron <b>' + fmtW(C.iron) + '</b> / ' + fmtW(ic) + (ih > 0 ? ' · +' + fmtW(ih, 1) + ' an hour' : '') + '</span></div>' +
-        '<p class="cline">' + fill2(CT.resolveIs, { t: fmtTime(fh * 3600) }) + (drillOn ? ' (' + (w.jobs.drillmaster || 0) + ' drillmasters; ' + fmtW(CB.drillNeed(C, L), 1) + ' would halve the wait above ' + CB.P.drill.floorH + ' h)' : '') + '</p>' +
-        '<p class="cline">Bloodstones: <b>' + fmtW(L.bs) + '</b> holding (combat power ×' + fmtW(cFlatFor(L.bs), 2) + ')' + (L.bsPending ? ', <b>' + fmtW(L.bsPending) + '</b> more waiting for the traveler' : '') + '; ' + fmtW(L.bs + (L.bsPending || 0) - CB.perkSpent(L.perks)) + ' to spend with him.' +
-        (C.clearedN >= CB.P.avatar.opens ? ' ' + (CB.avatarReady(C) ? 'You can lead a charge now.' : fill2(CT.leadWait, { t: fmtTime(Math.max(0, C.avatarNext - C.hr) * 3600) })) : '') + '</p>'; } }
+      m.innerHTML = '<div class="dstrip">' + bar('Combat power', C.cp, cap, left, 'cp') + (rc > 0 ? bar('Reserves', C.res, rc, '', 'res') : '<div></div>') + '</div>' +
+        '<p class="cline">' + fill2(CT.resolveIs, { t: fmtTime(fh * 3600) }) + '</p>' +
+        '<p class="cline">Bloodstones: <b>' + fmtW(L.bs) + '</b> holding (combat power ×' + fmtW(cFlatFor(L.bs), 2) + ')' + (L.bsPending ? ', <b>' + fmtW(L.bsPending) + '</b> more waiting for the traveler' : '') + '; ' + fmtW(L.bs + (L.bsPending || 0) - CB.perkSpent(L.perks)) + ' to spend with him.</p>'; } }
 
   // the battle front: the map
   if (open) { const mp = $('cd-map'), hz = combatHorizon(w, C), keys = Object.keys(w.m.tiles); let x0 = 0, x1 = 0, y0 = 0, y1 = 0;
     keys.forEach(k => { const p = k.split(','), x = +p[0], y = +p[1]; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; });
-    const nx = x1 - x0 + 1, ny = y1 - y0 + 1, cs = Math.max(16, Math.min(30, Math.floor(420 / Math.max(nx, ny)))), big = cs >= 24;
+    const nx = x1 - x0 + 1, ny = y1 - y0 + 1, mb = $('cd-mapbox'), fit = Math.max(10, Math.floor(Math.min(((mb.clientWidth || 420) - 16) / nx, ((mb.clientHeight || 420) - 16) / ny)) - 1);
+    CMV.dfit = fit; const cs = Math.round(Math.min(64, fit * (CMV.dzoom || 1))), big = cs >= 24; $('cd-zin').disabled = cs >= 64; $('cd-zout').disabled = (CMV.dzoom || 1) <= 1;
     const sig = [x0, y0, nx, ny, cs, keys.length, C.clearedN, sel, fr.map(c => c.key + ':' + (C.bdone[c.key] || 0) + ':' + dOdds(pvs[c.key]) + ':' + fmtShortCP(pvs[c.key].D * CPU)).join(',')].join('|');
     if (mp.dataset.s !== sig) { mp.dataset.s = sig; mp.style.setProperty('--nx', nx); mp.style.setProperty('--cs', cs + 'px'); let h = '';
       for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const k = x + ',' + y, t = tileOf(k);
@@ -107,9 +126,7 @@ function renderDefenseTab(w) {
         if (hz[k] && pvs[k]) { const pv = pvs[k], st = fmtShortCP(pv.D * CPU);
           h += '<button type="button" class="dc hz ' + dOdds(pv) + sl + '" style="--c:' + land + '" data-k="' + k + '" title="' + nm + ': ' + dEsc(c.famName) + ', ' + st + ', ' + cPct(pv.pwin) + '% to win">' + famBadge(c.fam, Math.round(cs * (big ? 0.5 : 0.7))) + (big ? '<span>' + st + '</span>' : '') + '</button>'; continue; }
         h += '<button type="button" class="dc far' + sl + '" style="--c:' + land + '" data-k="' + k + '" title="' + nm + ': beyond the horizon"></button>'; }
-      mp.innerHTML = h;
-      $('cd-legend').innerHTML = '<span><i class="dk safe"></i> made safe</span><span><i class="dk ok"></i> 100% to win</span><span><i class="dk mid"></i> a chance</span><span><i class="dk bad"></i> too strong now</span><span><i class="dk far"></i> beyond the horizon</span>' +
-        '<span class="dln">Symbols mark the ' + fr.length + ' next battles; a place made safe loses its symbol. Pick any place to see its battles.</span>'; } }
+      mp.innerHTML = h; } }
 
   // the battle front: easy fights and the horizon list
   if (open) { const ez = fr.filter(c => pvs[c.key].sure).length, eb = $('cd-easy'), es = 'e' + ez;
@@ -119,7 +136,7 @@ function renderDefenseTab(w) {
     const f = $('cd-front'), sig = fr.map(c => c.key + ':' + (C.bdone[c.key] || 0) + ':' + cPct(pvs[c.key].pwin) + ':' + fmtShortCP(pvs[c.key].D * CPU)).join(',') + '|' + sel;
     if (f.dataset.s !== sig) { f.dataset.s = sig;
       f.innerHTML = fr.length ? fr.map(c => { const pv = pvs[c.key], o = dOdds(pv);
-        return '<button type="button" role="listitem" class="drow' + (c.key === sel ? ' sel' : '') + '" data-k="' + c.key + '">' + famBadge(c.fam, 26) + '<span class="dn"><span>' + dEsc(dPlace(tileOf(c.key))) + '</span><span class="mmut">' + dEsc(c.famName) + ' · battle ' + ((C.bdone[c.key] || 0) + 1) + ' of ' + (c.nb + (C.extra[c.key] || 0)) + '</span></span>' +
+        return '<button type="button" role="listitem" class="drow' + (c.key === sel ? ' sel' : '') + '" data-k="' + c.key + '">' + famBadge(c.fam, 26, true) + '<span class="dn"><span>' + dEsc(dPlace(tileOf(c.key))) + '</span><span class="mmut">' + dEsc(c.famName) + ' · battle ' + ((C.bdone[c.key] || 0) + 1) + ' of ' + (c.nb + (C.extra[c.key] || 0)) + '</span></span>' +
           '<span class="dst">⚔ ' + fmtShortCP(pv.D * CPU) + '</span><span class="dpw ' + o + '">' + cPct(pv.pwin) + '%</span></button>'; }).join('')
         : '<p class="mmut">Every place you have called back is safe. Call back more.</p>'; } }
 
@@ -128,7 +145,7 @@ function renderDefenseTab(w) {
     if (cb.dataset.s !== sig) { cb.dataset.s = sig; cb.innerHTML = '';
       if (!sel) cb.innerHTML = '<p class="mmut">Pick a place on the map to see its battles.</p>';
       else { const t = tileOf(sel), c = CB.byKey(sel), hd = document.createElement('div'); hd.className = 'dch';
-        const r = MC.MAP.regions[t.region]; hd.innerHTML = '<span class="dcl">' + dEsc(LANDN[t.land] + (r ? ' · ' + r.name : '')) + '</span><span class="dcn">' + famBadge(c.fam, 30) + '<span>' + dEsc(t.name || c.name) + '</span></span>'; cb.appendChild(hd); combatCard(w, sel, cb); } } }
+        const r = MC.MAP.regions[t.region]; hd.innerHTML = '<span class="dcl">' + dEsc(LANDN[t.land] + (r ? ' · ' + r.name : '')) + '</span><span class="dcn">' + famBadge(c.fam, 30, true) + '<span>' + dEsc(t.name || c.name) + '</span></span>'; cb.appendChild(hd); combatCard(w, sel, cb); } } }
 
   // Buildings: where your strength comes from, then the lines by what they do (only what is open: the mine first)
   { const ch = $('cd-chain'), cap = CB.cap(C, L), parts = CB.capParts(C, L), sum = parts.reduce((a, p) => a + p[1], 0), sig = fmtCP(cap) + '|' + parts.map(p => p[1].toFixed(3)).join(',');
@@ -161,7 +178,7 @@ function renderDefenseTab(w) {
     $('cd-sec-beast').classList.toggle('hidden', !fams.length);
     if (bx.dataset.s !== sig) { bx.dataset.s = sig;
       bx.innerHTML = fams.map(f => { const n = L.beast[f] || 0, st = CB.beastStages(L, f); let th = CB.P.bestiary.first[CB.tierOf(f)]; for (let i = 0; i < st; i++) th *= CB.P.bestiary.g;
-        return '<div class="dbeast' + (n ? '' : ' unmet') + '"><div class="dbh">' + famBadge(f, 34) + '<span><b>' + dEsc(FAMN[f]) + '</b><span class="mmut">' + CB.tierOf(f) + '</span></span></div>' +
+        return '<div class="dbeast' + (n ? '' : ' unmet') + '"><div class="dbh">' + famBadge(f, 34, true) + '<span><b>' + dEsc(FAMN[f]) + '</b><span class="mmut">' + CB.tierOf(f) + '</span></span></div>' +
           '<div class="dtrack res"><i style="width:' + (n ? Math.min(100, n / th * 100) : 0).toFixed(1) + '%"></i></div>' +
           '<div class="dbf"><span>' + (n ? 'stage ' + st + ' · studied ' + fmtW(n) + ' / ' + fmtW(Math.ceil(th)) : 'not met yet') + '</span><span class="dedge">×' + fmtW(CB.beastEdge(L, f), 2) + ' against them</span></div></div>'; }).join('');
       $('cd-beastn').textContent = 'Each battle won and each raid teaches you more of a family. Each stage is ×' + fmtW(1 + CB.P.bestiary.edge, 1) + ' in its battles, for good. Healers, scouts and the council table open as stages add up (' + CB.beastTotal(L) + ' so far).'; } }

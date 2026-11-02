@@ -884,10 +884,13 @@ body.view-defense .col.side { display: none; }
 #v-defense .dtrack.res i { background: #6b8e85; }
 #v-defense .diron { font-size: 0.82rem; color: var(--ash); white-space: nowrap; } #v-defense .diron b { color: var(--ink); font-weight: 600; }
 @media (max-width: 760px) { #v-defense .dstrip { grid-template-columns: minmax(0, 1fr); gap: 0.5rem; } }
-#v-defense .dfront { display: grid; grid-template-columns: auto minmax(14rem, 1fr) minmax(15rem, 18rem); gap: 1.2rem; align-items: start; }
-@media (max-width: 1180px) { #v-defense .dfront { grid-template-columns: auto minmax(13rem, 1fr); } #v-defense .dcardcol { grid-column: 1 / -1; } }
+#v-defense .dfront { display: grid; grid-template-columns: minmax(16rem, 26rem) minmax(14rem, 1fr) minmax(15rem, 18rem); gap: 1.2rem; align-items: start; }
+@media (max-width: 1180px) { #v-defense .dfront { grid-template-columns: minmax(16rem, 26rem) minmax(13rem, 1fr); } #v-defense .dcardcol { grid-column: 1 / -1; } }
 @media (max-width: 760px) { #v-defense .dfront { grid-template-columns: minmax(0, 1fr); } }
-#v-defense .dmapbox { max-width: 100%; overflow: auto; }
+#v-defense .dmapwrap { position: relative; }
+#v-defense .dmapbox { width: 100%; height: 26rem; overflow: auto; display: grid; border: 1px solid var(--line); border-radius: 6px; cursor: grab; overscroll-behavior: contain; }
+#v-defense .dmapbox.drag { cursor: grabbing; } #v-defense .dmapbox .dmap { margin: auto; padding: 0.4rem; }
+#v-defense .fbw { display: inline-flex; flex: none; cursor: help; }
 #v-defense .dmap { display: grid; grid-template-columns: repeat(var(--nx, 15), var(--cs, 28px)); grid-auto-rows: var(--cs, 28px); gap: 1px; width: max-content; }
 #v-defense .dc { border: 0; padding: 0; margin: 0; font: inherit; background: transparent; border-radius: 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-size: calc(var(--cs, 28px) * 0.3); line-height: 1; font-weight: 600; color: var(--ink); text-shadow: 0 0 3px var(--bg); font-variant-numeric: tabular-nums; }
 #v-defense button.dc { cursor: pointer; }
@@ -899,7 +902,6 @@ body.view-defense .col.side { display: none; }
 #v-defense .dc.sel { outline: 2px solid var(--ink); outline-offset: 1px; position: relative; z-index: 1; }
 #v-defense .dc:focus-visible, #v-defense .drow:focus-visible { outline: 2px solid var(--ember); outline-offset: 1px; }
 #v-defense .dc .fbadge { display: block; flex: none; }
-#v-defense .dmapcol { width: max-content; max-width: 100%; }
 #v-defense .dlegend { display: flex; flex-wrap: wrap; gap: 0.3rem 0.9rem; margin-top: 0.55rem; font-size: 0.76rem; color: var(--ash); width: 0; min-width: 100%; }
 #v-defense .dk { display: inline-block; width: 11px; height: 11px; border-radius: 2px; vertical-align: -1px; background: color-mix(in srgb, var(--l-meadow) 45%, var(--bg)); box-shadow: inset 0 0 0 2px var(--o); }
 #v-defense .dk.safe { background: var(--l-forest); box-shadow: none; } #v-defense .dk.far { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--l-hills) 25%, var(--bg)) 0 3px, var(--bg) 3px 6px); box-shadow: none; }

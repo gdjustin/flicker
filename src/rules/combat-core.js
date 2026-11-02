@@ -281,6 +281,9 @@ var CPHASE = function (MC, CM, dialsIn) {
     }
     return out;
   }
+  // the chance the next roll at a place finds its relic (owner, 2026-11-01: raids show it); certain on the pity try
+  function relicOdds(life, key, how) { var c = byKey[key]; if (P.off.relics || !c || life.relics[key]) return 0; if ((life.relicTries[key] || 0) + 1 >= P.relic.pity) return 1;
+    return Math.min(1, (how === 'raid' ? P.raid.relic : P.relic.battle) * (1 + perkX(life, 'keen'))); }
   function rollRelic(C, life, c, mult, r, how) {
     if (P.off.relics) return;
     var ch = (how === 'raid' ? P.raid.relic : P.relic.battle) * mult * (1 + perkX(life, 'keen'));
@@ -471,6 +474,6 @@ var CPHASE = function (MC, CM, dialsIn) {
     ironH: ironH, ironCap: ironCap, landIronH: landIronH, mineSlots: mineSlots, drillSlots: drillSlots, beastStages: beastStages, beastTotal: beastTotal, flatBS: flatBS, lightFlat: lightFlat, lightSrc: lightSrc, lightStd: lightStd, frontier: frontier,
     nextBattle: nextBattle, avatarCd: avatarCd, armPrice: armPrice, have: asPlayer(function (C, k, s) { if (s) SS = s; return have(C, k); }), options: function (s, C, life) { SS = s; return options(s, C, life); }, incomeH: incomeH, snapshot: snapshot, armL: armL, recruitF: recruitF, armF: armF,
     preview: preview, attack: attack, fightable: fightable, avatarReady: avatarReady, raidAt: raidAt, raidCost: raidCost, rallyNow: asPlayer(rallyNow), rallyFood: rallyFood, rallyX: rallyX, canBuy: asPlayer(canBuy), buyLine: asPlayer(buyLine), oneOffsOpen: oneOffsOpen, buyOneOff: buyOneOff,
-    stdOpen: stdOpen, stdCost: stdCost, raiseStd: asPlayer(raiseStd), canStd: asPlayer(canStd), syncJobs: syncJobs, bank: bank, perkSpent: perkSpent, perk: perk, perkLv: perkLv, perkUseful: perkUseful, stdOK: stdOK, bankPending: bankPending, fixRun: fixRun, lightGifts: lightGifts, edgeOf: edgeOf, beastEdge: beastEdge, defOpen: defOpen, ironPerMinerH: ironPerMinerH, healF: healF, scoutF: scoutF, councilF: councilF, hardF: hardF, relicCP: relicCP, cpOf0: function () { return cp0; } };
+    stdOpen: stdOpen, stdCost: stdCost, raiseStd: asPlayer(raiseStd), canStd: asPlayer(canStd), syncJobs: syncJobs, bank: bank, perkSpent: perkSpent, perk: perk, perkLv: perkLv, perkUseful: perkUseful, stdOK: stdOK, bankPending: bankPending, fixRun: fixRun, relicOdds: relicOdds, relicCP: relicCP, relicLandEdge: relicLandEdge, lightGifts: lightGifts, edgeOf: edgeOf, beastEdge: beastEdge, defOpen: defOpen, ironPerMinerH: ironPerMinerH, healF: healF, scoutF: scoutF, councilF: councilF, hardF: hardF, relicCP: relicCP, cpOf0: function () { return cp0; } };
 };
 if (typeof module !== 'undefined') module.exports = CPHASE;

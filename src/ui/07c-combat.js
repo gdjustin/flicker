@@ -26,7 +26,7 @@ const CT = {   // combat's text, in one place for the text editor (placeholders 
   iron: 'Iron', ironRate: '+{n}/h', noMiners: 'no miners',
   attack: 'Attack', attackSub: 'Commit {n} combat power against their {d}.', leadH: 'Lead the charge', leadSub: 'You join this battle yourself: strength ×{x}. Again in {t}.',
   leadWait: 'You can lead a charge again in {t}.', won: 'won', next: 'Next', unknown: '???',
-  raid: 'Raid it', raidSub: 'Spend {n} of your Reserves: study of the {fam} (+{s}) and a chance at its relic.', raidNo: 'Needs {n} Reserves.',
+  raid: 'Raid it', raidSub: 'Spend {n} of your Reserves. You gain +{s} study of the {fam} ({study}){relic}', raidRelic: ' and a {p}% chance at its battle relic: all combat power +{cp}%, and +{edge}% in {land}.', raidSure: ' and its battle relic for certain this time: all combat power +{cp}%, and +{edge}% in {land}.', raidHave: '. Its battle relic is already yours.', raidNo: 'Needs {n} Reserves.',
   std: 'Raise a standard', stdSub: 'Haulers carry it out: all light +{pct}% once it stands. Costs {cost}.', stdQueued: 'Waiting for the haulers', stdQueuedSub: 'In the hauling queue: {n} standards waiting.',
   stdAll: 'Raise standards ({n} to raise)', stdAllSub: 'Queue them all for the haulers. Each one: all light +{pct}%, kept for good. {raised} raised so far.', stdPause: 'Take the standards off the queue', stdPauseSub: '{n} waiting. They keep what was carried; queue them again any time.',
   rally: 'Rally', rallySub: 'A feast for your defenders: Resolve ×{x} for {h} hours. Costs {food} food. Then {cd} hours before the next.',
@@ -195,7 +195,7 @@ function combatCard(w, k, box) {
     if (CB.stdOK(w) && C.newly[k] && !(L.stds || {})[k]) { const sc = CB.stdCost(L), q = stdQueued(w, k), b = document.createElement('button'); b.type = 'button'; b.className = 'act'; acts.appendChild(b);
       if (q) setBtn(b, CT.stdQueued, fill2(CT.stdQueuedSub, { n: stdWaiting(w) }), false, {}); else { setBtn(b, CT.std, fill2(CT.stdSub, { pct: fmtW(CB.P.standard.x * 100, 1), cost: costList(sc) }), true, {}); b.addEventListener('click', () => cStd(k)); } }
     if (C.lv.reserves > 0) { const rc = CB.raidCost(C, L), b2 = document.createElement('button'); b2.type = 'button'; b2.className = 'act'; acts.appendChild(b2);   // owner, 2026-11-01: raids wait for Reserves
-    setBtn(b2, CT.raid, C.res >= rc ? fill2(CT.raidSub, { n: fmtCP(rc), fam: c.famName.toLowerCase(), s: CB.P.raid.study }) + (L.relics[k] ? ' Its relic is already yours.' : '') : fill2(CT.raidNo, { n: fmtCP(rc) }), C.res >= rc, {}); b2.addEventListener('click', () => cRaid(k)); }
+    setBtn(b2, CT.raid, raidWhat(C, L, k, c) + (C.res >= rc ? '' : ' ' + fill2(CT.raidNo, { n: fmtCP(rc) })), C.res >= rc, {}); b2.addEventListener('click', () => cRaid(k)); }
   }
   if (L.relics[k]) add('p', 'mmut', 'Its battle relic is yours (' + LANDN[L.relics[k]].toLowerCase() + ').');
   else if (L.ever[k] == null) add('p', 'mmut', 'Its first battles may turn up a battle relic' + (C.lv.reserves > 0 ? ' (raids too).' : '.'));
@@ -212,6 +212,13 @@ function cAttack(k) {
   if (out.relic) wsay(fill2(CT.relicMsg, { place: shortName(tileOf(k)), land: LANDN[c.land].toLowerCase() }));
   CMV.lead = false; MV.lastMap = 0; renderWorld(); save(true);
 }
+// lands in the plural, for running text
+const LANDP = { meadow: 'meadows', forest: 'forests', hills: 'hills', marsh: 'marshes', river: 'river valleys', mountain: 'mountains', water: 'waters' };
+// what a raid brings: Bestiary study (and how far it is to the next stage), and the relic's chance and what the relic gives
+function raidWhat(C, L, k, c) { const f = c.fam, n = L.beast[f] || 0, st = CB.beastStages(L, f); let th = CB.P.bestiary.first[CB.tierOf(f)]; for (let i = 0; i < st; i++) th *= CB.P.bestiary.g;
+  const study = fmtW(Math.min(n + CB.P.raid.study, th)) + ' of ' + fmtW(Math.ceil(th)) + ' toward stage ' + (st + 1), p = CB.relicOdds(L, k, 'raid');
+  const rv = { p: cPct(p), cp: fmtW((CB.relicCP(Object.assign({}, L, { relicN: (L.relicN || 0) + 1 })) / CB.relicCP(L) - 1) * 100, 1), edge: fmtW(CB.P.relic.landEdge * 100), land: LANDP[c.land] || LANDN[c.land].toLowerCase() };
+  return fill2(CT.raidSub, { n: fmtCP(CB.raidCost(C, L)), fam: c.famName.toLowerCase(), s: CB.P.raid.study, study, relic: L.relics[k] ? CT.raidHave : p >= 1 ? fill2(CT.raidSure, rv) : fill2(CT.raidRelic, rv) }); }
 function cRaid(k) { const w = W(), C = cRun(w), L = cLife(), c = CB.byKey(k); const r = CB.raidAt(w, C, L, k, cRng()); if (!r) return; sys(fill2(CT.raidMsg, { place: shortName(tileOf(k)), s: r.study, fam: c.famName.toLowerCase() })); if (r.relic) wsay(fill2(CT.relicMsg, { place: shortName(tileOf(k)), land: LANDN[c.land].toLowerCase() })); renderWorld(); }
 // owner, 2026-11-01: standards are hauled projects ('std:<place>'), all queued at once if you like; the price is the next standard's when its hauling starts
 MC.addProjKind('std:', (s, key) => { const t = tileOf(key); return { id: 'std:' + key, name: 'A standard over ' + (t ? shortName(t).replace(/^The /, 'the ') : key), kind: 'small', stages: [{ name: 'The standard', cost: CB.stdCost(cLife()) }], gives: 'All light +' + fmtW(CB.P.standard.x * 100, 1) + '% for each standard raised.' }; },
@@ -273,7 +280,9 @@ function cWhatAdds(w, C, L, id) {   // the hover on a line: what building it add
 
 /* ---------- map marks: a bronze pip while a place is being fought, gold once safe; strength on places not yet fought ---------- */
 function combatCellCls(w, k, cls) { }   // owner, 2026-10-31: no combat dots on the map (the strength label stays)
-function combatHorizon(w, C) { const sig = C.clearedN + '|' + Object.keys(w.m.tiles).length + '|' + Math.floor(C.hr); if (CMV.hz && CMV.hz.sig === sig) return CMV.hz.set; const set = {}; CB.frontier(C, w).forEach(c => { set[c.key] = true; }); CMV.hz = { sig, set }; return set; }
+// owner, 2026-11-01: the horizon is the 10 next battles, weakest next battle first (the rules' frontier holds 14; the bot fights from those)
+function combatHorizonList(w, C) { const L = cLife(), day = C.hr / 24; return CB.frontier(C, w).map(c => ({ c, D: CB.nextBattle(c, C, L, day).D })).sort((a, b) => a.D - b.D).slice(0, 10).map(o => o.c); }
+function combatHorizon(w, C) { const sig = C.clearedN + '|' + Object.keys(w.m.tiles).length + '|' + Math.floor(C.hr) + '|' + Object.keys(C.bdone).reduce((a, k) => a + (C.bdone[k] || 0), 0); if (CMV.hz && CMV.hz.sig === sig) return CMV.hz.set; const set = {}; combatHorizonList(w, C).forEach(c => { set[c.key] = true; }); CMV.hz = { sig, set }; return set; }
 // owner, 2026-11-01: only the horizon's places show their strength
 function combatCellLabel(w, k) { const C = cRun(w); if (!cCapOpen(C) || !w.m.tiles[k] || C.cleared[k]) return ''; const c = CB.byKey(k); if (!c) return ''; if (!combatHorizon(w, C)[k]) return '';  return '⚔' + fmtShortCP(CB.nextBattle(c, C, cLife(), C.hr / 24).D * CPU); }
 function fmtShortCP(v) { return v >= 1e9 ? fmtW(v / 1e9, 1) + 'B' : v >= 1e6 ? fmtW(v / 1e6, 1) + 'M' : v >= 1e3 ? fmtW(v / 1e3, 1) + 'k' : fmtW(v, v < 10 ? 1 : 0); }
