@@ -145,7 +145,7 @@ function renderMapPhase(w) {
   $('tab-defense').classList.toggle('hidden', !cRun(w)); $('tab-defense').classList.toggle('on', view === 'defense'); $('v-defense').classList.toggle('hidden', view !== 'defense');
   tabDot('tab-map', view === 'map' ? [] : mapNeedsYou(w)); tabDot('tab-village', view === 'village' ? [] : settlementNeedsYou(w)); tabDot('tab-relics', view === 'relics' ? [] : relicsNeedYou(w)); if (cRun(w)) tabDot('tab-defense', view === 'defense' ? [] : defenseNeedsYou(w));
   $('v-village').classList.toggle('hidden', view !== 'village'); $('v-map').classList.toggle('hidden', view !== 'map'); $('m-panel').classList.toggle('hidden', view !== 'map'); $('v-relics').classList.toggle('hidden', view !== 'relics');
-  $('m-regions').classList.toggle('hidden', view !== 'map' || !Object.keys(w.m.tiles).length);
+  $('m-regions').classList.add('hidden'); $('m-regtab').classList.toggle('hidden', view !== 'map' || !Object.keys(w.m.tiles).length);
   document.body.classList.toggle('view-map', view === 'map'); document.body.classList.toggle('view-relics', view === 'relics'); document.body.classList.toggle('view-defense', view === 'defense');   // v1r: no journal beside the relics
   if (view === 'village') { renderMapSettlement(w); renderMapSnails(w); }
   else if (view === 'relics') renderRelicsTab(w);
