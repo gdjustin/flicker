@@ -995,9 +995,9 @@ body.view-defense .col.side { display: none; }
 .mlens { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.1rem 0 0.35rem; } .mlens.hidden { display: none; }
 .mchip { font: inherit; font-size: 0.82rem; padding: 0.2rem 0.75rem; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--ash); cursor: pointer; }
 .mchip:hover { border-color: var(--ash); } .mchip.on { border-color: #e2b155; background: color-mix(in srgb, #e2b155 14%, transparent); color: var(--ink); }
-body.view-map #v-map:not(.hidden) { height: auto; }
-body.view-map #v-map .mwrap { flex: none; height: clamp(22rem, calc(100dvh - 21rem), 52rem); }
-.mregtab { margin: 1rem 0 0.5rem; } .mregtab.hidden { display: none; }
+.mregtab { position: absolute; inset: 0; overflow: auto; z-index: 7; padding: 0.2rem 0.6rem 0.6rem; background: var(--bg); border: 1px solid var(--line); } .mregtab.hidden, .mwrap:not(.showreg) .mregtab { display: none; }
+.mwrap.showreg .mview, .mwrap.showreg .mzoom { visibility: hidden; }
+.mregb { margin-left: auto; }
 .mrt { display: flex; flex-direction: column; }
 .mrt .rth, .mrt .rtr { display: grid; grid-template-columns: minmax(7.5rem, 1.3fr) repeat(var(--rc, 1), minmax(3.8rem, 1fr)) 4.6rem; gap: 0.7rem; align-items: center; padding: 0.4rem 0.5rem; }
 .mrt.rt { --rc: 1; } .mrt.rta { --rc: 2; } .mrt.rtd { --rc: 3; } .mrt.rtad { --rc: 4; }

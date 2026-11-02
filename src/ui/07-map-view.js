@@ -27,7 +27,7 @@ function mapZoom(w, f) {
   const end = () => { if (!d) return; if (d.moved) { MV.dragEnd = Date.now(); v.classList.remove('drag'); } d = null; };
   v.addEventListener('pointerup', end); v.addEventListener('pointercancel', end);
   v.addEventListener('click', e => { if (MV.dragEnd && Date.now() - MV.dragEnd < 250) { e.stopPropagation(); e.preventDefault(); } }, true);
-  $('m-lens').addEventListener('click', e => { const b = e.target.closest('[data-l]'); if (!b) return; MV.lens = b.dataset.l || null; MV.lastMap = 0; renderWorld(); });
+  $('m-lens').addEventListener('click', e => { const g = e.target.closest('[data-regs]'); if (g) { MV.regs = !MV.regs; MV.lastMap = 0; renderWorld(); return; } const b = e.target.closest('[data-l]'); if (!b) return; MV.regs = false; MV.lens = b.dataset.l || null; MV.lastMap = 0; renderWorld(); });
   $('m-zin').addEventListener('click', () => mapZoom(W(), 1.25)); $('m-zout').addEventListener('click', () => mapZoom(W(), 0.8));
 })();
 function buildMapGrid(V) {
@@ -103,9 +103,11 @@ function renderMap(w) {
   if ((MV.lens === 'def' && !defOn) || (MV.lens === 'att' && !attOn)) MV.lens = null;
   const safeK = k => k === '0,0' || (!!w.m.tiles[k] && (!CB.byKey(k) || !!Cr.cleared[k]));
   const doneK = k => { const c = CB.byKey(k); if (!c) return true; if (!Cr.cleared[k]) return false; if (!CB.P.off.relics && !(Lf.relics || {})[k]) return false; return !(sOK && Cr.newly[k] && !(Lf.stds || {})[k]); };
-  { const lb = $('m-lens'), opts = [[null, 'Everything']].concat(attOn ? [['att', 'Attunement']] : []).concat(defOn ? [['def', 'Defense']] : []), sg = opts.map(o => o[0]).join(',') + '|' + MV.lens;
-    lb.classList.toggle('hidden', opts.length < 2);
-    if (lb.dataset.s !== sg) { lb.dataset.s = sg; lb.innerHTML = opts.map(([id, tt]) => '<button type="button" class="mchip' + (MV.lens === id ? ' on' : '') + '" data-l="' + (id || '') + '" aria-pressed="' + (MV.lens === id) + '">' + tt + '</button>').join(''); } }
+  { const lb = $('m-lens'), opts = [[null, 'Everything']].concat(attOn ? [['att', 'Attunement']] : []).concat(defOn ? [['def', 'Defense']] : []), sg = opts.map(o => o[0]).join(',') + '|' + MV.lens + '|' + !!MV.regs;
+    lb.classList.remove('hidden');
+    if (lb.dataset.s !== sg) { lb.dataset.s = sg; lb.innerHTML = (opts.length > 1 ? opts.map(([id, tt]) => '<button type="button" class="mchip' + (!MV.regs && MV.lens === id ? ' on' : '') + '" data-l="' + (id || '') + '" aria-pressed="' + (!MV.regs && MV.lens === id) + '">' + tt + '</button>').join('') : '') +
+      '<button type="button" class="mchip mregb' + (MV.regs ? ' on' : '') + '" data-regs="1" aria-pressed="' + !!MV.regs + '">Regions</button>'; }
+    $('v-map').querySelector('.mwrap').classList.toggle('showreg', !!MV.regs); }
   const landSt = {};   // v1p: what you know of each place, for the land canvas
   const sideOf = k => { const [x, y] = k.split(',').map(Number); let best = null, bs = Infinity; [[0, -1, 'top'], [0, 1, 'bottom'], [-1, 0, 'left'], [1, 0, 'right']].forEach(([dx, dy, nm]) => { const n = (x + dx) + ',' + (y + dy); if (!MC.restored(w, n)) return; const st = Math.abs(x + dx) + Math.abs(y + dy); if (st < bs) { bs = st; best = nm; } }); return best || 'bottom'; };
   for (const k in MV.cells) {
@@ -188,8 +190,8 @@ function renderRegions(w) {
 }
 // a click on a region's row: the map centres on that region
 function mapCentreRegion(i) { const r = MC.REGIONS[i], v = mapView(); if (!r || !v || !MV.cells) return; let sx = 0, sy = 0, n = 0; r.tiles.forEach(k => { const c = MV.cells[k]; if (!c) return; sx += c.el.offsetLeft + c.el.offsetWidth / 2; sy += c.el.offsetTop + c.el.offsetHeight / 2; n++; });
-  if (!n) return; v.scrollTo({ left: sx / n - v.clientWidth / 2, top: sy / n - v.clientHeight / 2, behavior: 'smooth' }); try { $('v-map').querySelector('.mwrap').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {} }
-$('m-regtab').addEventListener('click', e => { const b = e.target.closest('[data-r]'); if (b) mapCentreRegion(+b.dataset.r); });
+  if (!n) return; v.scrollTo({ left: sx / n - v.clientWidth / 2, top: sy / n - v.clientHeight / 2, behavior: 'smooth' }); }
+$('m-regtab').addEventListener('click', e => { const b = e.target.closest('[data-r]'); if (!b) return; MV.regs = false; MV.lastMap = 0; renderWorld(); requestAnimationFrame(() => mapCentreRegion(+b.dataset.r)); });
 // r1d (owner): one look for a region's row, on the map and on the Relics tab: its name, a pip per place in map order
 // (filled once back, dashed when picked or lined up), "N of M", a tick when finished. `note`: a muted line under it
 function regionRowHtml(w, r, note) {
@@ -209,9 +211,11 @@ function placeHead(w, k, t, r, box) {
   const Cr = cRun(w), L = Cr ? cLife() : null, defOn = !!(Cr && cCapOpen(Cr)), c = CB.byKey(k), hasL = !!(w.m.relicT && w.m.relicT[k]), hasB = !!(L && L.relics[k]);
   const hd = document.createElement('div'); hd.className = 'mphead';
   hd.innerHTML = '<span class="mpeye">' + esc(LANDN[t.land] + (r ? ' · ' + r.name : '')) + '</span><p class="mptitle">' + esc(shortName(t)) + '</p>' +
-    '<div class="mprels"><span title="' + esc(relicName(k) + (hasL ? ': claimed' : ': not claimed yet')) + '">' + relicMedalSvg(t.land, 26, hasL) + '</span>' +
-    (defOn && c ? '<span title="' + esc(BATTLE_RELIC_OF[t.land] + (hasB ? ': found' : ': not found yet')) + '">' + relicShieldSvg(t.land, 24, hasB) + '</span>' : '') + '</div>';
+    '<div class="mprels"><span class="mprl-l">' + relicMedalSvg(t.land, 26, hasL) + '</span>' + (defOn && c ? '<span class="mprl-b">' + relicShieldSvg(t.land, 24, hasB) + '</span>' : '') + '</div>';
   box.appendChild(hd);
+  // owner, 2026-11-02: one line on what each relic is
+  { const a = hd.querySelector('.mprl-l'); hoverTip(a, () => showTextTip(a, relicName(k) + (hasL ? ' · claimed' : ' · not claimed yet'), ['A light relic: set in a copper shrine, it boosts your light and raw resources.'])); }
+  { const b = hd.querySelector('.mprl-b'); if (b) hoverTip(b, () => showTextTip(b, BATTLE_RELIC_OF[t.land] + (hasB ? ' · found' : ' · not found yet'), ['A battle relic: found when its land is made safe or raided, it strengthens your troops.'])); }
   if (MC.masteryOn(w)) { const tr = MC.mTier(w, k), cap = MC.D.mastery.tiers, cl = MC.mClears(w, k), nd = MC.mNeed(w, k), row = document.createElement('div'); row.className = 'mprow light';
     row.innerHTML = '<span class="mprl">Light</span><span class="mprv"><span>Attunement <b>' + mastPct(tr) + '%</b></span><span class="mpbar"><i style="width:' + (tr >= cap ? 100 : Math.min(100, cl / Math.max(1, nd) * 100)).toFixed(1) + '%"></i></span></span>';
     box.appendChild(row); }
