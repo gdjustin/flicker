@@ -898,6 +898,17 @@ body.view-defense .col.side { display: none; }
 #v-defense .dc.hz { background: color-mix(in srgb, var(--c) 45%, var(--bg)); box-shadow: inset 0 0 0 2px var(--o, #b8484f); }
 #v-defense .dc.ok, #v-defense .dk.ok { --o: var(--form); } #v-defense .dc.mid, #v-defense .dk.mid { --o: #d9a64e; } #v-defense .dc.bad, #v-defense .dk.bad { --o: #b8484f; }
 #v-defense .dc.far { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--c) 18%, var(--bg)) 0 4px, var(--bg) 4px 8px); }
+#v-defense .dc.safe.todo { background: color-mix(in srgb, var(--c) 42%, var(--bg)); }
+#v-defense .dc.off { background: color-mix(in srgb, var(--ink) 6%, var(--bg)); }
+#v-defense .dc { position: relative; } #v-defense .dc .dmk { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+#v-defense { --mstd: #a63d45; --mrel: #94660f; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #v-defense { --mstd: #d8676e; --mrel: #e2b155; } }
+:root[data-theme="dark"] #v-defense { --mstd: #d8676e; --mrel: #e2b155; }
+#v-defense .dmk .mstd { fill: none; stroke: var(--mstd); stroke-width: 1.4; stroke-linejoin: round; } #v-defense .dmk .mrel { fill: none; stroke: var(--mrel); stroke-width: 1.4; }
+#v-defense .dsw { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.5rem; margin-bottom: 0.5rem; min-height: 1.9rem; }
+#v-defense .dchip { font: inherit; font-size: 0.82rem; padding: 0.22rem 0.75rem; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--ash); cursor: pointer; }
+#v-defense .dchip:hover { border-color: var(--ash); } #v-defense .dchip.on { border-color: #e2b155; background: color-mix(in srgb, #e2b155 14%, transparent); color: var(--ink); }
+#v-defense .dswn { font-size: 0.8rem; }
 #v-defense .dc.home { background: var(--ember); color: var(--bg); text-shadow: none; font-size: calc(var(--cs, 28px) * 0.55); }
 #v-defense .dc.sel { outline: 2px solid var(--ink); outline-offset: 1px; position: relative; z-index: 1; }
 #v-defense .dc:focus-visible, #v-defense .drow:focus-visible { outline: 2px solid var(--ember); outline-offset: 1px; }

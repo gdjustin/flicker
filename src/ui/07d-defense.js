@@ -82,7 +82,7 @@ function renderDefenseTab(w) {
   if (!box.dataset.built) { box.dataset.built = '1';
     box.innerHTML = '<div class="cdsec" id="cd-sec-muster"><div id="cd-muster"></div></div>' +
       '<section class="cdsec" id="cd-sec-front" aria-labelledby="cd-h-front"><h2 class="dsh" id="cd-h-front">The battle front</h2><div class="dfront">' +
-        '<div class="dmapcol"><div class="dmapwrap"><div class="dmapbox" id="cd-mapbox"><div class="dmap" id="cd-map" role="group" aria-label="The land you have called back, as your defenders see it"></div></div>' +
+        '<div class="dmapcol"><div class="dsw" id="cd-sw" role="group" aria-label="Show what is left"></div><div class="dmapwrap"><div class="dmapbox" id="cd-mapbox"><div class="dmap" id="cd-map" role="group" aria-label="The land you have called back, as your defenders see it"></div></div>' +
         '<div class="mzoom dzoom"><button type="button" id="cd-zin" aria-label="Zoom in">+</button><button type="button" id="cd-zout" aria-label="Zoom out">−</button></div></div></div>' +
         '<div class="dlistcol"><div id="cd-easy"></div><p class="sech" id="cd-hzh">On the horizon: the next battles, weakest first</p><div class="dlist" id="cd-front" role="list"></div></div>' +
         '<div class="dcardcol" id="cd-card"></div></div></section>' +
@@ -91,6 +91,7 @@ function renderDefenseTab(w) {
       '<section class="cdsec" id="cd-sec-beast" aria-labelledby="cd-h-beast"><h2 class="dsh" id="cd-h-beast">Bestiary</h2><p class="mmut dbnote" id="cd-beastn"></p><div class="dbeasts" id="cd-beast"></div></section>';
     $('cd-map').addEventListener('click', e => { const b = e.target.closest('[data-k]'); if (b) dPick(b.dataset.k); });
     $('cd-front').addEventListener('click', e => { const b = e.target.closest('[data-k]'); if (b) dPick(b.dataset.k); });
+    $('cd-sw').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if (!b) return; CMV.dfilter = CMV.dfilter === b.dataset.f ? null : b.dataset.f; renderDefenseTab(W()); });
     $('cd-zin').addEventListener('click', () => dZoom(1.25)); $('cd-zout').addEventListener('click', () => dZoom(0.8)); dPan($('cd-mapbox'));
     box.addEventListener('mouseover', e => { const el = e.target.closest('[data-fam]'); if (!el || el === CMV.tipEl) return; CMV.tipEl = el; showTextTip(el, FAMN[el.dataset.fam], famTip(el.dataset.fam)); });
     box.addEventListener('mouseout', e => { const el = e.target.closest('[data-fam]'); if (el && !el.contains(e.relatedTarget)) { CMV.tipEl = null; hideTip(); } });
@@ -116,15 +117,26 @@ function renderDefenseTab(w) {
     keys.forEach(k => { const p = k.split(','), x = +p[0], y = +p[1]; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; });
     const nx = x1 - x0 + 1, ny = y1 - y0 + 1, mb = $('cd-mapbox'), fit = Math.max(10, Math.floor(Math.min(((mb.clientWidth || 420) - 16) / nx, ((mb.clientHeight || 420) - 16) / ny)) - 1);
     CMV.dfit = fit; const cs = Math.round(Math.min(64, fit * (CMV.dzoom || 1))), big = cs >= 24; $('cd-zin').disabled = cs >= 64; $('cd-zout').disabled = (CMV.dzoom || 1) <= 1;
-    const sig = [x0, y0, nx, ny, cs, keys.length, C.clearedN, sel, fr.map(c => c.key + ':' + (C.bdone[c.key] || 0) + ':' + dOdds(pvs[c.key]) + ':' + fmtShortCP(pvs[c.key].D * CPU)).join(',')].join('|');
+    // owner, 2026-11-01 (option A): a place made safe shows its land's full colour once finished (its standard raised, once standards are researched, and its battle relic found);
+    // until then it is dim and, zoomed in, a hollow pennant corner or a hollow gold dot says what is left. The switches darken all but the places still missing one thing.
+    const sOK = CB.stdOK(w), rOK = !CB.P.off.relics, stds = L.stds || {}, left = k => { const c = CB.byKey(k); return { rel: !!(rOK && c && !L.relics[k]), std: !!(sOK && c && C.newly[k] && !stds[k]) }; };
+    let nRel = 0, nStd = 0; keys.forEach(k => { if (!C.cleared[k]) return; const l = left(k); if (l.rel) nRel++; if (l.std) nStd++; });
+    if (CMV.dfilter === 'std' && !sOK) CMV.dfilter = null; const flt = CMV.dfilter || null;
+    { const sw = $('cd-sw'), ss = [sOK, rOK, nRel, nStd, flt].join('|'); if (sw.dataset.s !== ss) { sw.dataset.s = ss; const chip = (f, t) => '<button type="button" class="dchip' + (flt === f ? ' on' : '') + '" data-f="' + f + '" aria-pressed="' + (flt === f) + '">' + t + '</button>';
+      sw.innerHTML = (rOK ? chip('rel', 'Missing relics') : '') + (sOK ? chip('std', 'Missing standards') : '') + (flt ? '<span class="mmut dswn">' + (flt === 'rel' ? nRel + (nRel === 1 ? ' place still hides' : ' places still hide') + ' a battle relic' : nStd + (nStd === 1 ? ' place still waits' : ' places still wait') + ' for a standard') + '</span>' : ''); } }
+    const sig = [x0, y0, nx, ny, cs, keys.length, C.clearedN, sel, L.relicN, L.stdN, sOK, flt, fr.map(c => c.key + ':' + (C.bdone[c.key] || 0) + ':' + dOdds(pvs[c.key]) + ':' + fmtShortCP(pvs[c.key].D * CPU)).join(',')].join('|');
     if (mp.dataset.s !== sig) { mp.dataset.s = sig; mp.style.setProperty('--nx', nx); mp.style.setProperty('--cs', cs + 'px'); let h = '';
       for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const k = x + ',' + y, t = tileOf(k);
         if (k === '0,0') { h += '<span class="dc home" title="Your home">⌂</span>'; continue; }
         if (!t || !w.m.tiles[k]) { h += '<span class="dc"></span>'; continue; }
         const c = CB.byKey(k), land = 'var(--l-' + LANDC[t.land] + ')', nm = dEsc(dPlace(t)), sl = k === sel ? ' sel' : '';
-        if (!c || C.cleared[k]) { h += '<button type="button" class="dc safe' + sl + '" style="--c:' + land + '" data-k="' + k + '" title="' + nm + ': made safe"></button>'; continue; }
-        if (hz[k] && pvs[k]) { const pv = pvs[k], st = fmtShortCP(pv.D * CPU);
+        if (!c || C.cleared[k]) { const l = c ? left(k) : { rel: false, std: false }, todo = l.rel || l.std, why = [l.std ? 'standard still to raise' : sOK && c && C.newly[k] ? 'standard raised' : '', l.rel ? 'relic still to find' : rOK && c ? 'relic found' : ''].filter(Boolean).join(', ');
+          if (flt && !l[flt]) { h += '<button type="button" class="dc off' + sl + '" data-k="' + k + '" title="' + nm + ': ' + why + '"></button>'; continue; }
+          const mk = big && (flt ? true : todo) ? '<svg class="dmk" viewBox="0 0 20 20" preserveAspectRatio="none" aria-hidden="true">' + ((flt ? flt === 'std' : l.std) ? '<path class="mstd" d="M12.5 1.2 H18.8 V7.5 Z"></path>' : '') + ((flt ? flt === 'rel' : l.rel) ? '<circle class="mrel" cx="5" cy="15" r="2.6"></circle>' : '') + '</svg>' : '';
+          h += '<button type="button" class="dc safe' + (todo && !flt ? ' todo' : '') + sl + '" style="--c:' + land + '" data-k="' + k + '" title="' + nm + ': made safe' + (why ? ', ' + why : '') + '">' + mk + '</button>'; continue; }
+        if (hz[k] && pvs[k] && !flt) { const pv = pvs[k], st = fmtShortCP(pv.D * CPU);
           h += '<button type="button" class="dc hz ' + dOdds(pv) + sl + '" style="--c:' + land + '" data-k="' + k + '" title="' + nm + ': ' + dEsc(c.famName) + ', ' + st + ', ' + cPct(pv.pwin) + '% to win">' + famBadge(c.fam, Math.round(cs * (big ? 0.5 : 0.7))) + (big ? '<span>' + st + '</span>' : '') + '</button>'; continue; }
+        if (flt) { h += '<button type="button" class="dc off' + sl + '" data-k="' + k + '" title="' + nm + '"></button>'; continue; }
         h += '<button type="button" class="dc far' + sl + '" style="--c:' + land + '" data-k="' + k + '" title="' + nm + ': beyond the horizon"></button>'; }
       mp.innerHTML = h; } }
 
